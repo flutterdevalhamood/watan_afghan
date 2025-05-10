@@ -46,14 +46,6 @@ class Screenroutes {
           },
         );
 
-      case Screenroutes.salesScreen:
-        return MaterialPageRoute(
-          settings: const RouteSettings(name: Screenroutes.salesScreen),
-          builder: (BuildContext context) {
-            return SalesScreen();
-          },
-        );
-
       case Screenroutes.purchaseScreen:
         return MaterialPageRoute(
           settings: const RouteSettings(name: Screenroutes.purchaseScreen),
