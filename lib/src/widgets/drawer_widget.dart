@@ -176,7 +176,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
               icon: Icons.shopping_bag,
               title: 'Purchases',
               onTap: () {
-                Navigator.pop(context);
+                NavigationService().pushNavigation(Screenroutes.purchaseScreen);
               },
             ),
             _buildMenuItem(
@@ -184,7 +184,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
               icon: Icons.shop,
               title: 'Sales',
               onTap: () {
-                Navigator.pop(context);
+                NavigationService().pushNavigation(Screenroutes.salesScreen);
               },
             ),
             _buildMenuItem(
@@ -192,7 +192,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
               icon: Icons.money,
               title: 'Expenses',
               onTap: () {
-                Navigator.pop(context);
+                NavigationService().pushNavigation(Screenroutes.expenseScreen);
               },
             ),
             _buildMenuItem(
@@ -200,7 +200,9 @@ class _DrawerWidgetState extends State<DrawerWidget> {
               icon: Icons.monetization_on,
               title: 'Financial Transactions',
               onTap: () {
-                Navigator.pop(context);
+                NavigationService().pushNavigation(
+                  Screenroutes.financialTransactions,
+                );
               },
             ),
             _buildMenuItem(

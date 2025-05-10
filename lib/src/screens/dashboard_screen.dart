@@ -4,7 +4,7 @@ import 'package:sample/src/util/app_routes.dart';
 import 'package:sample/src/widgets/drawer_widget.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({Key? key}) : super(key: key);
+  const DashboardScreen({super.key});
 
   @override
   State<DashboardScreen> createState() => _FinancialDashboardState();
