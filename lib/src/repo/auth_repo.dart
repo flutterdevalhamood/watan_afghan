@@ -3,15 +3,13 @@ import 'dart:convert';
 import 'package:sample/src/util/app_routes.dart';
 
 import '../BaseScreen.dart';
-import '../providers/login_controller.dart';
 import '../util/shared_pref.dart';
 
 class AuthRepo {
   static const _prefUserKey = "userBase";
-  static const _prefLoginType = "loginType";
   static const _prefTokenKey = "token";
   static const _prefRoleKey = "role";
-  static const _prefCustomerIdKey = "customerId";
+  static const _prefLoginIdKey = "Id";
 
   static set token(String? token) {
     if (token == null) {
@@ -54,34 +52,17 @@ class AuthRepo {
     return userJson;
   }
 
-  static set loginType(LoginType? loginType) {
-    if (loginType == null) {
-      prefs?.remove(_prefLoginType);
+  static set loginId(int? id) {
+    if (id == null) {
+      prefs?.remove(_prefLoginIdKey);
     } else {
-      prefs?.setString(_prefLoginType, loginType.name);
+      final userJson = jsonEncode(id);
+      prefs?.setString(_prefLoginIdKey, userJson);
     }
   }
 
-  static LoginType? get loginType {
-    final type = prefs?.getString(_prefLoginType);
-
-    return LoginType.values.firstWhere(
-      (element) => element.name == type,
-      orElse: () => LoginType.admin,
-    );
-  }
-
-  static set customerId(int? customerId) {
-    if (customerId == null) {
-      prefs?.remove(_prefCustomerIdKey);
-    } else {
-      final userJson = jsonEncode(customerId);
-      prefs?.setString(_prefCustomerIdKey, userJson);
-    }
-  }
-
-  static int? get customerId {
-    var value = prefs?.getString(_prefCustomerIdKey);
+  static int? get loginId {
+    var value = prefs?.getString(_prefLoginIdKey);
     if (value == null) return null;
     final customerIdJson = jsonDecode(value);
     return customerIdJson;
@@ -89,7 +70,6 @@ class AuthRepo {
 
   static logOut() {
     prefs?.clear();
-    loginType = null;
     user = null;
     navigatorKey?.currentState?.pushNamedAndRemoveUntil(
       Screenroutes.login,

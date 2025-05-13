@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:sample/main.dart';
+import 'package:sample/src/providers/login_controller.dart';
 import 'package:sample/src/util/app_navigation.dart';
 import 'package:sample/src/util/app_routes.dart';
+import 'package:sample/src/util/snack.dart';
 
 import '../repo/auth_repo.dart';
 
@@ -16,6 +18,8 @@ class _DrawerWidgetState extends State<DrawerWidget> {
   // Define theme colors to match login screen
   static const Color primaryColor = Color(0xFF6366F1);
   static const Color secondaryColor = Color(0xFF818CF8);
+
+  final AuthController _authController = AuthController();
 
   void _logout() async {
     // Show a confirmation dialog before logging out
@@ -35,7 +39,19 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                   child: Text('Cancel'),
                 ),
                 TextButton(
-                  onPressed: () => Navigator.pop(context, true),
+                  onPressed: () async {
+                    bool isSuccess = await _authController.logout(
+                      AuthRepo.loginId,
+                    );
+                    if (isSuccess) {
+                      showSuccessSnack("Logged out successfully!");
+                      Navigator.pop(context, true);
+                    } else {
+                      showErrorSnack("Error logging out");
+                    }
+
+                    // Navigate back
+                  },
                   child: Text('Logout', style: TextStyle(color: Colors.red)),
                 ),
               ],
@@ -79,17 +95,19 @@ class _DrawerWidgetState extends State<DrawerWidget> {
             colors: [primaryColor, secondaryColor],
           ),
         ),
-        child: Column(
+        // Using ListView instead of Column to solve overflow issues
+        child: ListView(
+          padding: EdgeInsets.zero,
           children: [
-            // User Profile Header
+            // User Profile Header - Reduced height
             Container(
-              padding: const EdgeInsets.fromLTRB(20, 50, 20, 20),
+              padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
               child: Row(
                 children: [
-                  // User Avatar
+                  // User Avatar - Reduced height
                   Container(
-                    width: 60,
-                    height: 120,
+                    width: 50,
+                    height: 50, // Reduced height from 120
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.9),
                       shape: BoxShape.circle,
@@ -103,11 +121,11 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                     ),
                     child: const Icon(
                       Icons.verified_user,
-                      size: 36,
+                      size: 30, // Smaller icon
                       color: primaryColor,
                     ),
                   ),
-                  const SizedBox(width: 18),
+                  const SizedBox(width: 16),
                   // User Info
                   Expanded(
                     child: Column(
@@ -118,16 +136,16 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                           'Hi Faris',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 20,
+                            fontSize: 18, // Slightly smaller font
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        SizedBox(height: 8),
+                        SizedBox(height: 4), // Reduced spacing
                         // Role Badge
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
+                            horizontal: 10,
+                            vertical: 4, // Reduced padding
                           ),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.15),
@@ -142,7 +160,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w600,
-                              fontSize: 12,
+                              fontSize: 11, // Slightly smaller font
                             ),
                           ),
                         ),
@@ -160,8 +178,8 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                 thickness: 1,
               ),
             ),
-            const SizedBox(height: 10),
-            // Menu Items
+            const SizedBox(height: 5), // Reduced spacing
+            // Menu Items - More compact
             _buildMenuItem(
               context: context,
               icon: Icons.dashboard_rounded,
@@ -170,7 +188,6 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                 Navigator.pop(context);
               },
             ),
-
             _buildMenuItem(
               context: context,
               icon: Icons.shopping_bag,
@@ -213,8 +230,17 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                 Navigator.pop(context);
               },
             ),
-            Spacer(),
-
+            // Add Change Password option here
+            _buildMenuItem(
+              context: context,
+              icon: Icons.lock_reset,
+              title: 'Change Password',
+              onTap: () {
+                NavigationService().pushNavigation(Screenroutes.changePassword);
+              },
+            ),
+            // Added height to push logout to bottom
+            SizedBox(height: 20),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Divider(
@@ -231,7 +257,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                 _logout();
               },
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 16), // Reduced padding at bottom
           ],
         ),
       ),
@@ -246,17 +272,20 @@ class _DrawerWidgetState extends State<DrawerWidget> {
     bool isLogout = false,
   }) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+      margin: const EdgeInsets.symmetric(
+        horizontal: 20,
+        vertical: 3,
+      ), // Reduced vertical margin
       decoration: BoxDecoration(
         color:
             isLogout
                 ? Colors.red.withOpacity(0.1)
                 : Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12), // Slightly smaller radius
       ),
       child: ListTile(
         leading: Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(8), // Smaller padding
           decoration: BoxDecoration(
             color:
                 isLogout
@@ -266,7 +295,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
           ),
           child: Icon(
             icon,
-            size: 22,
+            size: 20, // Smaller icon
             color: isLogout ? Colors.red[100] : Colors.white,
           ),
         ),
@@ -274,13 +303,16 @@ class _DrawerWidgetState extends State<DrawerWidget> {
           title,
           style: TextStyle(
             color: isLogout ? Colors.red[100] : Colors.white,
-            fontSize: 16,
+            fontSize: 14, // Smaller font
             fontWeight: FontWeight.w500,
           ),
         ),
         onTap: onTap,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 4,
+        ), // Reduced padding
       ),
     );
   }

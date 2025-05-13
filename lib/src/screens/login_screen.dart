@@ -1,10 +1,48 @@
-import 'package:flutter/material.dart';
-import 'package:sample/src/util/app_navigation.dart';
-import 'package:sample/src/util/app_routes.dart';
+import 'package:flutter/material.dart'; // Import AuthController
+import 'package:sample/src/providers/login_controller.dart';
 import 'package:sample/src/widgets/curve_painter.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  // Text controllers
+  final TextEditingController _emailController = TextEditingController(
+    text: 'faris@watanafghan.com',
+  );
+  final TextEditingController _passwordController = TextEditingController(
+    text: '123456',
+  );
+
+  // Form key for validation
+  final _formKey = GlobalKey<FormState>();
+
+  // Auth controller
+  final AuthController _authController = AuthController();
+
+  // Loading state
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  // Validate and submit login
+  void _submitLogin() {
+    if (_formKey.currentState != null && _formKey.currentState!.validate()) {
+      _authController.login(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,68 +101,82 @@ class LoginScreen extends StatelessWidget {
                       const SizedBox(height: 60),
                       Container(
                         margin: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Column(
-                          children: [
-                            // Email/Phone input
-                            TextFormField(
-                              decoration: const InputDecoration(
-                                hintText: 'Email or Phone number',
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 16,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            // Password input
-                            TextFormField(
-                              obscureText: true,
-                              decoration: const InputDecoration(
-                                hintText: 'Password',
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 16,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            // Login button
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  NavigationService().pushNavigation(
-                                    Screenroutes.dashboard,
-                                  );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Color(0xFF818CF8),
-                                  padding: const EdgeInsets.symmetric(
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            children: [
+                              // Email/Phone input
+                              TextFormField(
+                                controller: _emailController,
+                                keyboardType: TextInputType.emailAddress,
+                                decoration: const InputDecoration(
+                                  hintText: 'Email or Phone number',
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 20,
                                     vertical: 16,
                                   ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your email or phone number';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              // Password input
+                              TextFormField(
+                                controller: _passwordController,
+                                obscureText: true,
+                                decoration: const InputDecoration(
+                                  hintText: 'Password',
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 16,
                                   ),
                                 ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your password';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 24),
+                              // Login button
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: _submitLogin,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Color(0xFF818CF8),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 16,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Login',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              // Forgot Password
+                              TextButton(
+                                onPressed: () {},
                                 child: const Text(
-                                  'Login',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                  'Forgot Password?',
+                                  style: TextStyle(color: Colors.white70),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 20),
-                            // Forgot Password
-                            TextButton(
-                              onPressed: () {},
-                              child: const Text(
-                                'Forgot Password?',
-                                style: TextStyle(color: Colors.white70),
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                       const SizedBox(height: 100), // Space for bottom elements

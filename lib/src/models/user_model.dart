@@ -9,7 +9,7 @@ abstract class UserModel with _$UserModel {
     bool? IsSuccess,
     UserData? Data,
     String? Token,
-    dynamic? UserPrivileges,
+    dynamic UserPrivileges,
     int? StatusCode,
     String? Message,
   }) = _UserModel;
@@ -23,10 +23,10 @@ abstract class UserData with _$UserData {
   const factory UserData({
     int? id,
     String? name,
-    int? role_id,
+    String? role_id,
     String? email,
     String? imageUrl,
-    int? isActive,
+    String? isActive,
     Roles? roles,
     Customer? customer,
   }) = _UserData;

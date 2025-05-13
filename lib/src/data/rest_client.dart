@@ -12,9 +12,15 @@ var restApi = RestClient(dio, baseUrl: apiEndPoint);
 abstract class RestClient {
   factory RestClient(Dio dio, {String baseUrl}) = _RestClient;
 
-  @POST('/Login')
+  @POST('/api/Login')
   Future<UserModel> login({
     @Field("email") String? email,
     @Field("password") String? password,
+  });
+
+  @POST('/api/Logout')
+  Future<dynamic> logout({
+    @Header("Authorization") String? token,
+    @Field("id") int? id,
   });
 }

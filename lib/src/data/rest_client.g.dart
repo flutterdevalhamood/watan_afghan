@@ -10,7 +10,7 @@ part of 'rest_client.dart';
 
 class _RestClient implements RestClient {
   _RestClient(this._dio, {this.baseUrl, this.errorLogger}) {
-    baseUrl ??= 'https://fuelflow.alnedal.com/api';
+    baseUrl ??= 'https://watanafghanerp.wahidgoc.com';
   }
 
   final Dio _dio;
@@ -31,7 +31,7 @@ class _RestClient implements RestClient {
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            '/Login',
+            '/api/Login',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -45,6 +45,30 @@ class _RestClient implements RestClient {
       errorLogger?.logError(e, s, _options);
       rethrow;
     }
+    return _value;
+  }
+
+  @override
+  Future<dynamic> logout({String? token, int? id}) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{r'Authorization': token};
+    _headers.removeWhere((k, v) => v == null);
+    final _data = {'id': id};
+    _data.removeWhere((k, v) => v == null);
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/api/Logout',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
     return _value;
   }
 

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:developer';
 
 import 'package:dio/dio.dart';
@@ -12,46 +11,31 @@ import '../repo/auth_repo.dart';
 import '../util/circle_progress.dart';
 import '../util/snack.dart';
 
-enum LoginType { admin, operator, customer }
-
 class AuthController with ChangeNotifier {
-  LoginType loginType = LoginType.admin;
-
-  set setLoginType(LoginType type) {
-    loginType = type;
-    notifyListeners();
-  }
-
+  final token = AuthRepo.token;
   Future<void> login(String email, String password) async {
-    print('login');
-    print('email $email');
-    print('password $password');
-
     showCircle();
 
     try {
-      print('try');
       final loginResponse = await restApi.login(
         email: email,
         password: password,
       );
 
       if (loginResponse.IsSuccess == true) {
-        log(JsonEncoder.withIndent("\t").convert(loginResponse));
-
         final data = loginResponse.Data;
-        AuthRepo.loginType = loginType;
         AuthRepo.token = loginResponse.Token;
-        AuthRepo.role = loginResponse.Data?.roles?.Name;
-        AuthRepo.user = loginResponse.Data?.name;
-        AuthRepo.customerId = loginResponse.Data?.customer?.id ?? 0;
-        AuthRepo.role = loginResponse.Data?.roles?.Name;
+        AuthRepo.loginId = loginResponse.Data?.id;
 
-        print('customeriddddd ${AuthRepo.customerId}');
+        String? roleName;
+        if (data?.roles != null) {
+          roleName = data?.roles?.Name;
+        }
+        AuthRepo.role = roleName;
 
         NavigationService().pushNavigation(
           Screenroutes.dashboard,
-          arguments: {'role': loginResponse.Data?.roles?.Name},
+          arguments: {'role': roleName},
         );
       } else {
         showErrorSnack(Messages.authenticationFailure);
@@ -67,5 +51,22 @@ class AuthController with ChangeNotifier {
     }
 
     removeCircle();
+  }
+
+  Future<bool> logout(int? loginId) async {
+    showCircle();
+
+    try {
+      if (token == null) {
+        throw Exception("No Token Found");
+      }
+      await restApi.logout(token: 'Bearer $token', id: AuthRepo.loginId);
+      return true;
+    } catch (e) {
+      if (e is DioException) {
+        print("Dio Exception $e");
+      }
+      return false;
+    }
   }
 }

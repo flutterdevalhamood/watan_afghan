@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sample/src/screens/change_password_screen.dart';
 import 'package:sample/src/screens/expenses/expense_screen.dart';
 import 'package:sample/src/screens/financialTransactions/financial_transactions_screen.dart';
 import 'package:sample/src/screens/purchases/purchase_screen.dart';
@@ -18,6 +19,8 @@ class Screenroutes {
   static const String purchaseScreen = "purchaseScreen";
   static const String expenseScreen = "expenseScreen";
   static const String financialTransactions = "financialTransactions";
+
+  static const String changePassword = "changePassword";
 
   static Route<dynamic>? routes(RouteSettings settings) {
     StringConstants.currentRoute = settings.name ?? "";
@@ -69,6 +72,14 @@ class Screenroutes {
           ),
           builder: (BuildContext context) {
             return FinancialTransactionsScreen();
+          },
+        );
+
+      case Screenroutes.changePassword:
+        return MaterialPageRoute(
+          settings: const RouteSettings(name: Screenroutes.changePassword),
+          builder: (BuildContext context) {
+            return ChangePasswordScreen();
           },
         );
     }
