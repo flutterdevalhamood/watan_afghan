@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:sample/src/providers/login_controller.dart';
 import 'package:sample/src/util/snack.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
-  const ChangePasswordScreen({Key? key}) : super(key: key);
+  const ChangePasswordScreen({super.key});
 
   @override
   State<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
 }
 
 class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
-  // Define theme colors to match existing app theme
   static const Color primaryColor = Color(0xFF6366F1);
-  static const Color secondaryColor = Color(0xFF818CF8);
 
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
@@ -24,6 +23,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final TextEditingController _newPasswordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
+  final AuthController _authController = AuthController();
 
   @override
   void dispose() {
@@ -42,26 +42,17 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       try {
         // Simulate network request delay
         await Future.delayed(const Duration(seconds: 1));
-
-        // TODO: Replace with actual API call to change password
-        // Example: final result = await AuthRepo.changePassword(
-        //   userId: AuthRepo.loginId,
-        //   currentPassword: _currentPasswordController.text,
-        //   newPassword: _newPasswordController.text
-        // );
-
-        // For now, simulate a successful response
-        bool isSuccess = true;
+        final isSuccess = await _authController.changePassword(
+          _currentPasswordController.text,
+          _newPasswordController.text,
+        );
 
         if (isSuccess) {
           showSuccessSnack("Password changed successfully!");
 
-          // Clear form fields after successful password change
           _currentPasswordController.clear();
           _newPasswordController.clear();
-          _confirmPasswordController.clear();
 
-          // Navigate back to previous screen after short delay
           Future.delayed(const Duration(milliseconds: 800), () {
             Navigator.pop(context);
           });
@@ -239,42 +230,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                               }
                               if (value!.length < 6) {
                                 return 'Password must be at least 6 characters';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Confirm New Password Field
-                          _buildInputLabel('Confirm New Password'),
-                          const SizedBox(height: 8),
-                          TextFormField(
-                            controller: _confirmPasswordController,
-                            obscureText: _obscureConfirmPassword,
-                            decoration: _inputDecoration(
-                              'Confirm your new password',
-                              Icons.lock_outline,
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _obscureConfirmPassword
-                                      ? Icons.visibility_off
-                                      : Icons.visibility,
-                                  color: Colors.grey,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _obscureConfirmPassword =
-                                        !_obscureConfirmPassword;
-                                  });
-                                },
-                              ),
-                            ),
-                            validator: (value) {
-                              if (value?.isEmpty ?? true) {
-                                return 'Please confirm your password';
-                              }
-                              if (value != _newPasswordController.text) {
-                                return 'Passwords do not match';
                               }
                               return null;
                             },

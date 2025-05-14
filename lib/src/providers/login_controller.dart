@@ -69,4 +69,28 @@ class AuthController with ChangeNotifier {
       return false;
     }
   }
+
+  Future<bool> changePassword(
+    String? currentPassword,
+    String? newPassword,
+  ) async {
+    showCircle();
+
+    try {
+      if (token == null) {
+        throw Exception("No Token Found");
+      }
+      await restApi.changePassword(
+        token: 'Bearer $token',
+        currentPassword: currentPassword,
+        password: newPassword,
+      );
+      return true;
+    } catch (e) {
+      if (e is DioException) {
+        print("Dio Exception $e");
+      }
+      return false;
+    }
+  }
 }
