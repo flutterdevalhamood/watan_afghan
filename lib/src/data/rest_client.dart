@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 import 'package:sample/src/constants/api_constants.dart';
@@ -29,5 +31,14 @@ abstract class RestClient {
     @Header("Authorization") String? token,
     @Field("currentPassword") String? currentPassword,
     @Field("password") String? password,
+  });
+
+  @POST('/api/UserUpdate')
+  @MultiPart()
+  Future<dynamic> userUpdate({
+    @Header("Authorization") String? token,
+    @Part(name: "name") String? name,
+    @Part(name: "contactNumber") String? contactNumber,
+    @Part(name: "imageUrl") File? file,
   });
 }

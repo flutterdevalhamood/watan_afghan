@@ -15,7 +15,7 @@ class _LoginScreenState extends State<LoginScreen> {
     text: 'faris@watanafghan.com',
   );
   final TextEditingController _passwordController = TextEditingController(
-    text: '1234@abc',
+    text: '123456',
   );
 
   // Form key for validation

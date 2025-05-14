@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -26,6 +27,7 @@ class AuthController with ChangeNotifier {
         final data = loginResponse.Data;
         AuthRepo.token = loginResponse.Token;
         AuthRepo.loginId = loginResponse.Data?.id;
+        AuthRepo.user = loginResponse.Data?.name;
 
         String? roleName;
         if (data?.roles != null) {
@@ -85,6 +87,34 @@ class AuthController with ChangeNotifier {
         currentPassword: currentPassword,
         password: newPassword,
       );
+      return true;
+    } catch (e) {
+      if (e is DioException) {
+        print("Dio Exception $e");
+      }
+      return false;
+    }
+  }
+
+  Future<bool> userUpdate(
+    String? name,
+    String? contactNumber,
+    File? imageFile,
+  ) async {
+    showCircle();
+
+    try {
+      if (token == null) {
+        throw Exception("No Token Found");
+      }
+      await restApi.userUpdate(
+        token: 'Bearer $token',
+        name: name,
+        contactNumber: contactNumber,
+        file: imageFile,
+      );
+      AuthRepo.user = name;
+      notifyListeners();
       return true;
     } catch (e) {
       if (e is DioException) {

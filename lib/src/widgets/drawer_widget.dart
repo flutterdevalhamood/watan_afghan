@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:sample/main.dart';
+import 'package:sample/src/models/user_model.dart';
 import 'package:sample/src/providers/login_controller.dart';
 import 'package:sample/src/util/app_navigation.dart';
 import 'package:sample/src/util/app_routes.dart';
@@ -15,11 +18,27 @@ class DrawerWidget extends StatefulWidget {
 }
 
 class _DrawerWidgetState extends State<DrawerWidget> {
-  // Define theme colors to match login screen
   static const Color primaryColor = Color(0xFF6366F1);
   static const Color secondaryColor = Color(0xFF818CF8);
 
   final AuthController _authController = AuthController();
+  UserData? _currentUser;
+  final bool _isLoading = true;
+  @override
+  void initState() {
+    super.initState();
+    _authController.addListener(_updateUser);
+  }
+
+  @override
+  void dispose() {
+    _authController.removeListener(_updateUser);
+    super.dispose();
+  }
+
+  void _updateUser() {
+    setState(() {});
+  }
 
   void _logout() async {
     // Show a confirmation dialog before logging out
@@ -77,6 +96,53 @@ class _DrawerWidgetState extends State<DrawerWidget> {
     }
   }
 
+  Widget _buildProfileImage() {
+    if (_currentUser?.imageUrl != null && _currentUser!.imageUrl!.isNotEmpty) {
+      return Hero(
+        tag: 'profile-image',
+        child: Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 8,
+                offset: Offset(0, 3),
+              ),
+            ],
+            image: DecorationImage(
+              image:
+                  _currentUser!.imageUrl!.startsWith('http')
+                      ? NetworkImage(_currentUser!.imageUrl!) as ImageProvider
+                      : FileImage(File(_currentUser!.imageUrl!)),
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+      );
+    } else {
+      // Default avatar when no image is available
+      return Container(
+        width: 60,
+        height: 60,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.9),
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 8,
+              offset: Offset(0, 3),
+            ),
+          ],
+        ),
+        child: const Icon(Icons.person, size: 30, color: primaryColor),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -95,79 +161,88 @@ class _DrawerWidgetState extends State<DrawerWidget> {
             colors: [primaryColor, secondaryColor],
           ),
         ),
-        // Using ListView instead of Column to solve overflow issues
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            // User Profile Header - Reduced height
-            Container(
-              padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
-              child: Row(
-                children: [
-                  // User Avatar - Reduced height
-                  Container(
-                    width: 50,
-                    height: 50, // Reduced height from 120
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 8,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.verified_user,
-                      size: 30, // Smaller icon
-                      color: primaryColor,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // User Info
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Hi Faris',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18, // Slightly smaller font
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 4), // Reduced spacing
-                        // Role Badge
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4, // Reduced padding
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.3),
-                              width: 1,
-                            ),
-                          ),
-                          child: Text(
-                            '${AuthRepo.role}',
+            InkWell(
+              onTap: () {
+                NavigationService().pushNavigation(
+                  Screenroutes.profileUpdateScreen,
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
+                child: Row(
+                  children: [
+                    // User Avatar - With actual profile image
+                    _buildProfileImage(),
+                    const SizedBox(width: 16),
+                    // User Info
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            // _isLoading
+                            //     ? 'Loading...'
+                            //     :
+                            'Hi ${AuthRepo.user ?? 'User'}',
                             style: TextStyle(
                               color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 11, // Slightly smaller font
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ),
-                      ],
+                          SizedBox(height: 4),
+                          // Show contact number if available
+                          if (_currentUser?.role_id != null && !_isLoading)
+                            Text(
+                              _currentUser!.role_id!,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.9),
+                                fontSize: 12,
+                              ),
+                            ),
+                          SizedBox(height: 4),
+                          // Role Badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              '${AuthRepo.role}',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                    // Edit profile icon
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.edit, color: Colors.white, size: 16),
+                    ),
+                  ],
+                ),
               ),
             ),
             // Decorative Divider
@@ -186,6 +261,18 @@ class _DrawerWidgetState extends State<DrawerWidget> {
               title: 'Dashboard',
               onTap: () {
                 Navigator.pop(context);
+              },
+            ),
+            // New menu item for Profile Update
+            _buildMenuItem(
+              context: context,
+              icon: Icons.person,
+              title: 'My Profile',
+              onTap: () {
+                Navigator.pop(context);
+                NavigationService().pushNavigation(
+                  Screenroutes.profileUpdateScreen,
+                );
               },
             ),
             _buildMenuItem(

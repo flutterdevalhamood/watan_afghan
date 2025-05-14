@@ -100,6 +100,58 @@ class _RestClient implements RestClient {
     return _value;
   }
 
+  @override
+  Future<dynamic> userUpdate({
+    String? token,
+    String? name,
+    String? contactNumber,
+    File? file,
+  }) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{r'Authorization': token};
+    _headers.removeWhere((k, v) => v == null);
+    final _data = FormData();
+    if (name != null) {
+      _data.fields.add(MapEntry('name', name));
+    }
+    if (contactNumber != null) {
+      _data.fields.add(MapEntry('contactNumber', contactNumber));
+    }
+    if (file != null) {
+      if (file != null) {
+        _data.files.add(
+          MapEntry(
+            'imageUrl',
+            MultipartFile.fromFileSync(
+              file.path,
+              filename: file.path.split(Platform.pathSeparator).last,
+            ),
+          ),
+        );
+      }
+    }
+    final _options = _setStreamType<dynamic>(
+      Options(
+            method: 'POST',
+            headers: _headers,
+            extra: _extra,
+            contentType: 'multipart/form-data',
+          )
+          .compose(
+            _dio.options,
+            '/api/UserUpdate',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
   RequestOptions _setStreamType<T>(RequestOptions requestOptions) {
     if (T != dynamic &&
         !(requestOptions.responseType == ResponseType.bytes ||
