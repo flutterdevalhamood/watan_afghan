@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:sample/src/screens/change_password_screen.dart';
 import 'package:sample/src/screens/expenses/expense_screen.dart';
 import 'package:sample/src/screens/financialTransactions/financial_transactions_screen.dart';
+import 'package:sample/src/screens/investorTransactions/investor_transaction_detail_screen.dart';
+import 'package:sample/src/screens/investorTransactions/investor_transaction_screen.dart';
 import 'package:sample/src/screens/profile_update_screen.dart';
 import 'package:sample/src/screens/purchases/purchase_screen.dart';
 import 'package:sample/src/screens/sales/sales_screen.dart';
@@ -24,6 +26,11 @@ class Screenroutes {
   static const String changePassword = "changePassword";
   static const String userUpdateScreen = "userUpdateScreen";
   static const String profileUpdateScreen = "profileUpdateScreen";
+
+  //investortransaction
+  static const String investorTransactionScreen = "investorTransactionScreen";
+  static const String investorTransactionDetailScreen =
+      "investorTransactionDetailScreen";
 
   static Route<dynamic>? routes(RouteSettings settings) {
     StringConstants.currentRoute = settings.name ?? "";
@@ -99,6 +106,35 @@ class Screenroutes {
           settings: const RouteSettings(name: Screenroutes.profileUpdateScreen),
           builder: (BuildContext context) {
             return ProfileUpdateScreen();
+          },
+        );
+
+      case Screenroutes.profileUpdateScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(name: Screenroutes.profileUpdateScreen),
+          builder: (BuildContext context) {
+            return ProfileUpdateScreen();
+          },
+        );
+
+      case Screenroutes.investorTransactionScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(
+            name: Screenroutes.investorTransactionScreen,
+          ),
+          builder: (BuildContext context) {
+            return InvestorTransactionScreen();
+          },
+        );
+
+      case Screenroutes.investorTransactionDetailScreen:
+        final data = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          settings: const RouteSettings(
+            name: Screenroutes.investorTransactionDetailScreen,
+          ),
+          builder: (BuildContext context) {
+            return InvestorTransactionDetailScreen(transaction: data);
           },
         );
     }

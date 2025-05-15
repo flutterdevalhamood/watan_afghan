@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:sample/src/util/app_navigation.dart';
+import 'package:sample/src/util/app_routes.dart';
 
 class FinancialTransactionsScreen extends StatelessWidget {
   const FinancialTransactionsScreen({super.key});
@@ -7,7 +9,11 @@ class FinancialTransactionsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Financial Transactions'), elevation: 2),
+      appBar: AppBar(
+        title: const Text('Financial Transactions'),
+        elevation: 2,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+      ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -27,6 +33,17 @@ class FinancialTransactionsScreen extends StatelessWidget {
                 crossAxisSpacing: 16,
                 childAspectRatio: 1.5,
                 children: [
+                  _buildTransactionCard(
+                    context,
+                    'Investor Transactions',
+                    Icons.account_balance,
+                    Colors.purple,
+                    () {
+                      NavigationService().pushNavigation(
+                        Screenroutes.investorTransactionScreen,
+                      );
+                    },
+                  ),
                   _buildTransactionCard(
                     context,
                     'Customer Advance',

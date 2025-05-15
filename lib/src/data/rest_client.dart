@@ -41,4 +41,39 @@ abstract class RestClient {
     @Part(name: "contactNumber") String? contactNumber,
     @Part(name: "imageUrl") File? file,
   });
+
+  @GET('/api/InvestorTransaction/paginate/{page}/{limit}')
+  Future<dynamic> getInvestorTransaction(
+    @Path("page") int page,
+    @Path("limit") int limit,
+    @Header("Authorization") String? token,
+  );
+
+  @GET('/api/InvestorTransactionDetail/{id}')
+  Future<dynamic> getInvestorTransactionDetail({
+    @Path("id") int? id,
+    @Header("Authorization") String? token,
+  });
+
+  @POST('/api/InvestorTransaction')
+  Future<dynamic> postInvestorTransaction({
+    @Header("Authorization") String? token,
+    @Field("transaction_type") String? transactionType,
+    @Field("totalAmount") String? totalAmount,
+    @Field("investor_id") int? investorId,
+    @Field("payment_type") String? paymentType,
+    @Field("bank_id") int? bankId,
+    @Field("accountNumber") String? accountNumber,
+    @Field("transferDate") String? transferDate,
+    @Field("referenceNumber") String? referenceNumber,
+    @Field("PersonName") String? personName,
+    @Field("Description") String? description,
+    @Field("currency_id") String? currencyId,
+    @Field("isIncome") String? isIncome,
+  });
+
+  @GET('/api/getInvestorTransactionBaseList')
+  Future<dynamic> getInvestorTransactionBaseList({
+    @Header("Authorization") String? token,
+  });
 }
