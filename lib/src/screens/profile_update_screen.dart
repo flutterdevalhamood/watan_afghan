@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import 'package:sample/src/models/user_model.dart';
 import 'package:sample/src/providers/login_controller.dart';
 import 'package:sample/src/repo/auth_repo.dart';
@@ -24,7 +25,7 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _contactController = TextEditingController();
 
-  final AuthController _authController = AuthController();
+  late AuthController _authController;
 
   // bool _isLoading = true;
   bool _isSaving = false;
@@ -37,7 +38,11 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
   @override
   void initState() {
     super.initState();
-    _nameController.text = AuthRepo.user ?? '';
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _authController = Provider.of<AuthController>(context, listen: false);
+      _nameController.text = AuthRepo.user ?? '';
+      _contactController.text = AuthRepo.contact ?? '';
+    });
   }
 
   @override

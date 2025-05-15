@@ -188,7 +188,7 @@ $UserDataCopyWith<$Res>? get Data {
 /// @nodoc
 mixin _$UserData {
 
- int? get id; String? get name; String? get role_id; String? get email; String? get imageUrl; String? get isActive; Roles? get roles; Customer? get customer;
+ int? get id; String? get name; String? get role_id; String? get email; String? get imageUrl; String? get isActive; String? get contactNumber; Roles? get roles; Customer? get customer;
 /// Create a copy of UserData
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -201,16 +201,16 @@ $UserDataCopyWith<UserData> get copyWith => _$UserDataCopyWithImpl<UserData>(thi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserData&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.role_id, role_id) || other.role_id == role_id)&&(identical(other.email, email) || other.email == email)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.roles, roles) || other.roles == roles)&&(identical(other.customer, customer) || other.customer == customer));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserData&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.role_id, role_id) || other.role_id == role_id)&&(identical(other.email, email) || other.email == email)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.contactNumber, contactNumber) || other.contactNumber == contactNumber)&&(identical(other.roles, roles) || other.roles == roles)&&(identical(other.customer, customer) || other.customer == customer));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,role_id,email,imageUrl,isActive,roles,customer);
+int get hashCode => Object.hash(runtimeType,id,name,role_id,email,imageUrl,isActive,contactNumber,roles,customer);
 
 @override
 String toString() {
-  return 'UserData(id: $id, name: $name, role_id: $role_id, email: $email, imageUrl: $imageUrl, isActive: $isActive, roles: $roles, customer: $customer)';
+  return 'UserData(id: $id, name: $name, role_id: $role_id, email: $email, imageUrl: $imageUrl, isActive: $isActive, contactNumber: $contactNumber, roles: $roles, customer: $customer)';
 }
 
 
@@ -221,7 +221,7 @@ abstract mixin class $UserDataCopyWith<$Res>  {
   factory $UserDataCopyWith(UserData value, $Res Function(UserData) _then) = _$UserDataCopyWithImpl;
 @useResult
 $Res call({
- int? id, String? name, String? role_id, String? email, String? imageUrl, String? isActive, Roles? roles, Customer? customer
+ int? id, String? name, String? role_id, String? email, String? imageUrl, String? isActive, String? contactNumber, Roles? roles, Customer? customer
 });
 
 
@@ -238,7 +238,7 @@ class _$UserDataCopyWithImpl<$Res>
 
 /// Create a copy of UserData
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = freezed,Object? name = freezed,Object? role_id = freezed,Object? email = freezed,Object? imageUrl = freezed,Object? isActive = freezed,Object? roles = freezed,Object? customer = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = freezed,Object? name = freezed,Object? role_id = freezed,Object? email = freezed,Object? imageUrl = freezed,Object? isActive = freezed,Object? contactNumber = freezed,Object? roles = freezed,Object? customer = freezed,}) {
   return _then(_self.copyWith(
 id: freezed == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int?,name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -246,6 +246,7 @@ as String?,role_id: freezed == role_id ? _self.role_id : role_id // ignore: cast
 as String?,email: freezed == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
 as String?,imageUrl: freezed == imageUrl ? _self.imageUrl : imageUrl // ignore: cast_nullable_to_non_nullable
 as String?,isActive: freezed == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
+as String?,contactNumber: freezed == contactNumber ? _self.contactNumber : contactNumber // ignore: cast_nullable_to_non_nullable
 as String?,roles: freezed == roles ? _self.roles : roles // ignore: cast_nullable_to_non_nullable
 as Roles?,customer: freezed == customer ? _self.customer : customer // ignore: cast_nullable_to_non_nullable
 as Customer?,
@@ -283,7 +284,7 @@ $CustomerCopyWith<$Res>? get customer {
 @JsonSerializable()
 
 class _UserData implements UserData {
-  const _UserData({this.id, this.name, this.role_id, this.email, this.imageUrl, this.isActive, this.roles, this.customer});
+  const _UserData({this.id, this.name, this.role_id, this.email, this.imageUrl, this.isActive, this.contactNumber, this.roles, this.customer});
   factory _UserData.fromJson(Map<String, dynamic> json) => _$UserDataFromJson(json);
 
 @override final  int? id;
@@ -292,6 +293,7 @@ class _UserData implements UserData {
 @override final  String? email;
 @override final  String? imageUrl;
 @override final  String? isActive;
+@override final  String? contactNumber;
 @override final  Roles? roles;
 @override final  Customer? customer;
 
@@ -308,16 +310,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserData&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.role_id, role_id) || other.role_id == role_id)&&(identical(other.email, email) || other.email == email)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.roles, roles) || other.roles == roles)&&(identical(other.customer, customer) || other.customer == customer));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserData&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.role_id, role_id) || other.role_id == role_id)&&(identical(other.email, email) || other.email == email)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.isActive, isActive) || other.isActive == isActive)&&(identical(other.contactNumber, contactNumber) || other.contactNumber == contactNumber)&&(identical(other.roles, roles) || other.roles == roles)&&(identical(other.customer, customer) || other.customer == customer));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,role_id,email,imageUrl,isActive,roles,customer);
+int get hashCode => Object.hash(runtimeType,id,name,role_id,email,imageUrl,isActive,contactNumber,roles,customer);
 
 @override
 String toString() {
-  return 'UserData(id: $id, name: $name, role_id: $role_id, email: $email, imageUrl: $imageUrl, isActive: $isActive, roles: $roles, customer: $customer)';
+  return 'UserData(id: $id, name: $name, role_id: $role_id, email: $email, imageUrl: $imageUrl, isActive: $isActive, contactNumber: $contactNumber, roles: $roles, customer: $customer)';
 }
 
 
@@ -328,7 +330,7 @@ abstract mixin class _$UserDataCopyWith<$Res> implements $UserDataCopyWith<$Res>
   factory _$UserDataCopyWith(_UserData value, $Res Function(_UserData) _then) = __$UserDataCopyWithImpl;
 @override @useResult
 $Res call({
- int? id, String? name, String? role_id, String? email, String? imageUrl, String? isActive, Roles? roles, Customer? customer
+ int? id, String? name, String? role_id, String? email, String? imageUrl, String? isActive, String? contactNumber, Roles? roles, Customer? customer
 });
 
 
@@ -345,7 +347,7 @@ class __$UserDataCopyWithImpl<$Res>
 
 /// Create a copy of UserData
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = freezed,Object? name = freezed,Object? role_id = freezed,Object? email = freezed,Object? imageUrl = freezed,Object? isActive = freezed,Object? roles = freezed,Object? customer = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = freezed,Object? name = freezed,Object? role_id = freezed,Object? email = freezed,Object? imageUrl = freezed,Object? isActive = freezed,Object? contactNumber = freezed,Object? roles = freezed,Object? customer = freezed,}) {
   return _then(_UserData(
 id: freezed == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int?,name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -353,6 +355,7 @@ as String?,role_id: freezed == role_id ? _self.role_id : role_id // ignore: cast
 as String?,email: freezed == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
 as String?,imageUrl: freezed == imageUrl ? _self.imageUrl : imageUrl // ignore: cast_nullable_to_non_nullable
 as String?,isActive: freezed == isActive ? _self.isActive : isActive // ignore: cast_nullable_to_non_nullable
+as String?,contactNumber: freezed == contactNumber ? _self.contactNumber : contactNumber // ignore: cast_nullable_to_non_nullable
 as String?,roles: freezed == roles ? _self.roles : roles // ignore: cast_nullable_to_non_nullable
 as Roles?,customer: freezed == customer ? _self.customer : customer // ignore: cast_nullable_to_non_nullable
 as Customer?,

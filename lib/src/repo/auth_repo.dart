@@ -10,6 +10,7 @@ class AuthRepo {
   static const _prefTokenKey = "token";
   static const _prefRoleKey = "role";
   static const _prefLoginIdKey = "Id";
+  static const _prefContactKey = "contact";
 
   static set token(String? token) {
     if (token == null) {
@@ -33,6 +34,18 @@ class AuthRepo {
 
   static String? get role {
     return prefs?.getString(_prefRoleKey);
+  }
+
+  static set contact(String? contact) {
+    if (contact == null) {
+      prefs?.remove(_prefContactKey);
+    } else {
+      prefs?.setString(_prefContactKey, contact);
+    }
+  }
+
+  static String? get contact {
+    return prefs?.getString(_prefContactKey);
   }
 
   static set user(String? user) {

@@ -14,6 +14,7 @@ import '../util/snack.dart';
 
 class AuthController with ChangeNotifier {
   final token = AuthRepo.token;
+
   Future<void> login(String email, String password) async {
     showCircle();
 
@@ -28,7 +29,7 @@ class AuthController with ChangeNotifier {
         AuthRepo.token = loginResponse.Token;
         AuthRepo.loginId = loginResponse.Data?.id;
         AuthRepo.user = loginResponse.Data?.name;
-
+        AuthRepo.contact = loginResponse.Data?.contactNumber;
         String? roleName;
         if (data?.roles != null) {
           roleName = data?.roles?.Name;
@@ -39,6 +40,7 @@ class AuthController with ChangeNotifier {
           Screenroutes.dashboard,
           arguments: {'role': roleName},
         );
+        notifyListeners();
       } else {
         showErrorSnack(Messages.authenticationFailure);
       }

@@ -35,6 +35,7 @@ _UserData _$UserDataFromJson(Map<String, dynamic> json) => _UserData(
   email: json['email'] as String?,
   imageUrl: json['imageUrl'] as String?,
   isActive: json['isActive'] as String?,
+  contactNumber: json['contactNumber'] as String?,
   roles:
       json['roles'] == null
           ? null
@@ -52,6 +53,7 @@ Map<String, dynamic> _$UserDataToJson(_UserData instance) => <String, dynamic>{
   'email': instance.email,
   'imageUrl': instance.imageUrl,
   'isActive': instance.isActive,
+  'contactNumber': instance.contactNumber,
   'roles': instance.roles,
   'customer': instance.customer,
 };

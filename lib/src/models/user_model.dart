@@ -27,6 +27,7 @@ abstract class UserData with _$UserData {
     String? email,
     String? imageUrl,
     String? isActive,
+    String? contactNumber,
     Roles? roles,
     Customer? customer,
   }) = _UserData;
