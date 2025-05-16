@@ -15,6 +15,9 @@ class InvestorTransactionController with ChangeNotifier {
   String? errorMessage;
   int? id;
   List<Map<String, dynamic>>? transactionData;
+  List<Map<String, dynamic>>? currencyData;
+  List<Map<String, dynamic>>? investorData;
+  List<Map<String, dynamic>>? banksData;
 
   List<Map<String, dynamic>>? investorTransactionData;
 
@@ -117,29 +120,34 @@ class InvestorTransactionController with ChangeNotifier {
     }
   }
 
-  // Future<void> getFuelRefillDropdown() async {
-  //   try {
-  //     if (token == null) {
-  //       throw Exception("No token found");
-  //     }
-  //     final dropDownData = await restApi.getRefillDropDown('Bearer $token');
-  //     if (dropDownData['IsSuccess'] == true) {
-  //       customerData = List<Map<String, dynamic>>.from(
-  //         dropDownData['Data']['customer'],
-  //       );
-  //       refillUnitsData = List<Map<String, dynamic>>.from(
-  //         dropDownData['Data']['refil_units'],
-  //       );
-  //       notifyListeners();
-  //     } else {
-  //       print('API call failed: ${dropDownData['Message']}');
-  //     }
-  //   } catch (e) {
-  //     if (e is DioException) {
-  //       print('Dio error: ${e.message}');
-  //     }
-  //   }
-  // }
+  Future<void> getInvestorBaseData() async {
+    try {
+      if (token == null) {
+        throw Exception("No token found");
+      }
+      final investorBaseData = await restApi.getInvestorTransactionBaseList(
+        token: 'Bearer $token',
+      );
+      if (investorBaseData['IsSuccess'] == true) {
+        currencyData = List<Map<String, dynamic>>.from(
+          investorBaseData['Data']['currencies'],
+        );
+        investorData = List<Map<String, dynamic>>.from(
+          investorBaseData['Data']['investors'],
+        );
+        banksData = List<Map<String, dynamic>>.from(
+          investorBaseData['Data']['banks'],
+        );
+        notifyListeners();
+      } else {
+        print('API call failed: ${investorBaseData['Message']}');
+      }
+    } catch (e) {
+      if (e is DioException) {
+        print('Dio error: ${e.message}');
+      }
+    }
+  }
 
   Future<bool> postInvestorTransaction({
     String? transactionType,
@@ -177,6 +185,27 @@ class InvestorTransactionController with ChangeNotifier {
         print("Dio Exception $e");
       }
       return false;
+    }
+  }
+
+  Future<void> deleteInvestorTransaction(
+    int? id,
+    String? descriptionText,
+  ) async {
+    try {
+      if (token == null) {
+        throw Exception("No Token Found");
+      }
+      await restApi.deleteInvestorTransaction(
+        token: 'Bearer $token',
+        id: id,
+        description: descriptionText,
+      );
+      await getInvestorTransaction();
+    } catch (e) {
+      if (e is DioException) {
+        print('Dio Exception $e');
+      }
     }
   }
 }

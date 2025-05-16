@@ -15,18 +15,21 @@ class InvestorTransactionScreen extends StatefulWidget {
 
 class _InvestorTransactionScreenState extends State<InvestorTransactionScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _deleteReasonController = TextEditingController();
   String _searchQuery = '';
   final ScrollController _scrollController = ScrollController();
+  late InvestorTransactionController _controller =
+      InvestorTransactionController();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final controller = Provider.of<InvestorTransactionController>(
+      _controller = Provider.of<InvestorTransactionController>(
         context,
         listen: false,
       );
-      controller.getInvestorTransaction();
+      _controller.getInvestorTransaction();
     });
 
     _scrollController.addListener(_onScroll);
@@ -82,6 +85,56 @@ class _InvestorTransactionScreenState extends State<InvestorTransactionScreen> {
     );
   }
 
+  Future<void> _confirmDelete(int id) async {
+    _deleteReasonController.clear();
+    final bool? result = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Transaction'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Are you sure you want to delete this transaction?'),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _deleteReasonController,
+                decoration: const InputDecoration(
+                  labelText: 'Reason for deletion',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed:
+                  () => NavigationService().popNavigation(arguments: false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed:
+                  () => NavigationService().popNavigation(arguments: true),
+              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == true) {
+      _controller.deleteInvestorTransaction(id, _deleteReasonController.text);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Transaction deleted successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -120,25 +173,13 @@ class _InvestorTransactionScreenState extends State<InvestorTransactionScreen> {
 
                 final filteredData =
                     controller.investorTransactionData!.where((transaction) {
-                      final investor =
-                          transaction['investor']['Name']
-                              .toString()
-                              .toLowerCase();
                       final reference =
                           transaction['referenceNumber']
                               .toString()
                               .toLowerCase();
-                      final amount = transaction['totalAmount'].toString();
-                      final currency =
-                          transaction['currency']['Name']
-                              .toString()
-                              .toLowerCase();
                       final query = _searchQuery.toLowerCase();
 
-                      return investor.contains(query) ||
-                          reference.contains(query) ||
-                          amount.contains(query) ||
-                          currency.contains(query);
+                      return reference.contains(query);
                     }).toList();
 
                 if (filteredData.isEmpty) {
@@ -192,6 +233,16 @@ class _InvestorTransactionScreenState extends State<InvestorTransactionScreen> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          NavigationService().pushNavigation(
+            Screenroutes.investorTransactionDataScreen,
+          );
+        },
+        icon: const Icon(Icons.add),
+        label: const Text('Create New'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+      ),
     );
   }
 
@@ -207,7 +258,7 @@ class _InvestorTransactionScreenState extends State<InvestorTransactionScreen> {
           });
         },
         decoration: InputDecoration(
-          hintText: 'Search by name, reference, or amount',
+          hintText: 'Search by reference number',
           prefixIcon: const Icon(Icons.search, color: Color(0xFF8F9BB3)),
           suffixIcon:
               _searchQuery.isNotEmpty
@@ -242,6 +293,7 @@ class _InvestorTransactionScreenState extends State<InvestorTransactionScreen> {
     final typeColor = _getTransactionTypeColor(transactionType);
     final investor = transaction['investor']['Name'];
     final reference = transaction['referenceNumber'];
+    final id = transaction['id'];
 
     return GestureDetector(
       onTap: () => _navigateToTransactionDetail(transaction),
@@ -343,6 +395,15 @@ class _InvestorTransactionScreenState extends State<InvestorTransactionScreen> {
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: typeText == 'Deposit' ? Colors.green : Colors.red,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  GestureDetector(
+                    onTap: () => _confirmDelete(id),
+                    child: const Icon(
+                      Icons.delete_outline,
+                      color: Colors.red,
+                      size: 20,
                     ),
                   ),
                 ],

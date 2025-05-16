@@ -76,4 +76,11 @@ abstract class RestClient {
   Future<dynamic> getInvestorTransactionBaseList({
     @Header("Authorization") String? token,
   });
+
+  @POST('/api/InvestorTransactionDelete')
+  Future<dynamic> deleteInvestorTransaction({
+    @Header("Authorization") String? token,
+    @Field("id") int? id,
+    @Field("deleteDescription") String? description,
+  });
 }
