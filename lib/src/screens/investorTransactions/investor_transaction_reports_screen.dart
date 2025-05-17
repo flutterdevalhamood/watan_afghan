@@ -312,13 +312,9 @@ class _InvestorTransactionReportScreenState
                       ),
                     ),
                     value: _selectedInvestorId,
-                    hint: const Text('All Investors'),
+                    hint: const Text('Select Investor'),
                     isExpanded: true,
                     items: [
-                      const DropdownMenuItem<int>(
-                        value: null,
-                        child: Text('All Investors'),
-                      ),
                       ..._controller.investorData?.map((investor) {
                             return DropdownMenuItem<int>(
                               value: investor['id'],
@@ -348,13 +344,9 @@ class _InvestorTransactionReportScreenState
                       ),
                     ),
                     value: _selectedCurrencyId,
-                    hint: const Text('All Currencies'),
+                    hint: const Text('Select Currency'),
                     isExpanded: true,
                     items: [
-                      const DropdownMenuItem<int>(
-                        value: null,
-                        child: Text('All Currencies'),
-                      ),
                       ..._controller.currencyData?.map((currency) {
                             return DropdownMenuItem<int>(
                               value: currency['id'],

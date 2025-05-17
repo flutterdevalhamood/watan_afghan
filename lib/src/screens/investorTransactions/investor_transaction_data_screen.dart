@@ -108,9 +108,9 @@ class _InvestorTransactionDataScreenState
         totalAmount: _amountController.text,
         investorId: _selectedInvestorId,
         paymentType: _selectedPaymentType,
-        bankId: _selectedPaymentType == 'Bank' ? _selectedBankId : null,
+        bankId: _selectedPaymentType == 'bank' ? _selectedBankId : null,
         accountNumber:
-            _selectedPaymentType == 'Bank'
+            _selectedPaymentType == 'bank'
                 ? _accountNumberController.text
                 : null,
         transferDate: DateFormat('yyyy-MM-dd').format(_selectedDate),
