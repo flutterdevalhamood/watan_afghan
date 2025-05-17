@@ -31,7 +31,7 @@ class _InvestorTransactionDataScreenState
   int? _selectedBankId;
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
-  List<String> transactionType = ['credit', 'debit'];
+  List<String> transactionType = ['Deposit', 'Withdrawal'];
   List<String> paymentType = ['bank', 'cash'];
 
   @override
@@ -104,7 +104,8 @@ class _InvestorTransactionDataScreenState
       );
 
       bool success = await controller.postInvestorTransaction(
-        transactionType: _selectedTransactionType,
+        transactionType:
+            _selectedTransactionType == "deposit" ? "credit" : "debit",
         totalAmount: _amountController.text,
         investorId: _selectedInvestorId,
         paymentType: _selectedPaymentType,
