@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:sample/src/screens/change_password_screen.dart';
+import 'package:sample/src/screens/currencyConversions/currency_conversion_data_screen.dart';
+import 'package:sample/src/screens/currencyConversions/currency_conversion_detail_screen.dart';
+import 'package:sample/src/screens/currencyConversions/currency_conversion_list_screen.dart';
 import 'package:sample/src/screens/expenses/expense_screen.dart';
 import 'package:sample/src/screens/financialTransactions/financial_transactions_screen.dart';
 import 'package:sample/src/screens/investorTransactions/investor_transaction_data_screen.dart';
@@ -37,6 +40,13 @@ class Screenroutes {
       "investorTransactionDataScreen";
   static const String investorTransactionReportsScreen =
       "investorTransactionReportsScreen";
+
+  //currencyconversion
+  static const String currencyConversionScreen = "currencyConversionScreen";
+  static const String currencyConversionDataScreen =
+      "currencyConversionDataScreen";
+  static const String currencyConversionDetailScreen =
+      "currencyConversionDetailScreen";
 
   static Route<dynamic>? routes(RouteSettings settings) {
     StringConstants.currentRoute = settings.name ?? "";
@@ -161,6 +171,35 @@ class Screenroutes {
           ),
           builder: (BuildContext context) {
             return InvestorTransactionReportScreen();
+          },
+        );
+
+      case Screenroutes.currencyConversionScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(
+            name: Screenroutes.currencyConversionScreen,
+          ),
+          builder: (BuildContext context) {
+            return CurrencyConversionListScreen();
+          },
+        );
+      case Screenroutes.currencyConversionDataScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(
+            name: Screenroutes.currencyConversionDataScreen,
+          ),
+          builder: (BuildContext context) {
+            return CurrencyConversionDataScreen();
+          },
+        );
+      case Screenroutes.currencyConversionDetailScreen:
+        final data = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          settings: const RouteSettings(
+            name: Screenroutes.currencyConversionDetailScreen,
+          ),
+          builder: (BuildContext context) {
+            return CurrencyConversionDetailScreen();
           },
         );
     }

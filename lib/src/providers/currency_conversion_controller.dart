@@ -4,18 +4,18 @@ import 'package:flutter/material.dart';
 import '../data/rest_client.dart';
 import '../repo/auth_repo.dart';
 
-class InvestorTransactionController with ChangeNotifier {
+class CurrencyConversionController with ChangeNotifier {
   bool isLoading = false;
   int currentPage = 1;
   final int totalPages = 10;
   bool hasMore = true;
   String? errorMessage;
   int? id;
-  List<Map<String, dynamic>>? transactionData;
+  List<Map<String, dynamic>>? conversionData;
   List<Map<String, dynamic>>? currencyData;
   List<Map<String, dynamic>>? investorData;
   List<Map<String, dynamic>>? banksData;
-  List<Map<String, dynamic>>? investorTransactionData;
+  List<Map<String, dynamic>>? currencyConversionData;
   String? reportUrl;
 
   Future<bool> _checkToken() async {
@@ -45,40 +45,40 @@ class InvestorTransactionController with ChangeNotifier {
     return 'Bearer ${AuthRepo.token}';
   }
 
-  Future<void> getInvestorTransaction({bool loadMore = false}) async {
+  Future<void> getCurrencyConversion({bool loadMore = false}) async {
     if (!await _checkToken()) return;
 
     isLoading = true;
     notifyListeners();
 
     try {
-      final investorTransaction = await restApi.getInvestorTransaction(
+      final currencyConversion = await restApi.getCurrencyConversion(
         currentPage,
         totalPages,
         _getAuthHeader(),
       );
 
-      if (investorTransaction is Map<String, dynamic>) {
-        if (investorTransaction['IsSuccess'] == true) {
-          final data = investorTransaction['Data'] as List<dynamic>?;
+      if (currencyConversion is Map<String, dynamic>) {
+        if (currencyConversion['IsSuccess'] == true) {
+          final data = currencyConversion['Data'] as List<dynamic>?;
           if (data != null) {
-            final newInvestorTransactionData =
+            final newCurrencyConversionData =
                 data.map((v) => v as Map<String, dynamic>).toList();
             if (loadMore) {
-              investorTransactionData ??= [];
-              investorTransactionData!.addAll(
-                newInvestorTransactionData,
+              currencyConversionData ??= [];
+              currencyConversionData!.addAll(
+                newCurrencyConversionData,
               ); // Append to existing list
             } else {
-              investorTransactionData =
-                  newInvestorTransactionData; // Replace list on initial load
+              currencyConversionData =
+                  newCurrencyConversionData; // Replace list on initial load
             }
             hasMore = data.length == totalPages;
           } else {
             hasMore = false;
           }
         } else {
-          debugPrint('API call failed: ${investorTransaction['Message']}');
+          debugPrint('API call failed: ${currencyConversion['Message']}');
         }
       } else {
         debugPrint('Unexpected API response format');
@@ -94,11 +94,11 @@ class InvestorTransactionController with ChangeNotifier {
   void loadMore() {
     if (hasMore && !isLoading) {
       currentPage++;
-      getInvestorTransaction(loadMore: true);
+      getCurrencyConversion(loadMore: true);
     }
   }
 
-  Future<void> getInvestorTransactionDetail() async {
+  Future<void> getCurrencyConversionDetail() async {
     if (!await _checkToken()) return;
 
     isLoading = true;
@@ -110,20 +110,17 @@ class InvestorTransactionController with ChangeNotifier {
         throw Exception("Customer ID is required");
       }
 
-      final transactionDetailData = await restApi.getInvestorTransactionDetail(
-        id: id,
-        token: _getAuthHeader(),
-      );
+      final currencyConversionDetailData = await restApi
+          .getCurrencyConversionDetail(id: id, token: _getAuthHeader());
 
-      if (transactionDetailData['IsSuccess'] == true) {
-        final data = transactionDetailData['Data'] as Map<String, dynamic>;
-        transactionData = [data];
-        debugPrint('Assigned units fetched: ${transactionData?.length}');
+      if (currencyConversionDetailData['IsSuccess'] == true) {
+        final data =
+            currencyConversionDetailData['Data'] as Map<String, dynamic>;
+        conversionData = [data];
       } else {
         errorMessage =
-            transactionDetailData['Message'] ??
-            'Failed to fetch assigned units';
-        debugPrint('API call failed: $errorMessage');
+            currencyConversionDetailData['Message'] ??
+            'Failed to fetch conversion data';
       }
     } catch (e) {
       _handleApiError(e);
@@ -133,32 +130,25 @@ class InvestorTransactionController with ChangeNotifier {
     }
   }
 
-  Future<void> getInvestorBaseData() async {
+  Future<void> getCurrencyBaseData() async {
     if (!await _checkToken()) return;
 
     isLoading = true;
     notifyListeners();
 
     try {
-      final investorBaseData = await restApi.getInvestorTransactionBaseList(
+      final currencyBaseData = await restApi.getCurrencyConversionBaseList(
         token: _getAuthHeader(),
       );
 
-      if (investorBaseData['IsSuccess'] == true) {
+      if (currencyBaseData['IsSuccess'] == true) {
         currencyData = List<Map<String, dynamic>>.from(
-          investorBaseData['Data']['currencies'],
+          currencyBaseData['Data']['currencies'],
         );
-        investorData = List<Map<String, dynamic>>.from(
-          investorBaseData['Data']['investors'],
-        );
-        banksData = List<Map<String, dynamic>>.from(
-          investorBaseData['Data']['banks'],
-        );
-        debugPrint('Base data fetched successfully');
       } else {
-        debugPrint('API call failed: ${investorBaseData['Message']}');
+        debugPrint('API call failed: ${currencyBaseData['Message']}');
         errorMessage =
-            investorBaseData['Message'] ?? 'Failed to fetch base data';
+            currencyBaseData['Message'] ?? 'Failed to fetch base data';
       }
     } catch (e) {
       _handleApiError(e);
@@ -168,7 +158,7 @@ class InvestorTransactionController with ChangeNotifier {
     }
   }
 
-  Future<bool> postInvestorTransaction({
+  Future<bool> postCurrencyConversion({
     String? transactionType,
     String? totalAmount,
     int? investorId,
@@ -229,52 +219,21 @@ class InvestorTransactionController with ChangeNotifier {
     }
   }
 
-  Future<void> deleteInvestorTransaction(
+  Future<void> deleteCurrencyConversion(
     int? id,
     String? descriptionText,
   ) async {
     if (!await _checkToken()) return;
 
     try {
-      await restApi.deleteInvestorTransaction(
+      await restApi.deleteCurrencyConversion(
         token: _getAuthHeader(),
         id: id,
         description: descriptionText,
       );
-      await getInvestorTransaction();
+      await getCurrencyConversion();
     } catch (e) {
       _handleApiError(e);
-    }
-  }
-
-  Future<bool> postInvestorTransactionReports(
-    String? fromDate,
-    String? toDate,
-    int? investorId,
-    int? currencyId,
-  ) async {
-    if (!await _checkToken()) return false;
-
-    try {
-      final reportsData = await restApi.postInvestorTransactionReport(
-        token: _getAuthHeader(),
-        fromDate: fromDate,
-        toDate: toDate,
-        investorId: investorId,
-        currencyId: currencyId,
-      );
-      if (reportsData['IsSuccess'] == true) {
-        reportUrl = reportsData['Data']?['url'];
-        notifyListeners();
-        debugPrint('Report URL: $reportUrl');
-        return true;
-      } else {
-        debugPrint('Fetch reports data failed: ${reportsData['Message']}');
-        errorMessage = reportsData['Message'] ?? 'Failed to generate report';
-        return false;
-      }
-    } catch (e) {
-      return _handleApiError(e);
     }
   }
 

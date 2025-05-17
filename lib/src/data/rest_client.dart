@@ -93,4 +93,48 @@ abstract class RestClient {
     @Field("investor_id") int? investorId,
     @Field("currency_id") int? currencyId,
   });
+
+  //currencyConversion
+  @GET('/api/CurrencyConversion/paginate/{page}/{limit}')
+  Future<dynamic> getCurrencyConversion(
+    @Path("page") int page,
+    @Path("limit") int limit,
+    @Header("Authorization") String? token,
+  );
+
+  @POST('/api/CurrencyConversion')
+  @FormUrlEncoded()
+  Future<dynamic> postCurrencyConversion({
+    @Header("Authorization") String? token,
+    @Field("from_payment_type") String? fromPaymentType,
+    @Field("from_currency_id") int? fromCurrencyId,
+    @Field("from_amount") String? fromAmount,
+    @Field("from_bank_id") int? fromBankId,
+    @Field("bank_id") int? bankId,
+    @Field("to_payment_type") String? toPaymentType,
+    @Field("to_currency_id") int? toCurrencyId,
+    @Field("to_amount") String? toAmount,
+    @Field("to_bank_id") String? toBankId,
+    @Field("referenceNumber") String? referenceNumber,
+    @Field("transaction_date") String? transactionDate,
+    @Field("Description") String? description,
+  });
+
+  @GET('/api/getCurrencyConversionBaseList')
+  Future<dynamic> getCurrencyConversionBaseList({
+    @Header("Authorization") String? token,
+  });
+
+  @GET('/api/CurrencyConversionDetail/{id}')
+  Future<dynamic> getCurrencyConversionDetail({
+    @Path("id") int? id,
+    @Header("Authorization") String? token,
+  });
+
+  @POST('/api/CurrencyConversionDelete')
+  Future<dynamic> deleteCurrencyConversion({
+    @Header("Authorization") String? token,
+    @Field("id") int? id,
+    @Field("deleteDescription") String? description,
+  });
 }

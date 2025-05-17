@@ -46,6 +46,17 @@ class FinancialTransactionsScreen extends StatelessWidget {
                   ),
                   _buildTransactionCard(
                     context,
+                    'Currency Conversions',
+                    Icons.currency_exchange,
+                    Colors.black,
+                    () {
+                      NavigationService().pushNavigation(
+                        Screenroutes.currencyConversionScreen,
+                      );
+                    },
+                  ),
+                  _buildTransactionCard(
+                    context,
                     'Customer Advance',
                     Icons.account_balance_wallet,
                     Colors.blue,
