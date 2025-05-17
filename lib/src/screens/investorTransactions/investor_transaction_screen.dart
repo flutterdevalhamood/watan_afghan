@@ -85,6 +85,12 @@ class _InvestorTransactionScreenState extends State<InvestorTransactionScreen> {
     );
   }
 
+  void _navigateToReportsScreen() {
+    NavigationService().pushNavigation(
+      Screenroutes.investorTransactionReportsScreen,
+    );
+  }
+
   Future<void> _confirmDelete(int id) async {
     _deleteReasonController.clear();
     final bool? result = await showDialog<bool>(
@@ -149,6 +155,13 @@ class _InvestorTransactionScreenState extends State<InvestorTransactionScreen> {
         ),
         elevation: 0,
         backgroundColor: Theme.of(context).colorScheme.primary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.summarize),
+            tooltip: 'Reports',
+            onPressed: _navigateToReportsScreen,
+          ),
+        ],
       ),
       body: Column(
         children: [

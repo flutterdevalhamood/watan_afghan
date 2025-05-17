@@ -6,11 +6,14 @@ import 'package:sample/src/providers/login_controller.dart';
 import 'package:sample/src/util/shared_pref.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'src/repo/auth_repo.dart';
+
 final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
     GlobalKey<ScaffoldMessengerState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AuthRepo.initAuth();
   prefs = await SharedPreferences.getInstance();
   runApp(
     MultiProvider(

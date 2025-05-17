@@ -56,6 +56,7 @@ abstract class RestClient {
   });
 
   @POST('/api/InvestorTransaction')
+  @FormUrlEncoded()
   Future<dynamic> postInvestorTransaction({
     @Header("Authorization") String? token,
     @Field("transaction_type") String? transactionType,
@@ -82,5 +83,14 @@ abstract class RestClient {
     @Header("Authorization") String? token,
     @Field("id") int? id,
     @Field("deleteDescription") String? description,
+  });
+
+  @POST('/api/InvestorTransactionReport')
+  Future<dynamic> postInvestorTransactionReport({
+    @Header("Authorization") String? token,
+    @Field("fromDate") String? fromDate,
+    @Field("toDate") String? toDate,
+    @Field("investor_id") int? investorId,
+    @Field("currency_id") int? currencyId,
   });
 }

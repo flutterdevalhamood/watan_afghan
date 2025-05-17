@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 import '../data/rest_client.dart';
 import '../repo/auth_repo.dart';
@@ -8,7 +8,6 @@ class InvestorTransactionController with ChangeNotifier {
   List<Map<String, dynamic>>? unitData;
 
   bool isLoading = false;
-  final token = AuthRepo.token;
   int currentPage = 1;
   final int totalPages = 10;
   bool hasMore = true;
@@ -18,20 +17,47 @@ class InvestorTransactionController with ChangeNotifier {
   List<Map<String, dynamic>>? currencyData;
   List<Map<String, dynamic>>? investorData;
   List<Map<String, dynamic>>? banksData;
-
   List<Map<String, dynamic>>? investorTransactionData;
+  String? reportUrl;
+
+  Future<bool> _checkToken() async {
+    final token = AuthRepo.token;
+
+    // Check if token is valid
+    if (token == null || token.isEmpty) {
+      debugPrint("No token available - auth failed");
+      // Handle missing token
+      AuthRepo.handleAuthError();
+      return false;
+    }
+
+    // Check if token is expired (if implementation supports it)
+    if (AuthRepo.isTokenExpired()) {
+      debugPrint("Token expired - auth failed");
+      // Handle expired token
+      AuthRepo.handleAuthError();
+      return false;
+    }
+
+    return true;
+  }
+
+  // Format the token with Bearer prefix
+  String _getAuthHeader() {
+    return 'Bearer ${AuthRepo.token}';
+  }
 
   Future<void> getInvestorTransaction({bool loadMore = false}) async {
+    if (!await _checkToken()) return;
+
     isLoading = true;
     notifyListeners();
+
     try {
-      if (token == null) {
-        throw Exception("No token found");
-      }
       final investorTransaction = await restApi.getInvestorTransaction(
         currentPage,
         totalPages,
-        'Bearer $token',
+        _getAuthHeader(),
       );
 
       if (investorTransaction is Map<String, dynamic>) {
@@ -54,17 +80,13 @@ class InvestorTransactionController with ChangeNotifier {
             hasMore = false;
           }
         } else {
-          print('API call failed: ${investorTransaction['Message']}');
+          debugPrint('API call failed: ${investorTransaction['Message']}');
         }
       } else {
-        print('Unexpected API response format');
+        debugPrint('Unexpected API response format');
       }
     } catch (e) {
-      print('Exception: $e');
-      if (e is DioException) {
-        // Handle Dio-specific errors
-        print('Dio error: ${e.message}');
-      }
+      _handleApiError(e);
     } finally {
       isLoading = false;
       notifyListeners();
@@ -72,48 +94,41 @@ class InvestorTransactionController with ChangeNotifier {
   }
 
   void loadMore() {
-    if (hasMore && !isLoading) {}
-    currentPage++;
-    getInvestorTransaction(loadMore: true);
+    if (hasMore && !isLoading) {
+      currentPage++;
+      getInvestorTransaction(loadMore: true);
+    }
   }
 
   Future<void> getInvestorTransactionDetail() async {
+    if (!await _checkToken()) return;
+
     isLoading = true;
     errorMessage = null;
     notifyListeners();
 
     try {
-      if (token == null) {
-        throw Exception("No Token Found");
-      }
-
       if (id == null) {
         throw Exception("Customer ID is required");
       }
 
       final transactionDetailData = await restApi.getInvestorTransactionDetail(
         id: id,
-        token: 'Bearer $token',
+        token: _getAuthHeader(),
       );
 
       if (transactionDetailData['IsSuccess'] == true) {
         final data = transactionDetailData['Data'] as Map<String, dynamic>;
         transactionData = [data];
-        print('Assigned units fetched: ${transactionData?.length}');
+        debugPrint('Assigned units fetched: ${transactionData?.length}');
       } else {
         errorMessage =
             transactionDetailData['Message'] ??
             'Failed to fetch assigned units';
-        print('API call failed: $errorMessage');
+        debugPrint('API call failed: $errorMessage');
       }
     } catch (e) {
-      if (e is DioException) {
-        errorMessage = 'Network error: ${e.message}';
-        print('Dio Exception: $e');
-      } else {
-        errorMessage = 'Error: ${e.toString()}';
-        print('Error: $e');
-      }
+      _handleApiError(e);
     } finally {
       isLoading = false;
       notifyListeners();
@@ -121,13 +136,16 @@ class InvestorTransactionController with ChangeNotifier {
   }
 
   Future<void> getInvestorBaseData() async {
+    if (!await _checkToken()) return;
+
+    isLoading = true;
+    notifyListeners();
+
     try {
-      if (token == null) {
-        throw Exception("No token found");
-      }
       final investorBaseData = await restApi.getInvestorTransactionBaseList(
-        token: 'Bearer $token',
+        token: _getAuthHeader(),
       );
+
       if (investorBaseData['IsSuccess'] == true) {
         currencyData = List<Map<String, dynamic>>.from(
           investorBaseData['Data']['currencies'],
@@ -138,14 +156,17 @@ class InvestorTransactionController with ChangeNotifier {
         banksData = List<Map<String, dynamic>>.from(
           investorBaseData['Data']['banks'],
         );
-        notifyListeners();
+        debugPrint('Base data fetched successfully');
       } else {
-        print('API call failed: ${investorBaseData['Message']}');
+        debugPrint('API call failed: ${investorBaseData['Message']}');
+        errorMessage =
+            investorBaseData['Message'] ?? 'Failed to fetch base data';
       }
     } catch (e) {
-      if (e is DioException) {
-        print('Dio error: ${e.message}');
-      }
+      _handleApiError(e);
+    } finally {
+      isLoading = false;
+      notifyListeners();
     }
   }
 
@@ -163,13 +184,24 @@ class InvestorTransactionController with ChangeNotifier {
     String? currencyId,
     String? isIncome,
   }) async {
+    if (!await _checkToken()) return false;
+
+    // Debug logging
+    debugPrint("Posting transaction with payment type: $paymentType");
+    debugPrint("Transaction type: $transactionType");
+    debugPrint("Investor ID: $investorId");
+
     try {
-      await restApi.postInvestorTransaction(
-        token: 'Bearer $token',
-        transactionType: transactionType,
+      final response = await restApi.postInvestorTransaction(
+        token: _getAuthHeader(),
+        transactionType:
+            transactionType
+                ?.toLowerCase(), // Ensure lowercase to match API expectations
         totalAmount: totalAmount,
         investorId: investorId,
-        paymentType: paymentType,
+        paymentType:
+            paymentType
+                ?.toLowerCase(), // Ensure lowercase to match API expectations
         bankId: bankId,
         accountNumber: accountNumber,
         transferDate: transferDate,
@@ -179,12 +211,23 @@ class InvestorTransactionController with ChangeNotifier {
         currencyId: currencyId,
         isIncome: isIncome,
       );
-      return true;
-    } catch (e) {
-      if (e is DioException) {
-        print("Dio Exception $e");
+
+      // Check response
+      if (response is Map<String, dynamic> && response['IsSuccess'] == true) {
+        debugPrint("Transaction posted successfully!");
+        return true;
+      } else if (response is Map<String, dynamic>) {
+        debugPrint(
+          "Transaction failed: ${response['Message'] ?? 'Unknown error'}",
+        );
+        errorMessage = response['Message'] ?? 'Failed to save transaction';
+      } else {
+        debugPrint("Unknown response format");
+        errorMessage = 'Unexpected response format';
       }
       return false;
+    } catch (e) {
+      return _handleApiError(e);
     }
   }
 
@@ -192,20 +235,77 @@ class InvestorTransactionController with ChangeNotifier {
     int? id,
     String? descriptionText,
   ) async {
+    if (!await _checkToken()) return;
+
     try {
-      if (token == null) {
-        throw Exception("No Token Found");
-      }
       await restApi.deleteInvestorTransaction(
-        token: 'Bearer $token',
+        token: _getAuthHeader(),
         id: id,
         description: descriptionText,
       );
       await getInvestorTransaction();
     } catch (e) {
-      if (e is DioException) {
-        print('Dio Exception $e');
-      }
+      _handleApiError(e);
     }
+  }
+
+  Future<bool> postInvestorTransactionReports(
+    String? fromDate,
+    String? toDate,
+    int? investorId,
+    int? currencyId,
+  ) async {
+    if (!await _checkToken()) return false;
+
+    try {
+      final reportsData = await restApi.postInvestorTransactionReport(
+        token: _getAuthHeader(),
+        fromDate: fromDate,
+        toDate: toDate,
+        investorId: investorId,
+        currencyId: currencyId,
+      );
+      if (reportsData['IsSuccess'] == true) {
+        reportUrl = reportsData['Data']?['url'];
+        notifyListeners();
+        debugPrint('Report URL: $reportUrl');
+        return true;
+      } else {
+        debugPrint('Fetch reports data failed: ${reportsData['Message']}');
+        errorMessage = reportsData['Message'] ?? 'Failed to generate report';
+        return false;
+      }
+    } catch (e) {
+      return _handleApiError(e);
+    }
+  }
+
+  // Standardized error handling
+  dynamic _handleApiError(dynamic e) {
+    if (e is DioException) {
+      debugPrint("Dio Exception: ${e.message}");
+
+      // Handle redirect to login (authentication failure)
+      if (e.response?.statusCode == 302 ||
+          (e.response?.data is String &&
+              (e.response?.data as String).contains('login'))) {
+        debugPrint("Authentication failed - redirected to login page");
+        errorMessage = 'Authentication failed. Please log in again.';
+        AuthRepo.handleAuthError();
+        return false;
+      }
+
+      // Log detailed response information
+      if (e.response != null) {
+        debugPrint('Response status: ${e.response?.statusCode}');
+        debugPrint('Response data: ${e.response?.data}');
+      }
+
+      errorMessage = 'Network error: ${e.message}';
+    } else {
+      debugPrint("Error: $e");
+      errorMessage = 'Error: ${e.toString()}';
+    }
+    return false;
   }
 }

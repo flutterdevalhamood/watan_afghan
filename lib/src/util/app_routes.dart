@@ -4,6 +4,7 @@ import 'package:sample/src/screens/expenses/expense_screen.dart';
 import 'package:sample/src/screens/financialTransactions/financial_transactions_screen.dart';
 import 'package:sample/src/screens/investorTransactions/investor_transaction_data_screen.dart';
 import 'package:sample/src/screens/investorTransactions/investor_transaction_detail_screen.dart';
+import 'package:sample/src/screens/investorTransactions/investor_transaction_reports_screen.dart';
 import 'package:sample/src/screens/investorTransactions/investor_transaction_screen.dart';
 import 'package:sample/src/screens/profile_update_screen.dart';
 import 'package:sample/src/screens/purchases/purchase_screen.dart';
@@ -34,6 +35,8 @@ class Screenroutes {
       "investorTransactionDetailScreen";
   static const String investorTransactionDataScreen =
       "investorTransactionDataScreen";
+  static const String investorTransactionReportsScreen =
+      "investorTransactionReportsScreen";
 
   static Route<dynamic>? routes(RouteSettings settings) {
     StringConstants.currentRoute = settings.name ?? "";
@@ -148,6 +151,16 @@ class Screenroutes {
           ),
           builder: (BuildContext context) {
             return InvestorTransactionDataScreen();
+          },
+        );
+
+      case Screenroutes.investorTransactionReportsScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(
+            name: Screenroutes.investorTransactionReportsScreen,
+          ),
+          builder: (BuildContext context) {
+            return InvestorTransactionReportScreen();
           },
         );
     }
