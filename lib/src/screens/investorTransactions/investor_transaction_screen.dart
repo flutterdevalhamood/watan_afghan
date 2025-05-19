@@ -146,13 +146,7 @@ class _InvestorTransactionScreenState extends State<InvestorTransactionScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        title: const Text(
-          'Investor Transactions',
-          style: TextStyle(
-            color: Color(0xFF222B45),
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        title: const Text('Investor Transactions'),
         elevation: 0,
         backgroundColor: Theme.of(context).colorScheme.primary,
         actions: [
