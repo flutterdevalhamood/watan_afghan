@@ -193,13 +193,13 @@ class Screenroutes {
           },
         );
       case Screenroutes.currencyConversionDetailScreen:
-        final data = settings.arguments as Map<String, dynamic>?;
+        final conversionId = settings.arguments as int?;
         return MaterialPageRoute(
           settings: const RouteSettings(
             name: Screenroutes.currencyConversionDetailScreen,
           ),
           builder: (BuildContext context) {
-            return CurrencyConversionDetailScreen();
+            return CurrencyConversionDetailScreen(id: conversionId);
           },
         );
     }

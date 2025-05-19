@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:sample/src/providers/currency_conversion_controller.dart';
+import 'package:sample/src/util/app_navigation.dart';
+import 'package:sample/src/util/app_routes.dart';
 
 class CurrencyConversionListScreen extends StatefulWidget {
-  const CurrencyConversionListScreen({Key? key}) : super(key: key);
+  const CurrencyConversionListScreen({super.key});
 
   @override
   State<CurrencyConversionListScreen> createState() =>
@@ -16,6 +18,7 @@ class _CurrencyConversionListScreenState
   final ScrollController _scrollController = ScrollController();
   late CurrencyConversionController _controller;
   final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _deleteReasonController = TextEditingController();
   String _searchQuery = '';
   List<Map<String, dynamic>> _filteredTransactions = [];
 
@@ -81,10 +84,11 @@ class _CurrencyConversionListScreenState
 
   void _onTransactionTap(int id) {
     _controller.id = id;
-    _controller.getCurrencyConversionDetail().then((_) {
-      // Navigate to detail screen
-      Navigator.pushNamed(context, '/currency-transaction-detail');
-    });
+
+    NavigationService().pushNavigation(
+      Screenroutes.currencyConversionDetailScreen,
+      arguments: id,
+    );
   }
 
   Widget _buildSearchBox() {
@@ -154,75 +158,79 @@ class _CurrencyConversionListScreenState
       child: Card(
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: InkWell(
-          onTap: () => _onTransactionTap(id),
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.receipt_long, color: Colors.blue),
-                        const SizedBox(width: 8),
-                        Text(
-                          referenceNumber,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        formattedDate,
-                        style: TextStyle(
-                          color: Colors.blue.shade700,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 12,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.receipt_long, color: Colors.blue),
+                      const SizedBox(width: 8),
+                      Text(
+                        referenceNumber,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
                       ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
                     ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  description,
-                  style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton.icon(
-                      onPressed: () => _onTransactionTap(id),
-                      icon: const Icon(Icons.arrow_forward, size: 16),
-                      label: const Text('VIEW DETAILS'),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.blue.shade700,
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      formattedDate,
+                      style: TextStyle(
+                        color: Colors.blue.shade700,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 12,
                       ),
                     ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                description,
+                style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton.icon(
+                    onPressed: () => _onTransactionTap(id),
+                    icon: const Icon(Icons.arrow_forward, size: 16),
+                    label: const Text('VIEW DETAILS'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.blue.shade700,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => _confirmDelete(id),
+                    child: const Icon(
+                      Icons.delete_outline,
+                      color: Colors.red,
+                      size: 20,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
@@ -316,6 +324,58 @@ class _CurrencyConversionListScreenState
         ],
       ),
     );
+  }
+
+  Future<void> _confirmDelete(int id) async {
+    _deleteReasonController.clear();
+    final bool? result = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Currency Conversion Data'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Are you sure you want to delete this conversion data?',
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _deleteReasonController,
+                decoration: const InputDecoration(
+                  labelText: 'Reason for deletion',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed:
+                  () => NavigationService().popNavigation(arguments: false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed:
+                  () => NavigationService().popNavigation(arguments: true),
+              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == true) {
+      _controller.deleteCurrencyConversion(id, _deleteReasonController.text);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Conversion data deleted successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
   }
 
   @override
@@ -423,8 +483,9 @@ class _CurrencyConversionListScreenState
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // TODO: Navigate to add transaction screen
-          Navigator.pushNamed(context, '/add-currency-transaction');
+          NavigationService().pushNavigation(
+            Screenroutes.currencyConversionDataScreen,
+          );
         },
         backgroundColor: Colors.blue,
         child: const Icon(Icons.add, color: Colors.white),
