@@ -309,15 +309,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                 );
               },
             ),
-            _buildMenuItem(
-              context: context,
-              icon: Icons.report,
-              title: 'Report',
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            // Add Change Password option here
+
             _buildMenuItem(
               context: context,
               icon: Icons.lock_reset,
