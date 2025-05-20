@@ -137,4 +137,9 @@ abstract class RestClient {
     @Field("id") int? id,
     @Field("deleteDescription") String? description,
   });
+
+  @GET('/api/GetAdminDashboardData')
+  Future<dynamic> getAdminDashboardData({
+    @Header("Authorization") String? token,
+  });
 }

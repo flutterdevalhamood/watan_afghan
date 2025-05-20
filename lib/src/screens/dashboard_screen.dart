@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:sample/src/providers/dashboard_controller.dart';
 import 'package:sample/src/util/app_routes.dart';
+import 'package:sample/src/util/currency_utils.dart';
 import 'package:sample/src/widgets/drawer_widget.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  State<DashboardScreen> createState() => _FinancialDashboardState();
+  State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _FinancialDashboardState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen> {
   Future<bool> _onWillPop() async {
     bool? shouldLogout = await showDialog(
       context: context,
@@ -42,401 +45,326 @@ class _FinancialDashboardState extends State<DashboardScreen> {
   }
 
   final String accountName = "Y Account";
-  final double totalBalanceAED = 45872.63;
   final DateTime currentMonth = DateTime.now();
   final DateTime lastMonth = DateTime.now().subtract(const Duration(days: 30));
 
-  // Account currency data
-  final List<CurrencyBalance> currencyBalances = [
-    CurrencyBalance(
-      currency: "AED",
-      amount: 24500.00,
-      code: "AED",
-      flag: "🇦🇪",
-      color: const Color(0xFF0A6EBD),
-    ),
-    CurrencyBalance(
-      currency: "USD",
-      amount: 3250.75,
-      code: "USD",
-      flag: "🇺🇸",
-      color: const Color(0xFF2E8B57),
-    ),
-    CurrencyBalance(
-      currency: "EUR",
-      amount: 1785.22,
-      code: "EUR",
-      flag: "🇪🇺",
-      color: const Color(0xFF4169E1),
-    ),
-    CurrencyBalance(
-      currency: "INR",
-      amount: 94500.50,
-      code: "INR",
-      flag: "🇮🇳",
-      color: const Color(0xFFFF8C00),
-    ),
-  ];
-
   // Expense data (all zeros for current month as shown in the image)
   final List<double> dailyExpenses = List.generate(31, (index) => 0.0);
-
-  // Sample data for sales and purchase reports
-  final List<Transaction> salesTransactions = [
-    Transaction(
-      date: DateTime.now().subtract(const Duration(days: 35)),
-      description: 'Client A - Product Sale',
-      amount: 1250.00,
-      type: TransactionType.sales,
-    ),
-    Transaction(
-      date: DateTime.now().subtract(const Duration(days: 32)),
-      description: 'Client B - Service Fee',
-      amount: 850.75,
-      type: TransactionType.sales,
-    ),
-    Transaction(
-      date: DateTime.now().subtract(const Duration(days: 30)),
-      description: 'Client C - Subscription',
-      amount: 499.99,
-      type: TransactionType.sales,
-    ),
-    Transaction(
-      date: DateTime.now().subtract(const Duration(days: 25)),
-      description: 'Client D - Bulk Order',
-      amount: 3200.50,
-      type: TransactionType.sales,
-    ),
-  ];
-
-  final List<Transaction> purchaseTransactions = [
-    Transaction(
-      date: DateTime.now().subtract(const Duration(days: 40)),
-      description: 'Vendor A - Office Supplies',
-      amount: 325.45,
-      type: TransactionType.purchase,
-    ),
-    Transaction(
-      date: DateTime.now().subtract(const Duration(days: 38)),
-      description: 'Vendor B - Equipment',
-      amount: 1750.00,
-      type: TransactionType.purchase,
-    ),
-    Transaction(
-      date: DateTime.now().subtract(const Duration(days: 28)),
-      description: 'Vendor C - Software License',
-      amount: 599.99,
-      type: TransactionType.purchase,
-    ),
-  ];
 
   bool _isExpenseExpanded = true;
   bool _isSalesExpanded = true;
   bool _isPurchaseExpanded = true;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<DashboardController>(
+        context,
+        listen: false,
+      ).getInvestorBaseData();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: _onWillPop,
-      child: Scaffold(
-        drawer: DrawerWidget(),
-        backgroundColor: Colors.grey.shade100,
-        appBar: AppBar(
-          title: const Text('Account Dashboard'),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          foregroundColor: Colors.white,
-          elevation: 0,
-        ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Account Summary Card
-                _buildAccountSummaryCard(),
-
-                const SizedBox(height: 24),
-
-                // Currency Breakdown Section
-                _buildCurrencyBreakdownCard(),
-
-                const SizedBox(height: 24),
-
-                // Expense Monitor Section
-                _buildExpandableSection(
-                  title: "Sales Monitor(Last Month)",
-                  isExpanded: _isSalesExpanded,
-                  onTap: () {
-                    setState(() {
-                      _isSalesExpanded = !_isSalesExpanded;
-                    });
-                  },
-                  child: _buildExpenseMonitorContent(),
-                ),
-
-                const SizedBox(height: 16),
-
-                _buildExpandableSection(
-                  title: "Purchase Monitor(Last Month)",
-                  isExpanded: _isPurchaseExpanded,
-                  onTap: () {
-                    setState(() {
-                      _isPurchaseExpanded = !_isPurchaseExpanded;
-                    });
-                  },
-                  child: _buildExpenseMonitorContent(),
-                ),
-
-                // Sales Report Section
-                // _buildExpandableSection(
-                //   title: "Sales Report (Last Month)",
-                //   isExpanded: _isSalesExpanded,
-                //   onTap: () {
-                //     setState(() {
-                //       _isSalesExpanded = !_isSalesExpanded;
-                //     });
-                //   },
-                // child: _buildTransactionsContent(
-                //   transactions: salesTransactions,
-                //   totalLabel: 'Total Sales',
-                //   iconData: Icons.shopping_cart_outlined,
-                //   color: Colors.green.shade600,
-                // ),
-                // ),
-                const SizedBox(height: 16),
-
-                // Purchase Report Section
-                // _buildExpandableSection(
-                //   title: "Purchase Report (Last Month)",
-                //   isExpanded: _isPurchaseExpanded,
-                //   onTap: () {
-                //     setState(() {
-                //       _isPurchaseExpanded = !_isPurchaseExpanded;
-                //     });
-                //   },
-                // child: _buildTransactionsContent(
-                //   transactions: purchaseTransactions,
-                //   totalLabel: 'Total Purchases',
-                //   iconData: Icons.shopping_bag_outlined,
-                //   color: Colors.blue.shade600,
-                // ),
-                // ),
-                const SizedBox(height: 24),
-
-                // Action Buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildActionButton(
-                      icon: Icons.sync_alt,
-                      label: 'Transfer',
-                      onTap: () {},
-                    ),
-                    const SizedBox(width: 16),
-                    _buildActionButton(
-                      icon: Icons.history,
-                      label: 'History',
-                      onTap: () {},
-                    ),
-                    const SizedBox(width: 16),
-                    _buildActionButton(
-                      icon: Icons.download,
-                      label: 'Export',
-                      onTap: () {},
-                    ),
-                  ],
-                ),
-              ],
+    return Consumer<DashboardController>(
+      builder: (context, dashboardController, child) {
+        return WillPopScope(
+          onWillPop: _onWillPop,
+          child: Scaffold(
+            drawer: DrawerWidget(),
+            backgroundColor: Colors.grey.shade100,
+            appBar: AppBar(
+              title: const Text('Account Dashboard'),
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Colors.white,
+              elevation: 0,
             ),
+            body:
+                dashboardController.isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : dashboardController.errorMessage != null
+                    ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            dashboardController.errorMessage!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () {
+                              dashboardController.getInvestorBaseData();
+                            },
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    )
+                    : RefreshIndicator(
+                      onRefresh:
+                          () => dashboardController.getInvestorBaseData(),
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // // Financial Overview Cards
+                              // _buildFinancialOverviewSection(
+                              //   dashboardController,
+                              // ),
+                              //
+                              // const SizedBox(height: 24),
+
+                              // Currency Breakdown Cards
+                              _buildCurrencyBreakdownSection(
+                                dashboardController,
+                              ),
+
+                              const SizedBox(height: 24),
+
+                              // Sales Monitor Section
+                              _buildExpandableSection(
+                                title: "Sales Monitor(Last Month)",
+                                isExpanded: _isSalesExpanded,
+                                onTap: () {
+                                  setState(() {
+                                    _isSalesExpanded = !_isSalesExpanded;
+                                  });
+                                },
+                                child: _buildExpenseMonitorContent(),
+                              ),
+
+                              const SizedBox(height: 16),
+
+                              // Purchase Monitor Section
+                              _buildExpandableSection(
+                                title: "Purchase Monitor(Last Month)",
+                                isExpanded: _isPurchaseExpanded,
+                                onTap: () {
+                                  setState(() {
+                                    _isPurchaseExpanded = !_isPurchaseExpanded;
+                                  });
+                                },
+                                child: _buildExpenseMonitorContent(),
+                              ),
+
+                              const SizedBox(height: 24),
+
+                              // Action Buttons
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  _buildActionButton(
+                                    icon: Icons.sync_alt,
+                                    label: 'Transfer',
+                                    onTap: () {},
+                                  ),
+                                  const SizedBox(width: 16),
+                                  _buildActionButton(
+                                    icon: Icons.history,
+                                    label: 'History',
+                                    onTap: () {},
+                                  ),
+                                  const SizedBox(width: 16),
+                                  _buildActionButton(
+                                    icon: Icons.download,
+                                    label: 'Export',
+                                    onTap: () {},
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildAccountSummaryCard() {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  accountName,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+  Widget _buildCurrencyBreakdownSection(DashboardController controller) {
+    List<Map<String, dynamic>> sections = [
+      {
+        "title": "Cash on Hand",
+        "data": controller.cashOnHand,
+        "icon": Icons.payments_outlined,
+        "color": Colors.green,
+      },
+      {
+        "title": "Amount in Bank",
+        "data": controller.amountInBank,
+        "icon": Icons.account_balance_outlined,
+        "color": Colors.blue,
+      },
+      {
+        "title": "Investor Payable",
+        "data": controller.investorPayable,
+        "icon": Icons.person_outline,
+        "color": Colors.orange,
+      },
+    ];
+
+    return Column(
+      children:
+          sections.map((section) {
+            final Map<String, dynamic>? data = section["data"];
+            if (data == null || data.isEmpty) return const SizedBox.shrink();
+
+            final List<CurrencyBalance> currencyBalances = [];
+            double sectionTotal = 0.0;
+
+            data.forEach((currency, amount) {
+              // Convert to double in case it's an integer in the JSON
+              final double amountValue =
+                  (amount is int) ? amount.toDouble() : amount;
+              sectionTotal += amountValue;
+
+              currencyBalances.add(
+                CurrencyBalance(
+                  currency: getCurrencyName(currency),
+                  amount: amountValue,
+                  code: currency,
+                  flag: getCurrencyFlag(currency),
+                  color: getCurrencyColor(currency),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Text(
-                    'Active',
-                    style: TextStyle(
-                      color: Color(0xFF0A6EBD),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Total Balance',
-              style: TextStyle(fontSize: 14, color: Colors.grey),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              formatCurrency(totalBalanceAED, 'AED'),
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0A6EBD),
+              );
+            });
+
+            return Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Last updated: ${DateFormat('dd MMM yyyy, HH:mm').format(DateTime.now())}',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+              margin: const EdgeInsets.only(bottom: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: (section["color"] as Color).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            section["icon"] as IconData,
+                            color: section["color"] as Color,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          section["title"] as String,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
-  Widget _buildCurrencyBreakdownCard() {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: const Text(
-              'Currency Breakdown',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ),
+                  // Table Header
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withOpacity(0.05),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Currency',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0A6EBD),
+                          ),
+                        ),
+                        Text(
+                          'Amount',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0A6EBD),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
-          // Table Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
-            ),
-            child: const Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    'Currency',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0A6EBD),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    'Amount',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0A6EBD),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+                  // Table Rows
+                  ...currencyBalances.map((balance) {
+                    final bool isNegative = balance.amount < 0;
+                    final double absAmount = balance.amount.abs();
 
-          // Table Rows
-          ...currencyBalances.map((balance) {
-            return Container(
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: Colors.grey.shade200, width: 1),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: balance.color.withOpacity(0.1),
-                    child: Text(
-                      balance.flag,
-                      style: const TextStyle(fontSize: 18),
-                    ),
-                  ),
-                  title: Text(
-                    balance.currency,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 16,
-                    ),
-                  ),
-                  subtitle: Text(
-                    balance.code,
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                  ),
-                  trailing: Text(
-                    formatCurrency(balance.amount, balance.code),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
+                    return Container(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: Colors.grey.shade200,
+                            width: 1,
+                          ),
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: balance.color.withOpacity(0.1),
+                            child: Text(
+                              balance.flag,
+                              style: const TextStyle(fontSize: 18),
+                            ),
+                          ),
+                          title: Text(
+                            balance.currency,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 16,
+                            ),
+                          ),
+                          subtitle: Text(
+                            balance.code,
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 12,
+                            ),
+                          ),
+                          trailing: Text(
+                            isNegative
+                                ? "-${formatCurrency(absAmount, balance.code)}"
+                                : formatCurrency(balance.amount, balance.code),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                              color: isNegative ? Colors.red : null,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ],
               ),
             );
           }).toList(),
-
-          // Summary footer
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(16),
-                bottomRight: Radius.circular(16),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Total (in AED)',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  formatCurrency(totalBalanceAED, 'AED'),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0A6EBD),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -639,128 +567,6 @@ class _FinancialDashboardState extends State<DashboardScreen> {
     );
   }
 
-  // Widget _buildTransactionsContent({
-  //   required List<Transaction> transactions,
-  //   required String totalLabel,
-  //   required IconData iconData,
-  //   required Color color,
-  // }) {
-  //   // Calculate total
-  //   double total = transactions.fold(
-  //     0,
-  //     (prev, transaction) => prev + transaction.amount,
-  //   );
-  //
-  //   return Padding(
-  //     padding: const EdgeInsets.all(16.0),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         Text(
-  //           'Period: ${DateFormat('d MMM').format(lastMonth)} - ${DateFormat('d MMM yyyy').format(currentMonth)}',
-  //           style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-  //         ),
-  //         const SizedBox(height: 16),
-  //
-  //         // Transactions list
-  //         ...transactions.map(
-  //           (transaction) => _buildTransactionItem(
-  //             transaction,
-  //             iconData: iconData,
-  //             color: color,
-  //           ),
-  //         ),
-  //
-  //         const SizedBox(height: 16),
-  //         const Divider(thickness: 1),
-  //
-  //         // Total row
-  //         Padding(
-  //           padding: const EdgeInsets.symmetric(vertical: 10),
-  //           child: Row(
-  //             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //             children: [
-  //               Text(
-  //                 totalLabel,
-  //                 style: const TextStyle(
-  //                   fontWeight: FontWeight.bold,
-  //                   fontSize: 16,
-  //                 ),
-  //               ),
-  //               Text(
-  //                 NumberFormat.currency(
-  //                   symbol: '\$',
-  //                   decimalDigits: 2,
-  //                 ).format(total),
-  //                 style: TextStyle(
-  //                   fontWeight: FontWeight.bold,
-  //                   fontSize: 18,
-  //                   color: color,
-  //                 ),
-  //               ),
-  //             ],
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
-  Widget _buildTransactionItem(
-    Transaction transaction, {
-    required IconData iconData,
-    required Color color,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(iconData, color: color),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  transaction.description,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  DateFormat('dd MMM yyyy').format(transaction.date),
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            NumberFormat.currency(
-              symbol: '\$',
-              decimalDigits: 2,
-            ).format(transaction.amount),
-            style: TextStyle(fontWeight: FontWeight.bold, color: color),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildActionButton({
     required IconData icon,
     required String label,
@@ -805,21 +611,6 @@ class _FinancialDashboardState extends State<DashboardScreen> {
     );
     return formatter.format(amount);
   }
-
-  String getCurrencySymbol(String code) {
-    switch (code) {
-      case 'AED':
-        return 'AED ';
-      case 'USD':
-        return '\$';
-      case 'EUR':
-        return '€';
-      case 'INR':
-        return '₹';
-      default:
-        return '';
-    }
-  }
 }
 
 class CurrencyBalance {
@@ -839,17 +630,3 @@ class CurrencyBalance {
 }
 
 enum TransactionType { sales, purchase }
-
-class Transaction {
-  final DateTime date;
-  final String description;
-  final double amount;
-  final TransactionType type;
-
-  Transaction({
-    required this.date,
-    required this.description,
-    required this.amount,
-    required this.type,
-  });
-}
