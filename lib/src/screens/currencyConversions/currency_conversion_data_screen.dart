@@ -3,11 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:sample/src/providers/currency_conversion_controller.dart';
+import 'package:sample/src/widgets/form_field_widget.dart';
 
 class CurrencyConversionDataScreen extends StatefulWidget {
-  final int? investorId;
-
-  const CurrencyConversionDataScreen({super.key, this.investorId});
+  const CurrencyConversionDataScreen({super.key});
 
   @override
   State<CurrencyConversionDataScreen> createState() =>
@@ -17,50 +16,52 @@ class CurrencyConversionDataScreen extends StatefulWidget {
 class _CurrencyConversionScreenState
     extends State<CurrencyConversionDataScreen> {
   final _formKey = GlobalKey<FormState>();
-  bool _isIncome = true;
-  String _transactionType = 'currency';
-  String? _selectedCurrencyId;
-  String? _selectedPaymentType = 'bank';
-  int? _selectedBankId;
 
-  final TextEditingController _amountController = TextEditingController();
-  final TextEditingController _accountNumberController =
-      TextEditingController();
-  final TextEditingController _transferDateController = TextEditingController();
+  final TextEditingController _fromAmountController = TextEditingController();
+  final TextEditingController _toAmountController = TextEditingController();
   final TextEditingController _referenceNumberController =
       TextEditingController();
-  final TextEditingController _personNameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _dateController = TextEditingController();
+  final TextEditingController _fromAccountNumberController =
+      TextEditingController();
+  final TextEditingController _toAccountNumberController =
+      TextEditingController();
 
+  Map<String, dynamic>? _selectedFromCurrency;
+  int? _selectedFromCurrencyId;
+  int? _selectedToCurrencyId;
+  Map<String, dynamic>? _selectedToCurrency;
+  String _fromPaymentType = 'cash';
+  String _toPaymentType = 'cash';
   DateTime _selectedDate = DateTime.now();
+  int? _fromBankId;
+  int? _toBankId;
 
   @override
   void initState() {
     super.initState();
-    _transferDateController.text = DateFormat(
-      'yyyy-MM-dd',
-    ).format(_selectedDate);
-
-    // Fetch currency data when screen initializes
+    _dateController.text = DateFormat('dd/MM/yyyy').format(_selectedDate);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<CurrencyConversionController>(
+      final controller = Provider.of<CurrencyConversionController>(
         context,
         listen: false,
-      ).getCurrencyBaseData();
+      );
+      controller.getCurrencyBaseData();
     });
   }
 
   @override
   void dispose() {
-    _amountController.dispose();
-    _accountNumberController.dispose();
-    _transferDateController.dispose();
+    _fromAmountController.dispose();
+    _toAmountController.dispose();
     _referenceNumberController.dispose();
-    _personNameController.dispose();
     _descriptionController.dispose();
+    _dateController.dispose();
     super.dispose();
   }
 
+  // Show date picker
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -71,51 +72,56 @@ class _CurrencyConversionScreenState
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
-        _transferDateController.text = DateFormat(
-          'yyyy-MM-dd',
-        ).format(_selectedDate);
+        _dateController.text = DateFormat('dd/MM/yyyy').format(_selectedDate);
       });
     }
   }
 
-  Future<void> _submitConversion() async {
+  // Save currency conversion
+  Future<void> _saveConversion() async {
     if (_formKey.currentState!.validate()) {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
       final controller = Provider.of<CurrencyConversionController>(
         context,
         listen: false,
       );
 
-      final bool success = await controller.postCurrencyConversion(
-        transactionType: _transactionType,
-        totalAmount: _amountController.text,
-        investorId: widget.investorId,
-        paymentType: _selectedPaymentType,
-        bankId: _selectedBankId,
-        accountNumber: _accountNumberController.text,
-        transferDate: _transferDateController.text,
+      // Format date for API
+      final formattedDate = DateFormat('yyyy-MM-dd').format(_selectedDate);
+
+      final success = await controller.postCurrencyConversion(
+        fromPaymentType: _fromPaymentType,
+        fromCurrencyId: _selectedFromCurrencyId,
+        fromAmount: _fromAmountController.text,
+        fromBankId: _fromBankId,
+        toPaymentType: _toPaymentType,
+        toCurrencyId: _selectedToCurrencyId,
+        toAmount: _toAmountController.text,
+        toBankId: _toBankId.toString(),
         referenceNumber: _referenceNumberController.text,
-        personName: _personNameController.text,
+        transactionDate: formattedDate,
         description: _descriptionController.text,
-        currencyId: _selectedCurrencyId,
-        isIncome: _isIncome ? 'true' : 'false',
       );
+
+      // Hide loading indicator
+      Navigator.of(context).pop();
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Currency conversion registered successfully'),
-            backgroundColor: Colors.green,
+            content: Text('Currency conversion saved successfully'),
           ),
         );
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(); // Return to previous screen
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              controller.errorMessage ?? 'Failed to register conversion',
-            ),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(controller.errorMessage ?? 'Failed to save')),
         );
       }
     }
@@ -127,14 +133,37 @@ class _CurrencyConversionScreenState
       appBar: AppBar(
         title: const Text('Currency Conversion'),
         backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
       ),
       body: Consumer<CurrencyConversionController>(
         builder: (context, controller, child) {
           if (controller.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
+
+          final currencies = controller.currencyData ?? [];
+          final banks = controller.banksData ?? [];
+
+          final filteredFromBanks =
+              _selectedFromCurrencyId != null
+                  ? banks
+                      .where(
+                        (bank) =>
+                            bank['id'].toString() ==
+                            _selectedFromCurrencyId.toString(),
+                      )
+                      .toList()
+                  : banks;
+
+          final filteredToBanks =
+              _selectedToCurrencyId != null
+                  ? banks
+                      .where(
+                        (bank) =>
+                            bank['id'].toString() ==
+                            _selectedToCurrencyId.toString(),
+                      )
+                      .toList()
+                  : banks;
 
           return SingleChildScrollView(
             child: Padding(
@@ -144,314 +173,291 @@ class _CurrencyConversionScreenState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Transaction Type Card
-                    _buildSectionCard(
-                      title: 'Transaction Information',
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Transaction Direction
-                          Row(
-                            children: [
-                              const Text(
-                                'Transaction Type:',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              ChoiceChip(
-                                label: const Text('Income'),
-                                selected: _isIncome,
-                                onSelected: (selected) {
-                                  setState(() {
-                                    _isIncome = true;
-                                  });
-                                },
-                              ),
-                              const SizedBox(width: 8),
-                              ChoiceChip(
-                                label: const Text('Expense'),
-                                selected: !_isIncome,
-                                onSelected: (selected) {
-                                  setState(() {
-                                    _isIncome = false;
-                                  });
-                                },
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Amount
-                          TextFormField(
-                            controller: _amountController,
-                            decoration: const InputDecoration(
-                              labelText: 'Amount',
-                              hintText: 'Enter amount',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.attach_money),
-                            ),
-                            keyboardType: TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                RegExp(r'^\d+\.?\d{0,2}'),
-                              ),
-                            ],
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter an amount';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Currency Selection
-                          DropdownButtonFormField<String>(
-                            decoration: const InputDecoration(
-                              labelText: 'Currency',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.currency_exchange),
-                            ),
-                            hint: const Text('Select Currency'),
-                            value: _selectedCurrencyId,
-                            onChanged: (String? newValue) {
+                    _buildSectionTitle('From Currency Details'),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildDropdownField(
+                            label: 'From Currency *',
+                            hint: '--Select Currency--',
+                            value: _selectedFromCurrencyId,
+                            items:
+                                currencies.map((currency) {
+                                  return DropdownMenuItem(
+                                    value: currency['id'] as int,
+                                    child: Text(currency['Name'] as String),
+                                  );
+                                }).toList(),
+                            onChanged: (value) {
                               setState(() {
-                                _selectedCurrencyId = newValue;
+                                _selectedFromCurrencyId = value;
                               });
                             },
                             validator: (value) {
-                              if (value == null || value.isEmpty) {
+                              if (value == null) {
                                 return 'Please select a currency';
                               }
                               return null;
                             },
-                            items:
-                                controller.currencyData?.map<
-                                  DropdownMenuItem<String>
-                                >((currency) {
-                                  return DropdownMenuItem<String>(
-                                    value: currency['id'].toString(),
-                                    child: Text(
-                                      '${currency['currencyCode']} - ${currency['currencyName']}',
-                                    ),
-                                  );
-                                }).toList(),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Payment Details Card
-                    _buildSectionCard(
-                      title: 'Payment Details',
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Payment Type
-                          Row(
-                            children: [
-                              const Text(
-                                'Payment Method:',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              ChoiceChip(
-                                label: const Text('Bank'),
-                                selected: _selectedPaymentType == 'bank',
-                                onSelected: (selected) {
-                                  setState(() {
-                                    _selectedPaymentType = 'bank';
-                                  });
-                                },
-                              ),
-                              const SizedBox(width: 8),
-                              ChoiceChip(
-                                label: const Text('Cash'),
-                                selected: _selectedPaymentType == 'cash',
-                                onSelected: (selected) {
-                                  setState(() {
-                                    _selectedPaymentType = 'cash';
-                                  });
-                                },
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-
-                          if (_selectedPaymentType == 'bank') ...[
-                            // Bank Selection (assuming you have a list of banks)
-                            DropdownButtonFormField<int>(
-                              decoration: const InputDecoration(
-                                labelText: 'Bank',
-                                border: OutlineInputBorder(),
-                                prefixIcon: Icon(Icons.account_balance),
-                              ),
-                              hint: const Text('Select Bank'),
-                              value: _selectedBankId,
-                              onChanged: (int? newValue) {
-                                setState(() {
-                                  _selectedBankId = newValue;
-                                });
-                              },
-                              validator:
-                                  _selectedPaymentType == 'bank'
-                                      ? (value) {
-                                        if (value == null) {
-                                          return 'Please select a bank';
-                                        }
-                                        return null;
-                                      }
-                                      : null,
-                              // Replace with actual bank data
-                              items: const [
-                                DropdownMenuItem<int>(
-                                  value: 1,
-                                  child: Text('Bank A'),
-                                ),
-                                DropdownMenuItem<int>(
-                                  value: 2,
-                                  child: Text('Bank B'),
-                                ),
-                                DropdownMenuItem<int>(
-                                  value: 3,
-                                  child: Text('Bank C'),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Account Number
-                            TextFormField(
-                              controller: _accountNumberController,
-                              decoration: const InputDecoration(
-                                labelText: 'Account Number',
-                                hintText: 'Enter account number',
-                                border: OutlineInputBorder(),
-                                prefixIcon: Icon(Icons.account_balance_wallet),
-                              ),
-                              validator:
-                                  _selectedPaymentType == 'bank'
-                                      ? (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Please enter account number';
-                                        }
-                                        return null;
-                                      }
-                                      : null,
-                            ),
-                            const SizedBox(height: 16),
-                          ],
-
-                          // Transfer Date
-                          GestureDetector(
-                            onTap: () => _selectDate(context),
-                            child: AbsorbPointer(
-                              child: TextFormField(
-                                controller: _transferDateController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Transfer Date',
-                                  border: OutlineInputBorder(),
-                                  prefixIcon: Icon(Icons.calendar_today),
-                                  suffixIcon: Icon(Icons.arrow_drop_down),
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please select a date';
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Reference Number
-                          TextFormField(
-                            controller: _referenceNumberController,
-                            decoration: const InputDecoration(
-                              labelText: 'Reference Number',
-                              hintText: 'Enter reference number',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.numbers),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Additional Information Card
-                    _buildSectionCard(
-                      title: 'Additional Information',
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Person Name
-                          TextFormField(
-                            controller: _personNameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Person Name',
-                              hintText: 'Enter person name',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.person),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Description
-                          TextFormField(
-                            controller: _descriptionController,
-                            decoration: const InputDecoration(
-                              labelText: 'Description',
-                              hintText: 'Enter description',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.description),
-                            ),
-                            maxLines: 3,
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Submit Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed:
-                            controller.isLoading ? null : _submitConversion,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Theme.of(context).colorScheme.primary,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child:
-                            controller.isLoading
-                                ? const CircularProgressIndicator(
-                                  color: Colors.white,
-                                )
-                                : const Text(
-                                  'Register Conversion',
-                                  style: TextStyle(fontSize: 16),
-                                ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // From Amount
+                    _buildTextField(
+                      controller: _fromAmountController,
+                      label: 'From Amount *',
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'^\d+\.?\d{0,2}'),
+                        ),
+                      ],
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter an amount';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // From Payment Type
+                    _buildDropdownField(
+                      label: 'From Payment Type *',
+                      hint: 'Select Payment Type',
+                      value: _fromPaymentType,
+                      items: const [
+                        DropdownMenuItem(value: 'cash', child: Text('Cash')),
+                        DropdownMenuItem(value: 'bank', child: Text('Bank')),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _fromPaymentType = value as String;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    if (_fromPaymentType == 'bank') ...[
+                      CustomFormField(
+                        title: 'Select Bank',
+                        isRequired: true,
+                        child: DropdownButtonFormField<int>(
+                          decoration: InputDecoration(
+                            hintText: 'Select Bank',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          value: _fromBankId,
+                          items:
+                              filteredFromBanks
+                                  .map(
+                                    (bank) => DropdownMenuItem(
+                                      value: bank['id'] as int,
+                                      child: Text('${bank['Name']}'),
+                                    ),
+                                  )
+                                  .toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _fromBankId = value;
+                            });
+                          },
+                          validator: (value) {
+                            if (_fromPaymentType == 'bank' && value == null) {
+                              return 'Please select a bank';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      const SizedBox(height: 16),
+                    ],
+
+                    // To Currency Section
+                    _buildSectionTitle('To Currency Details'),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildDropdownField(
+                            label: 'To Currency *',
+                            hint: '--Select Currency--',
+                            value: _selectedToCurrencyId,
+                            items:
+                                currencies.map((currency) {
+                                  return DropdownMenuItem(
+                                    value: currency['id'] as int,
+                                    child: Text(currency['Name'] as String),
+                                  );
+                                }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedToCurrencyId = value;
+                              });
+                            },
+                            validator: (value) {
+                              if (value == null) {
+                                return 'Please select a currency';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // To Amount
+                    _buildTextField(
+                      controller: _toAmountController,
+                      label: 'To Amount *',
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'^\d+\.?\d{0,2}'),
+                        ),
+                      ],
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter an amount';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // To Payment Type
+                    _buildDropdownField(
+                      label: 'To Payment Type *',
+                      hint: 'Select Payment Type',
+                      value: _toPaymentType,
+                      items: const [
+                        DropdownMenuItem(value: 'cash', child: Text('Cash')),
+                        DropdownMenuItem(value: 'bank', child: Text('Bank')),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _toPaymentType = value as String;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    if (_toPaymentType == 'bank') ...[
+                      CustomFormField(
+                        title: 'Select Bank',
+                        isRequired: true,
+                        child: DropdownButtonFormField<int>(
+                          decoration: InputDecoration(
+                            hintText: 'Select Bank',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          value: _toBankId,
+                          items:
+                              filteredToBanks
+                                  .map(
+                                    (bank) => DropdownMenuItem(
+                                      value: bank['id'] as int,
+                                      child: Text('${bank['Name']}'),
+                                    ),
+                                  )
+                                  .toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _toBankId = value;
+                            });
+                          },
+                          validator: (value) {
+                            if (_toPaymentType == 'bank' && value == null) {
+                              return 'Please select a bank';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
+                    // Transaction Details Section
+                    _buildSectionTitle('Transaction Details'),
+
+                    // Reference Number
+                    _buildTextField(
+                      controller: _referenceNumberController,
+                      label: 'Reference Number *',
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a reference number';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Date Picker
+                    InkWell(
+                      onTap: () => _selectDate(context),
+                      child: IgnorePointer(
+                        child: _buildTextField(
+                          controller: _dateController,
+                          label: 'Transaction Date *',
+                          suffixIcon: const Icon(Icons.calendar_today),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please select a date';
+                            }
+                            return null;
+                          },
+                        ),
                       ),
                     ),
+                    const SizedBox(height: 16),
+
+                    // Description
+                    _buildTextField(
+                      controller: _descriptionController,
+                      label: 'Description',
+                      maxLines: 3,
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Action Buttons
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: _saveConversion,
+                            icon: const Icon(Icons.save),
+                            label: const Text('Save'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.teal,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () => Navigator.of(context).pop(),
+                            icon: const Icon(Icons.cancel),
+                            label: const Text('Cancel'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
                   ],
                 ),
               ),
@@ -462,29 +468,77 @@ class _CurrencyConversionScreenState
     );
   }
 
-  Widget _buildSectionCard({required String title, required Widget child}) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.indigo,
-              ),
-            ),
-            const Divider(),
-            const SizedBox(height: 8),
-            child,
-          ],
+  // Helper method to build section titles
+  Widget _buildSectionTitle(String title) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.blue,
+          ),
+        ),
+        const Divider(),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  // Helper method to build text fields
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    TextInputType keyboardType = TextInputType.text,
+    List<TextInputFormatter>? inputFormatters,
+    int maxLines = 1,
+    Widget? suffixIcon,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
+        suffixIcon: suffixIcon,
+      ),
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
+      maxLines: maxLines,
+      validator: validator,
+    );
+  }
+
+  // Helper method to build dropdown fields
+  Widget _buildDropdownField<T>({
+    required String label,
+    required String hint,
+    required T? value,
+    required List<DropdownMenuItem<T>> items,
+    required Function(T?) onChanged,
+    String? Function(T?)? validator,
+  }) {
+    return DropdownButtonFormField<T>(
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
         ),
       ),
+      hint: Text(hint),
+      value: value,
+      items: items,
+      onChanged: onChanged,
+      validator: validator,
+      isExpanded: true,
     );
   }
 }

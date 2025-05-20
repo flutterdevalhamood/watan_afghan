@@ -142,7 +142,10 @@ class _InvestorTransactionDataScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('New Investor Transaction')),
+      appBar: AppBar(
+        title: const Text('New Investor Transaction'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+      ),
       body: Consumer<InvestorTransactionController>(
         builder: (context, controller, child) {
           if (controller.isLoading) {

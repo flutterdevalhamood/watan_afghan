@@ -149,7 +149,7 @@ class DetailCard extends StatelessWidget {
 
 class DetailRow extends StatelessWidget {
   final String label;
-  final String value;
+  final String? value;
   final bool isImportant;
 
   const DetailRow({
@@ -176,7 +176,7 @@ class DetailRow extends StatelessWidget {
           Expanded(
             flex: 3,
             child: Text(
-              value,
+              value ?? '',
               style: TextStyle(
                 fontSize: isImportant ? 16 : 14,
                 fontWeight: isImportant ? FontWeight.bold : FontWeight.normal,

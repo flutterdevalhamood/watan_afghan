@@ -13,7 +13,6 @@ class CurrencyConversionController with ChangeNotifier {
   int? id;
   List<Map<String, dynamic>>? conversionData;
   List<Map<String, dynamic>>? currencyData;
-  List<Map<String, dynamic>>? investorData;
   List<Map<String, dynamic>>? banksData;
   List<Map<String, dynamic>>? currencyConversionData;
   String? reportUrl;
@@ -145,6 +144,9 @@ class CurrencyConversionController with ChangeNotifier {
         currencyData = List<Map<String, dynamic>>.from(
           currencyBaseData['Data']['currencies'],
         );
+        banksData = List<Map<String, dynamic>>.from(
+          currencyBaseData['Data']['banks'],
+        );
       } else {
         debugPrint('API call failed: ${currencyBaseData['Message']}');
         errorMessage =
@@ -159,45 +161,36 @@ class CurrencyConversionController with ChangeNotifier {
   }
 
   Future<bool> postCurrencyConversion({
-    String? transactionType,
-    String? totalAmount,
-    int? investorId,
-    String? paymentType,
+    String? fromPaymentType,
+    int? fromCurrencyId,
+    String? fromAmount,
+    int? fromBankId,
     int? bankId,
-    String? accountNumber,
-    String? transferDate,
+    String? toPaymentType,
+    int? toCurrencyId,
+    String? toAmount,
+    String? toBankId,
     String? referenceNumber,
-    String? personName,
+    String? transactionDate,
     String? description,
-    String? currencyId,
-    String? isIncome,
   }) async {
     if (!await _checkToken()) return false;
 
-    // Debug logging
-    debugPrint("Posting transaction with payment type: $paymentType");
-    debugPrint("Transaction type: $transactionType");
-    debugPrint("Investor ID: $investorId");
-
     try {
-      final response = await restApi.postInvestorTransaction(
+      final response = await restApi.postCurrencyConversion(
         token: _getAuthHeader(),
-        transactionType:
-            transactionType
-                ?.toLowerCase(), // Ensure lowercase to match API expectations
-        totalAmount: totalAmount,
-        investorId: investorId,
-        paymentType:
-            paymentType
-                ?.toLowerCase(), // Ensure lowercase to match API expectations
+        fromPaymentType: fromPaymentType,
+        fromCurrencyId: fromCurrencyId,
+        fromAmount: fromAmount,
+        fromBankId: fromBankId,
         bankId: bankId,
-        accountNumber: accountNumber,
-        transferDate: transferDate,
+        toPaymentType: toPaymentType,
+        toCurrencyId: toCurrencyId,
+        toAmount: toAmount,
+        toBankId: toBankId,
         referenceNumber: referenceNumber,
-        personName: personName,
+        transactionDate: transactionDate,
         description: description,
-        currencyId: currencyId,
-        isIncome: isIncome,
       );
 
       // Check response
