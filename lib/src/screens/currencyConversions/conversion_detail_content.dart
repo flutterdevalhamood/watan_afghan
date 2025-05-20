@@ -4,29 +4,30 @@ import 'package:sample/src/screens/currencyConversions/conversion_summary_card.d
 import 'package:sample/src/screens/currencyConversions/currency_conversion_detail_screen.dart';
 
 class ConversionDetailContent extends StatelessWidget {
-  final Map<String, dynamic> data;
+  final Map<String, dynamic>? data;
 
   const ConversionDetailContent({super.key, required this.data});
 
   @override
   Widget build(BuildContext context) {
-    final fromCurrency = data['from_currency']['Name'];
-    final toCurrency = data['to_currency']['Name'];
-    final fromAmount = double.parse(data['from_amount']);
-    final toAmount = double.parse(data['to_amount']);
-    final conversionRate = double.parse(data['conversion_rate']);
-    final referenceNumber = data['referenceNumber'];
-    final transactionDate = DateTime.parse(data['transaction_date']);
+    final fromCurrency = data?['from_currency']['Name'];
+    final toCurrency = data?['to_currency']['Name'];
+    final fromAmount = double.parse(data?['from_amount']);
+    final toAmount = double.parse(data?['to_amount']);
+    final conversionRate = double.parse(data?['conversion_rate']);
+    final referenceNumber = data?['referenceNumber'];
+    final transactionDate = DateTime.parse(data?['transaction_date']);
     final formattedDate = DateFormat('MMM dd, yyyy').format(transactionDate);
-    final fromPaymentType = _capitalizeFirstLetter(data['from_payment_type']);
-    final toPaymentType = _capitalizeFirstLetter(data['to_payment_type']);
-    final description = data['Description'];
+    final fromPaymentType = _capitalizeFirstLetter(data?['from_payment_type']);
+    final toPaymentType = _capitalizeFirstLetter(data?['to_payment_type']);
+    final description = data?['Description'] ?? '';
 
     // Extract new fields from API response
     final fromBankName =
-        data['from_bank'] != null ? data['from_bank']['Name'] : '';
-    final toBankName = data['to_bank'] != null ? data['to_bank']['Name'] : '';
-    final userName = data['user'] != null ? data['user']['name'] : '';
+        data?['from_bank'] != null ? data?['from_bank']?['Name'] : '';
+    final toBankName =
+        data?['to_bank'] != null ? data?['to_bank']?['Name'] : '';
+    final userName = data?['user'] != null ? data?['user']?['name'] : '';
 
     return SingleChildScrollView(
       child: Padding(
@@ -64,19 +65,19 @@ class ConversionDetailContent extends StatelessWidget {
                   DetailRow(label: 'Transaction Date', value: formattedDate),
                   const Divider(),
                   DetailRow(label: 'From Payment Type', value: fromPaymentType),
-                  if (data['from_bank_id'] != "0") ...[
+                  if (data?['from_bank_id'] != "0") ...[
                     const Divider(),
                     DetailRow(label: 'From Bank', value: fromBankName),
                   ],
                   const Divider(),
                   DetailRow(label: 'To Payment Type', value: toPaymentType),
-                  if (data['to_bank_id'] != "0") ...[
+                  if (data?['to_bank_id'] != "0") ...[
                     const Divider(),
                     DetailRow(label: 'To Bank', value: toBankName),
                   ],
                   const Divider(),
                   DetailRow(label: 'Processed By', value: userName),
-                  if (description.isNotEmpty) ...[
+                  if (description != null && description.isNotEmpty) ...[
                     const Divider(),
                     DetailRow(label: 'Description', value: description),
                   ],
