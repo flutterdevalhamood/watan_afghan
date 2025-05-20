@@ -14,6 +14,7 @@ import '../util/snack.dart';
 
 class AuthController with ChangeNotifier {
   final token = AuthRepo.token;
+  String? contactNumber;
 
   Future<void> login(String email, String password) async {
     showCircle();
@@ -116,6 +117,7 @@ class AuthController with ChangeNotifier {
         file: imageFile,
       );
       AuthRepo.user = name;
+      AuthRepo.contact = contactNumber;
       notifyListeners();
       return true;
     } catch (e) {
