@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:sample/src/models/user_model.dart';
 import 'package:sample/src/util/app_navigation.dart';
 import 'package:sample/src/util/app_routes.dart';
 
@@ -15,6 +16,7 @@ import '../util/snack.dart';
 class AuthController with ChangeNotifier {
   final token = AuthRepo.token;
   String? contactNumber;
+  UserData? userData;
 
   Future<void> login(String email, String password) async {
     showCircle();
@@ -26,22 +28,21 @@ class AuthController with ChangeNotifier {
       );
 
       if (loginResponse.IsSuccess == true) {
-        final data = loginResponse.Data;
+        userData = loginResponse.Data;
         AuthRepo.token = loginResponse.Token;
         AuthRepo.loginId = loginResponse.Data?.id;
         AuthRepo.user = loginResponse.Data?.name;
         AuthRepo.contact = loginResponse.Data?.contactNumber;
         String? roleName;
-        if (data?.roles != null) {
-          roleName = data?.roles?.Name;
+        if (userData?.roles != null) {
+          roleName = userData?.roles?.Name;
         }
         AuthRepo.role = roleName;
-
+        notifyListeners();
         NavigationService().pushNavigation(
           Screenroutes.dashboard,
           arguments: {'role': roleName},
         );
-        notifyListeners();
       } else {
         showErrorSnack(Messages.authenticationFailure);
       }

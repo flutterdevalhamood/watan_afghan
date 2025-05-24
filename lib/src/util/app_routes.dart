@@ -3,6 +3,8 @@ import 'package:sample/src/screens/change_password_screen.dart';
 import 'package:sample/src/screens/currencyConversions/currency_conversion_data_screen.dart';
 import 'package:sample/src/screens/currencyConversions/currency_conversion_detail_screen.dart';
 import 'package:sample/src/screens/currencyConversions/currency_conversion_list_screen.dart';
+import 'package:sample/src/screens/customer/customer_data_screen.dart';
+import 'package:sample/src/screens/customer/customer_list_screen.dart';
 import 'package:sample/src/screens/expenses/expense_screen.dart';
 import 'package:sample/src/screens/financialTransactions/financial_transactions_screen.dart';
 import 'package:sample/src/screens/investorTransactions/investor_transaction_data_screen.dart';
@@ -47,6 +49,11 @@ class Screenroutes {
       "currencyConversionDataScreen";
   static const String currencyConversionDetailScreen =
       "currencyConversionDetailScreen";
+
+  //customer
+  static const String customerListScreen = "customerListScreen";
+  static const String customerDataScreen = "customerDataScreen";
+  static const String customerDetailScreen = "customerDetailScreen";
 
   static Route<dynamic>? routes(RouteSettings settings) {
     StringConstants.currentRoute = settings.name ?? "";
@@ -200,6 +207,34 @@ class Screenroutes {
           ),
           builder: (BuildContext context) {
             return CurrencyConversionDetailScreen(id: conversionId);
+          },
+        );
+
+      //customer
+      case Screenroutes.customerListScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(name: Screenroutes.customerListScreen),
+          builder: (BuildContext context) {
+            return CustomerListScreen();
+          },
+        );
+
+      // case Screenroutes.customerDetailScreen:
+      //   final data = settings.arguments as Map<String, dynamic>?;
+      //   return MaterialPageRoute(
+      //     settings: const RouteSettings(
+      //       name: Screenroutes.customerDetailScreen,
+      //     ),
+      //     builder: (BuildContext context) {
+      //       return CustomerDetailScreen(transaction: data);
+      //     },
+      //   );
+
+      case Screenroutes.customerDataScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(name: Screenroutes.customerDataScreen),
+          builder: (BuildContext context) {
+            return CustomerDataScreen();
           },
         );
     }

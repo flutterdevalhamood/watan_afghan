@@ -1,6 +1,5 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:sample/main.dart';
 import 'package:sample/src/models/user_model.dart';
 import 'package:sample/src/providers/login_controller.dart';
@@ -27,6 +26,9 @@ class _DrawerWidgetState extends State<DrawerWidget> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<AuthController>(context, listen: false);
+    });
     _authController.addListener(_updateUser);
   }
 
@@ -37,7 +39,12 @@ class _DrawerWidgetState extends State<DrawerWidget> {
   }
 
   void _updateUser() {
-    setState(() {});
+    if (mounted) {
+      setState(() {
+        _currentUser = _authController.userData;
+        print('User data updated: $_currentUser');
+      });
+    }
   }
 
   void _logout() async {
@@ -96,8 +103,8 @@ class _DrawerWidgetState extends State<DrawerWidget> {
     }
   }
 
-  Widget _buildProfileImage() {
-    if (_currentUser?.imageUrl != null && _currentUser!.imageUrl!.isNotEmpty) {
+  Widget _buildProfileImage(String? imageUrl) {
+    if (imageUrl != null && imageUrl.isNotEmpty) {
       return Hero(
         tag: 'profile-image',
         child: Container(
@@ -113,10 +120,8 @@ class _DrawerWidgetState extends State<DrawerWidget> {
               ),
             ],
             image: DecorationImage(
-              image:
-                  _currentUser!.imageUrl!.startsWith('http')
-                      ? NetworkImage(_currentUser!.imageUrl!) as ImageProvider
-                      : FileImage(File(_currentUser!.imageUrl!)),
+              image: NetworkImage(imageUrl),
+
               fit: BoxFit.cover,
             ),
           ),
@@ -145,201 +150,229 @@ class _DrawerWidgetState extends State<DrawerWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Drawer(
-      elevation: 10,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(
-          topRight: Radius.circular(20),
-          bottomRight: Radius.circular(20),
-        ),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [primaryColor, secondaryColor],
+    return Consumer<AuthController>(
+      builder: (context, authController, child) {
+        final imageUrl = authController.userData?.imageUrl;
+        return Drawer(
+          elevation: 10,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.only(
+              topRight: Radius.circular(20),
+              bottomRight: Radius.circular(20),
+            ),
           ),
-        ),
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            InkWell(
-              onTap: () {
-                NavigationService().pushNavigation(
-                  Screenroutes.profileUpdateScreen,
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
-                child: Row(
-                  children: [
-                    // User Avatar - With actual profile image
-                    _buildProfileImage(),
-                    const SizedBox(width: 16),
-                    // User Info
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            // _isLoading
-                            //     ? 'Loading...'
-                            //     :
-                            'Hi ${AuthRepo.user ?? 'User'}',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [primaryColor, secondaryColor],
+              ),
+            ),
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                InkWell(
+                  onTap: () {
+                    NavigationService().pushNavigation(
+                      Screenroutes.profileUpdateScreen,
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
+                    child: Row(
+                      children: [
+                        // User Avatar - With actual profile image
+                        _buildProfileImage(imageUrl),
+                        const SizedBox(width: 16),
+                        // User Info
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                // _isLoading
+                                //     ? 'Loading...'
+                                //     :
+                                'Hi ${AuthRepo.user ?? 'User'}',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              // Show contact number if available
+                              if (_currentUser?.role_id != null && !_isLoading)
+                                Text(
+                                  _currentUser!.role_id!,
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.9),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              SizedBox(height: 4),
+                              // Role Badge
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  '${AuthRepo.role}',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          SizedBox(height: 4),
-                          // Show contact number if available
-                          if (_currentUser?.role_id != null && !_isLoading)
-                            Text(
-                              _currentUser!.role_id!,
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.9),
-                                fontSize: 12,
-                              ),
-                            ),
-                          SizedBox(height: 4),
-                          // Role Badge
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.3),
-                                width: 1,
-                              ),
-                            ),
-                            child: Text(
-                              '${AuthRepo.role}',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 11,
-                              ),
-                            ),
+                        ),
+                        // Edit profile icon
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            shape: BoxShape.circle,
                           ),
-                        ],
-                      ),
+                          child: Icon(
+                            Icons.edit,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                        ),
+                      ],
                     ),
-                    // Edit profile icon
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(Icons.edit, color: Colors.white, size: 16),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-            // Decorative Divider
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Divider(
-                color: Colors.white.withOpacity(0.2),
-                thickness: 1,
-              ),
-            ),
-            const SizedBox(height: 5), // Reduced spacing
-            // Menu Items - More compact
-            _buildMenuItem(
-              context: context,
-              icon: Icons.dashboard_rounded,
-              title: 'Dashboard',
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            // New menu item for Profile Update
-            _buildMenuItem(
-              context: context,
-              icon: Icons.person,
-              title: 'My Profile',
-              onTap: () {
-                Navigator.pop(context);
-                NavigationService().pushNavigation(
-                  Screenroutes.profileUpdateScreen,
-                );
-              },
-            ),
-            _buildMenuItem(
-              context: context,
-              icon: Icons.shopping_bag,
-              title: 'Purchases',
-              onTap: () {
-                NavigationService().pushNavigation(Screenroutes.purchaseScreen);
-              },
-            ),
-            _buildMenuItem(
-              context: context,
-              icon: Icons.shop,
-              title: 'Sales',
-              onTap: () {
-                NavigationService().pushNavigation(Screenroutes.salesScreen);
-              },
-            ),
-            _buildMenuItem(
-              context: context,
-              icon: Icons.money,
-              title: 'Expenses',
-              onTap: () {
-                NavigationService().pushNavigation(Screenroutes.expenseScreen);
-              },
-            ),
-            _buildMenuItem(
-              context: context,
-              icon: Icons.monetization_on,
-              title: 'Financial Transactions',
-              onTap: () {
-                NavigationService().pushNavigation(
-                  Screenroutes.financialTransactions,
-                );
-              },
-            ),
+                // Decorative Divider
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Divider(
+                    color: Colors.white.withOpacity(0.2),
+                    thickness: 1,
+                  ),
+                ),
+                const SizedBox(height: 5), // Reduced spacing
+                // Menu Items - More compact
+                _buildMenuItem(
+                  context: context,
+                  icon: Icons.dashboard_rounded,
+                  title: 'Dashboard',
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
+                ),
+                // New menu item for Profile Update
+                _buildMenuItem(
+                  context: context,
+                  icon: Icons.person,
+                  title: 'My Profile',
+                  onTap: () {
+                    Navigator.pop(context);
+                    NavigationService().pushNavigation(
+                      Screenroutes.profileUpdateScreen,
+                    );
+                  },
+                ),
+                _buildMenuItem(
+                  context: context,
+                  icon: Icons.person,
+                  title: 'Customers',
+                  onTap: () {
+                    Navigator.pop(context);
+                    NavigationService().pushNavigation(
+                      Screenroutes.customerListScreen,
+                    );
+                  },
+                ),
+                _buildMenuItem(
+                  context: context,
+                  icon: Icons.shopping_bag,
+                  title: 'Purchases',
+                  onTap: () {
+                    NavigationService().pushNavigation(
+                      Screenroutes.purchaseScreen,
+                    );
+                  },
+                ),
+                _buildMenuItem(
+                  context: context,
+                  icon: Icons.shop,
+                  title: 'Sales',
+                  onTap: () {
+                    NavigationService().pushNavigation(
+                      Screenroutes.salesScreen,
+                    );
+                  },
+                ),
+                _buildMenuItem(
+                  context: context,
+                  icon: Icons.money,
+                  title: 'Expenses',
+                  onTap: () {
+                    NavigationService().pushNavigation(
+                      Screenroutes.expenseScreen,
+                    );
+                  },
+                ),
+                _buildMenuItem(
+                  context: context,
+                  icon: Icons.monetization_on,
+                  title: 'Financial Transactions',
+                  onTap: () {
+                    NavigationService().pushNavigation(
+                      Screenroutes.financialTransactions,
+                    );
+                  },
+                ),
 
-            _buildMenuItem(
-              context: context,
-              icon: Icons.lock_reset,
-              title: 'Change Password',
-              onTap: () {
-                NavigationService().pushNavigation(Screenroutes.changePassword);
-              },
+                _buildMenuItem(
+                  context: context,
+                  icon: Icons.lock_reset,
+                  title: 'Change Password',
+                  onTap: () {
+                    NavigationService().pushNavigation(
+                      Screenroutes.changePassword,
+                    );
+                  },
+                ),
+                // Added height to push logout to bottom
+                SizedBox(height: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Divider(
+                    color: Colors.white.withOpacity(0.2),
+                    thickness: 1,
+                  ),
+                ),
+                _buildMenuItem(
+                  context: context,
+                  icon: Icons.logout_rounded,
+                  title: 'Logout',
+                  isLogout: true,
+                  onTap: () {
+                    _logout();
+                  },
+                ),
+                const SizedBox(height: 16), // Reduced padding at bottom
+              ],
             ),
-            // Added height to push logout to bottom
-            SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Divider(
-                color: Colors.white.withOpacity(0.2),
-                thickness: 1,
-              ),
-            ),
-            _buildMenuItem(
-              context: context,
-              icon: Icons.logout_rounded,
-              title: 'Logout',
-              isLogout: true,
-              onTap: () {
-                _logout();
-              },
-            ),
-            const SizedBox(height: 16), // Reduced padding at bottom
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 

@@ -142,4 +142,49 @@ abstract class RestClient {
   Future<dynamic> getAdminDashboardData({
     @Header("Authorization") String? token,
   });
+
+  //customerregistration
+  @GET('/api/Customer/paginate/{page}/{limit}')
+  Future<dynamic> getCustomer(
+    @Path("page") int page,
+    @Path("limit") int limit,
+    @Header("Authorization") String? token,
+  );
+
+  @POST('/api/Customer')
+  @FormUrlEncoded()
+  Future<dynamic> postCustomerRegistration({
+    @Header("Authorization") String? token,
+    @Field("Name") String? name,
+    @Field("Representative") String? representative,
+    @Field("company_type_id") int? companyTypeId,
+    @Field("registrationDate") String? registrationDate,
+    @Field("payment_type_id") int? paymentTypeId,
+    @Field("to_payment_type") String? toPaymentType,
+    @Field("openingBalance") int? openingBalance,
+    @Field("openingBalanceAsOfDate") String? openingBalanceAsOfDate,
+    @Field("Mobile") String? mobile,
+    @Field("Phone") String? phone,
+    @Field("Email") String? email,
+    @Field("Address") String? address,
+    @Field("region_id") int? regionId,
+    @Field("postCode") String? postCode,
+  });
+
+  @GET('/api/CustomerDetail/{id}')
+  Future<dynamic> getCustomerDetail({
+    @Path("id") int? id,
+    @Header("Authorization") String? token,
+  });
+
+  @GET('/api/getCustomerBaseList')
+  Future<dynamic> getCustomerBaseList({@Header("Authorization") String? token});
+
+  @POST('/api/CustomerDelete')
+  @FormUrlEncoded()
+  Future<dynamic> deleteCustomer({
+    @Header("Authorization") String? token,
+    @Field("id") int? id,
+    @Field("deleteDescription") String? description,
+  });
 }

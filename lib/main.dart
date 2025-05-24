@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sample/src/BaseScreen.dart';
 import 'package:sample/src/providers/currency_conversion_controller.dart';
+import 'package:sample/src/providers/customer_controller.dart';
 import 'package:sample/src/providers/dashboard_controller.dart';
 import 'package:sample/src/providers/investor_transaction_controller.dart';
 import 'package:sample/src/providers/login_controller.dart';
@@ -28,6 +29,7 @@ void main() async {
           create: (context) => CurrencyConversionController(),
         ),
         ChangeNotifierProvider(create: (context) => DashboardController()),
+        ChangeNotifierProvider(create: (context) => CustomerController()),
       ],
       child: const BaseScreen(),
     ),
