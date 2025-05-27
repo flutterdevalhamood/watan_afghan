@@ -237,7 +237,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
     if (picked != null) {
       setState(() {
         controller.text =
-            "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
+            "${picked.year}/${picked.month.toString().padLeft(2, '0')}/${picked.day.toString().padLeft(2, '0')}}";
       });
     }
   }
