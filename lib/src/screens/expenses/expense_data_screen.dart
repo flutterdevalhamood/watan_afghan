@@ -14,18 +14,16 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
   // Form values
   String? selectedSupplier;
   String? selectedReferenceNumber;
+  String? selectedCurrency = 'AED'; // Added currency selection
   String invoiceNumber = "ECFT-0087";
   DateTime invoiceDate = DateTime.now();
 
+  // Currency options
+  final List<String> currencies = ['AED', 'USD', 'EUR'];
+
   // Payment related fields
   String? selectedPaymentType = 'Cash';
-  final List<String> paymentTypes = [
-    'Cash',
-    'Bank Transfer',
-    'Check',
-    'Credit Card',
-    'Online Payment',
-  ];
+  final List<String> paymentTypes = ['Cash', 'Bank Transfer', 'Check'];
   double paidAmount = 0.0;
   double roundOff = 0.0;
   double balanceAmount = 0.0;
@@ -37,12 +35,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
   String chequeRefNumber = '';
 
   // Bank options
-  final List<String> bankNames = [
-    '--Select Bank Name--',
-    'Bank 1',
-    'Bank 2',
-    'Bank 3',
-  ];
+  final List<String> bankNames = ['--Select Bank Name--', 'Bank 1'];
 
   // File upload
   String? selectedFile = 'No file chosen';
@@ -50,19 +43,24 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
   // Product table data
   List<SalesItem> salesItems = [SalesItem()];
 
-  // Totals
+  // Totals - Modified to include manual subtotal entry
   double subtotal = 0.0;
   double vatAmount = 0.0;
   double grandTotal = 0.0;
-  final double vatRate = 0.05; // 5% VAT
+  double selectedVatRate = 0.05; // Default 5% VAT
+
+  // Controllers for manual entry
+  final TextEditingController subtotalController = TextEditingController(
+    text: '0.0',
+  );
+
+  // VAT options
+  final List<double> vatRates = [0.00, 0.05]; // 0% and 5%
+  final List<String> vatLabels = ['0%', '5%'];
 
   // Dropdown options
-  final List<String> customers = [
-    '--Select Customer--',
-    'Customer 1',
-    'Customer 2',
-    'Customer 3',
-  ];
+  final List<String> customers = ['--Select Customer--', 'Customer 1'];
+
   @override
   void initState() {
     super.initState();
@@ -70,12 +68,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     _updateTotals();
   }
 
-  final List<String> products = [
-    'Product',
-    'Product 1',
-    'Product 2',
-    'Product 3',
-  ];
+  final List<String> products = ['Product', 'Product 1'];
   final List<String> units = ['UNIT', 'PCS', 'KG', 'METER'];
 
   // Controller for Terms and Customer Note
@@ -156,7 +149,40 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                           },
                           validator: (value) {
                             if (value == null || value == customers[0]) {
-                              return 'Please select a customer';
+                              return 'Please select a supplier';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Currency Dropdown - Added
+                      _buildLabeledField(
+                        'Currency:',
+                        required: true,
+                        child: DropdownButtonFormField<String>(
+                          decoration: const InputDecoration(
+                            hintText: 'Select Currency',
+                          ),
+                          value: selectedCurrency,
+                          items:
+                              currencies
+                                  .map(
+                                    (item) => DropdownMenuItem<String>(
+                                      value: item,
+                                      child: Text(item),
+                                    ),
+                                  )
+                                  .toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              selectedCurrency = value;
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null) {
+                              return 'Please select a currency';
                             }
                             return null;
                           },
@@ -186,7 +212,8 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                           ),
                         ),
                       ),
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
+
                       _buildLabeledField(
                         'Reference Number:',
                         required: true,
@@ -223,7 +250,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
 
                 const SizedBox(height: 20),
 
-                // Products Section
+                // Products Section - Modified with manual subtotal entry and VAT selection
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
@@ -242,9 +269,6 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Warning removed
-                      const SizedBox(height: 8),
-
                       // Products Table Header
                       Container(
                         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -271,7 +295,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                         ),
                       ),
 
-                      // Products Table Rows - Vertical layout to avoid overflow
+                      // Products Table Rows
                       ListView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
@@ -310,83 +334,67 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                                   ),
 
                                   const SizedBox(height: 12),
-
-                                  // Total for this item
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    color: Colors.grey.shade100,
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        const Text(
-                                          'Item Total:',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        Text(
-                                          '${salesItems[index].total.toStringAsFixed(2)}',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
+                                  // Manual Subtotal Entry - Added
+                                  _buildLabeledField(
+                                    'Subtotal:',
+                                    required: true,
+                                    child: TextFormField(
+                                      controller: subtotalController,
+                                      keyboardType: TextInputType.number,
+                                      decoration: InputDecoration(
+                                        hintText: 'Enter subtotal amount',
+                                        prefixText:
+                                            '${selectedCurrency ?? 'AED'} ',
+                                      ),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          subtotal =
+                                              double.tryParse(value) ?? 0.0;
+                                          _calculateGrandTotal();
+                                        });
+                                      },
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Please enter subtotal amount';
+                                        }
+                                        return null;
+                                      },
                                     ),
                                   ),
 
-                                  Row(
-                                    children: [
-                                      // Quantity TextField
-                                      Expanded(
-                                        child: _buildLabeledField(
-                                          'Quantity:',
-                                          required: true,
-                                          child: TextFormField(
-                                            initialValue:
-                                                salesItems[index].quantity
-                                                    .toString(),
-                                            keyboardType: TextInputType.number,
-                                            onChanged: (value) {
-                                              setState(() {
-                                                salesItems[index].quantity =
-                                                    int.tryParse(value) ?? 0;
-                                                _calculateTotal(index);
-                                                _updateTotals();
-                                              });
-                                            },
-                                          ),
-                                        ),
-                                      ),
+                                  const SizedBox(height: 16),
 
-                                      const SizedBox(width: 16),
-
-                                      // Price TextField
-                                      Expanded(
-                                        child: _buildLabeledField(
-                                          'Price:',
-                                          required: true,
-                                          child: TextFormField(
-                                            initialValue:
-                                                salesItems[index].price
-                                                    .toString(),
-                                            keyboardType: TextInputType.number,
-                                            onChanged: (value) {
-                                              setState(() {
-                                                salesItems[index].price =
-                                                    double.tryParse(value) ??
-                                                    0.0;
-                                                _calculateTotal(index);
-                                                _updateTotals();
-                                              });
-                                            },
-                                          ),
-                                        ),
+                                  // VAT Selection - Modified
+                                  _buildLabeledField(
+                                    'VAT Rate:',
+                                    required: true,
+                                    child: DropdownButtonFormField<double>(
+                                      decoration: const InputDecoration(
+                                        hintText: 'Select VAT Rate',
                                       ),
-                                    ],
+                                      value: selectedVatRate,
+                                      items: List.generate(vatRates.length, (
+                                        index,
+                                      ) {
+                                        return DropdownMenuItem<double>(
+                                          value: vatRates[index],
+                                          child: Text(vatLabels[index]),
+                                        );
+                                      }),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          selectedVatRate = value ?? 0.05;
+                                          _calculateGrandTotal();
+                                        });
+                                      },
+                                      validator: (value) {
+                                        if (value == null) {
+                                          return 'Please select VAT rate';
+                                        }
+                                        return null;
+                                      },
+                                    ),
                                   ),
-
-                                  const SizedBox(height: 12),
 
                                   // Description TextField
                                   _buildLabeledField(
@@ -410,9 +418,6 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
 
                       const SizedBox(height: 16),
 
-                      // Description TextField removed (moved into each item card)
-                      const SizedBox(height: 16),
-
                       // Totals Section
                       Container(
                         padding: const EdgeInsets.all(8),
@@ -424,15 +429,15 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                           children: [
                             _buildTotalRow(
                               'Subtotal:',
-                              subtotal.toStringAsFixed(2),
+                              '${selectedCurrency ?? 'AED'} ${subtotal.toStringAsFixed(2)}',
                             ),
                             _buildTotalRow(
-                              'VAT (5%):',
-                              vatAmount.toStringAsFixed(2),
+                              'VAT (${(selectedVatRate * 100).toInt()}%):',
+                              '${selectedCurrency ?? 'AED'} ${vatAmount.toStringAsFixed(2)}',
                             ),
                             _buildTotalRow(
                               'Grand Total:',
-                              grandTotal.toStringAsFixed(2),
+                              '${selectedCurrency ?? 'AED'} ${grandTotal.toStringAsFixed(2)}',
                               isBold: true,
                             ),
                           ],
@@ -444,7 +449,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
 
                 const SizedBox(height: 20),
 
-                // Payment Details Section
+                // Payment Details Section - Modified
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
@@ -495,6 +500,12 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                           onChanged: (value) {
                             setState(() {
                               selectedPaymentType = value;
+                              // Reset bank fields when payment type changes
+                              if (value == 'Cash') {
+                                selectedBankName = null;
+                                accountNumber = '';
+                                chequeRefNumber = '';
+                              }
                             });
                           },
                           validator: (value) {
@@ -507,12 +518,9 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Conditional fields based on payment type
-                      if (selectedPaymentType == 'Bank Transfer')
-                        _buildBankTransferFields(isMobile),
-
-                      if (selectedPaymentType == 'Check')
-                        _buildCheckFields(isMobile),
+                      // Conditional fields based on payment type - Modified logic
+                      if (selectedPaymentType != 'Cash')
+                        _buildPaymentSpecificFields(isMobile),
 
                       // Paid Amount field
                       _buildLabeledField(
@@ -521,9 +529,9 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                         child: TextFormField(
                           controller: paidAmountController,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             hintText: 'Enter paid amount',
-                            prefixText: '\$',
+                            prefixText: '${selectedCurrency ?? 'AED'} ',
                           ),
                           onChanged: (value) {
                             double enteredAmount =
@@ -547,11 +555,11 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                       _buildLabeledField(
                         'Round Off:',
                         child: TextFormField(
-                          readOnly: true, // Auto-calculated
+                          readOnly: true,
                           initialValue: roundOff.toStringAsFixed(2),
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             hintText: '0.00',
-                            prefixText: '\$',
+                            prefixText: '${selectedCurrency ?? 'AED'} ',
                           ),
                         ),
                       ),
@@ -561,12 +569,12 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                       _buildLabeledField(
                         'Balance:',
                         child: TextFormField(
-                          readOnly: true, // Auto-calculated
+                          readOnly: true,
                           initialValue: balanceAmount.toStringAsFixed(2),
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             hintText: '0.00',
-                            prefixText: '\$',
-                            fillColor: Color(0xFFFFEEEE),
+                            prefixText: '${selectedCurrency ?? 'AED'} ',
+                            fillColor: const Color(0xFFFFEEEE),
                             filled: true,
                           ),
                           style: TextStyle(
@@ -579,9 +587,8 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
 
                       const SizedBox(height: 16),
 
-                      // File Upload Section
-                      if (selectedPaymentType == 'Bank Transfer' ||
-                          selectedPaymentType == 'Check')
+                      // File Upload Section - only for non-cash payments
+                      if (selectedPaymentType != 'Cash')
                         _buildFileUploadSection(),
                     ],
                   ),
@@ -599,6 +606,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                       label: const Text('Cancel'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 12,
@@ -617,6 +625,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                       label: const Text('Save'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.teal,
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,
                           vertical: 12,
@@ -641,13 +650,13 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     );
   }
 
-  // Build Bank Transfer Fields - responsive layout
-  Widget _buildBankTransferFields(bool isMobile) {
-    if (isMobile) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Bank Name dropdown
+  // Build Payment Specific Fields - New method for cleaner logic
+  Widget _buildPaymentSpecificFields(bool isMobile) {
+    return Column(
+      children: [
+        // Bank Name - Required for Bank Transfer and Check
+        if (selectedPaymentType == 'Bank Transfer' ||
+            selectedPaymentType == 'Check')
           _buildLabeledField(
             'Bank Name:',
             required: true,
@@ -676,9 +685,13 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
               },
             ),
           ),
+
+        if (selectedPaymentType == 'Bank Transfer' ||
+            selectedPaymentType == 'Check')
           const SizedBox(height: 16),
 
-          // Account Number
+        // Account Number - For Bank Transfer
+        if (selectedPaymentType == 'Bank Transfer')
           _buildLabeledField(
             'Account Number:',
             required: true,
@@ -701,9 +714,11 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
               },
             ),
           ),
-          const SizedBox(height: 16),
 
-          // Transfer Date
+        if (selectedPaymentType == 'Bank Transfer') const SizedBox(height: 16),
+
+        // Transfer or Deposit Date - For Bank Transfer
+        if (selectedPaymentType == 'Bank Transfer')
           _buildLabeledField(
             'Transfer or Deposit Date:',
             required: true,
@@ -728,150 +743,11 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
-        ],
-      );
-    } else {
-      // Desktop/Tablet layout - two columns
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Bank Name dropdown
-              Expanded(
-                child: _buildLabeledField(
-                  'Bank Name:',
-                  required: true,
-                  child: DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(
-                      hintText: 'Select Bank Name',
-                    ),
-                    value: selectedBankName,
-                    items:
-                        bankNames
-                            .map(
-                              (item) => DropdownMenuItem<String>(
-                                value: item,
-                                child: Text(item),
-                              ),
-                            )
-                            .toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedBankName = value;
-                      });
-                    },
-                    validator: (value) {
-                      if (value == null || value == bankNames[0]) {
-                        return 'Please select a bank';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
 
-              // Account Number
-              Expanded(
-                child: _buildLabeledField(
-                  'Account Number:',
-                  required: true,
-                  child: TextFormField(
-                    initialValue: accountNumber,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      hintText: 'Enter Account Number',
-                    ),
-                    onChanged: (value) {
-                      setState(() {
-                        accountNumber = value;
-                      });
-                    },
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter account number';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
+        if (selectedPaymentType == 'Bank Transfer') const SizedBox(height: 16),
 
-          // Transfer Date
-          _buildLabeledField(
-            'Transfer or Deposit Date:',
-            required: true,
-            child: GestureDetector(
-              onTap: () => _selectDate(context, isTransferDate: true),
-              child: AbsorbPointer(
-                child: TextFormField(
-                  decoration: const InputDecoration(
-                    hintText: 'Select Transfer Date',
-                    suffixIcon: Icon(Icons.calendar_today),
-                  ),
-                  controller: TextEditingController(
-                    text: DateFormat('dd/MM/yyyy').format(transferDate),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please select transfer date';
-                    }
-                    return null;
-                  },
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-      );
-    }
-  }
-
-  // Build Check Fields - responsive layout
-  Widget _buildCheckFields(bool isMobile) {
-    if (isMobile) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Bank Name dropdown
-          _buildLabeledField(
-            'Bank Name:',
-            required: true,
-            child: DropdownButtonFormField<String>(
-              decoration: const InputDecoration(hintText: 'Select Bank Name'),
-              value: selectedBankName,
-              items:
-                  bankNames
-                      .map(
-                        (item) => DropdownMenuItem<String>(
-                          value: item,
-                          child: Text(item),
-                        ),
-                      )
-                      .toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedBankName = value;
-                });
-              },
-              validator: (value) {
-                if (value == null || value == bankNames[0]) {
-                  return 'Please select a bank';
-                }
-                return null;
-              },
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Cheque or Ref Number
+        // Cheque or Reference Number - For Check
+        if (selectedPaymentType == 'Check')
           _buildLabeledField(
             'Cheque or Ref. Number:',
             required: true,
@@ -893,74 +769,10 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
               },
             ),
           ),
-          const SizedBox(height: 16),
-        ],
-      );
-    } else {
-      // Desktop/Tablet layout - two columns
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Bank Name dropdown
-          Expanded(
-            child: _buildLabeledField(
-              'Bank Name:',
-              required: true,
-              child: DropdownButtonFormField<String>(
-                decoration: const InputDecoration(hintText: 'Select Bank Name'),
-                value: selectedBankName,
-                items:
-                    bankNames
-                        .map(
-                          (item) => DropdownMenuItem<String>(
-                            value: item,
-                            child: Text(item),
-                          ),
-                        )
-                        .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    selectedBankName = value;
-                  });
-                },
-                validator: (value) {
-                  if (value == null || value == bankNames[0]) {
-                    return 'Please select a bank';
-                  }
-                  return null;
-                },
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
 
-          // Cheque or Ref Number
-          Expanded(
-            child: _buildLabeledField(
-              'Cheque or Ref. Number:',
-              required: true,
-              child: TextFormField(
-                initialValue: chequeRefNumber,
-                decoration: const InputDecoration(
-                  hintText: 'Enter Cheque or Reference Number',
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    chequeRefNumber = value;
-                  });
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter cheque or reference number';
-                  }
-                  return null;
-                },
-              ),
-            ),
-          ),
-        ],
-      );
-    }
+        if (selectedPaymentType == 'Check') const SizedBox(height: 16),
+      ],
+    );
   }
 
   // Build File Upload Section
@@ -1006,7 +818,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     );
   }
 
-  // Function to select date - with option for both invoice and transfer dates
+  // Function to select date
   Future<void> _selectDate(
     BuildContext context, {
     bool isTransferDate = false,
@@ -1034,19 +846,16 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
       salesItems[index].total =
           salesItems[index].quantity * salesItems[index].price;
       salesItems[index].subtotal = salesItems[index].total;
-      // Apply VAT to this item
-      salesItems[index].vatAmount = salesItems[index].subtotal * vatRate;
+      salesItems[index].vatAmount =
+          salesItems[index].subtotal * selectedVatRate;
     });
   }
 
-  // Function to update grand totals
-  void _updateTotals() {
+  // Function to calculate grand total from manual subtotal entry
+  void _calculateGrandTotal() {
     setState(() {
-      // Calculate subtotal (sum of all item totals)
-      subtotal = salesItems.fold(0, (sum, item) => sum + item.total);
-
-      // Calculate VAT amount
-      vatAmount = subtotal * vatRate;
+      // Calculate VAT amount from manual subtotal
+      vatAmount = subtotal * selectedVatRate;
 
       // Calculate grand total
       grandTotal = subtotal + vatAmount;
@@ -1054,6 +863,13 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
       // Update balance amount
       _calculateRoundOffAndBalance();
     });
+  }
+
+  // Function to update totals (keep for compatibility)
+  void _updateTotals() {
+    // This method is kept for compatibility but grand total calculation
+    // is now handled by _calculateGrandTotal() when subtotal is manually entered
+    _calculateRoundOffAndBalance();
   }
 
   // Function to calculate Round Off and Balance
@@ -1072,6 +888,8 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
       balanceAmount = double.parse(balanceAmount.toStringAsFixed(2));
     });
   }
+
+  // Helper for building labeled form fields
 
   // Helper for building labeled form fields
   Widget _buildLabeledField(

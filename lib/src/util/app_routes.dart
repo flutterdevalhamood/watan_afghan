@@ -6,7 +6,8 @@ import 'package:sample/src/screens/currencyConversions/currency_conversion_detai
 import 'package:sample/src/screens/currencyConversions/currency_conversion_list_screen.dart';
 import 'package:sample/src/screens/customer/customer_data_screen.dart';
 import 'package:sample/src/screens/customer/customer_list_screen.dart';
-import 'package:sample/src/screens/expenses/expense_screen.dart';
+import 'package:sample/src/screens/expenses/expense_data_screen.dart';
+import 'package:sample/src/screens/expenses/expense_list_screen.dart';
 import 'package:sample/src/screens/financialTransactions/financial_transactions_screen.dart';
 import 'package:sample/src/screens/investorTransactions/investor_transaction_data_screen.dart';
 import 'package:sample/src/screens/investorTransactions/investor_transaction_detail_screen.dart';
@@ -64,6 +65,11 @@ class Screenroutes {
   static const String supplierDetailScreen = "supplierDetailScreen";
 
   static const String contactsScreen = "contactsScreen";
+
+  //expenses
+  static const String expenseListScreen = "expenseListScreen";
+  static const String expenseDataScreen = "expenseDataScreen";
+  static const String expenseDetailScreen = "expenseDetailScreen";
 
   static Route<dynamic>? routes(RouteSettings settings) {
     StringConstants.currentRoute = settings.name ?? "";
@@ -258,6 +264,22 @@ class Screenroutes {
           settings: const RouteSettings(name: Screenroutes.contactsScreen),
           builder: (BuildContext context) {
             return ContactsScreen();
+          },
+        );
+
+      case Screenroutes.expenseListScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(name: Screenroutes.expenseListScreen),
+          builder: (BuildContext context) {
+            return ExpenseListScreen();
+          },
+        );
+
+      case Screenroutes.expenseDataScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(name: Screenroutes.expenseDataScreen),
+          builder: (BuildContext context) {
+            return ExpenseScreen();
           },
         );
     }
