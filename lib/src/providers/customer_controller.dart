@@ -88,38 +88,68 @@ class CustomerController with ChangeNotifier {
     if (!await _checkToken()) return;
 
     isLoading = true;
+    errorMessage = null; // Clear previous errors
     notifyListeners();
 
     try {
-      final customer = await restApi.getCustomer(
+      final response = await restApi.getCustomer(
         currentPage,
         totalPages,
         _getAuthHeader(),
       );
 
-      if (customer is Map<String, dynamic>) {
-        if (customer['IsSuccess'] == true) {
-          final data = customer['Data'] as List<dynamic>?;
-          if (data != null) {
-            final newCustomerData =
-                data.map((json) => Customer.fromJson(json)).toList();
-            if (loadMore) {
-              _allCustomers.addAll(newCustomerData);
-            } else {
-              _allCustomers = newCustomerData; // Replace list on initial load
-            }
-            searchCustomers(_searchQuery);
-            hasMore = data.length == totalPages;
+      debugPrint("API Response: $response");
+
+      // Check if response is null
+      if (response == null) {
+        errorMessage = 'No response received from server';
+        return;
+      }
+
+      // Ensure response is a Map
+      if (response is! Map<String, dynamic>) {
+        errorMessage = 'Invalid response format received';
+        debugPrint('Response is not a Map: ${response.runtimeType}');
+        return;
+      }
+
+      final customer = response as Map<String, dynamic>;
+
+      // Check if the response indicates success
+      if (customer['IsSuccess'] == true) {
+        final data = customer['Data'];
+
+        if (data != null && data is List) {
+          final newCustomerData =
+              data
+                  .where((item) => item != null && item is Map<String, dynamic>)
+                  .map(
+                    (json) => Customer.fromJson(json as Map<String, dynamic>),
+                  )
+                  .toList();
+
+          if (loadMore) {
+            _allCustomers.addAll(newCustomerData);
           } else {
-            errorMessage = customer['Message'] as String?;
+            _allCustomers = newCustomerData;
           }
+
+          searchCustomers(_searchQuery);
+          hasMore = data.length == totalPages;
+
+          debugPrint('Successfully loaded ${newCustomerData.length} customers');
         } else {
-          debugPrint('API call failed: ${customer['Message']}');
+          errorMessage = 'No customer data received';
+          debugPrint('Data is null or not a List: $data');
         }
       } else {
-        debugPrint('Unexpected API response format');
+        // Handle API error response
+        errorMessage =
+            customer['Message'] as String? ?? 'Unknown error occurred';
+        debugPrint('API call failed: $errorMessage');
       }
     } catch (e) {
+      debugPrint('Exception in getCustomerData: $e');
       _handleApiError(e);
     } finally {
       isLoading = false;
@@ -137,6 +167,7 @@ class CustomerController with ChangeNotifier {
   void refresh() {
     currentPage = 1;
     hasMore = true;
+    errorMessage = null;
     _allCustomers.clear();
     _filteredCustomers.clear();
     getCustomerData();
@@ -150,22 +181,34 @@ class CustomerController with ChangeNotifier {
     notifyListeners();
 
     try {
-      final customerDetailData = await restApi.getCustomerDetail(
+      final response = await restApi.getCustomerDetail(
         id: customerId,
         token: _getAuthHeader(),
       );
 
-      if (customerDetailData['IsSuccess'] == true) {
-        final data = customerDetailData['Data'] as Map<String, dynamic>;
-        customerDetail = [data];
-        debugPrint('Assigned units fetched: ${customerDetail?.length}');
+      if (response != null && response is Map<String, dynamic>) {
+        final customerDetailData = response as Map<String, dynamic>;
+
+        if (customerDetailData['IsSuccess'] == true) {
+          final data = customerDetailData['Data'];
+          if (data != null && data is Map<String, dynamic>) {
+            customerDetail = [data];
+            debugPrint('Customer detail fetched: ${customerDetail?.length}');
+          } else {
+            _detailErrorMessage = 'Invalid customer detail data format';
+          }
+        } else {
+          _detailErrorMessage =
+              customerDetailData['Message'] as String? ??
+              'Failed to fetch customer details';
+          debugPrint('API call failed: $_detailErrorMessage');
+        }
       } else {
-        errorMessage =
-            customerDetailData['Message'] ?? 'Failed to fetch assigned units';
-        debugPrint('API call failed: $errorMessage');
+        _detailErrorMessage = 'Invalid response format';
       }
     } catch (e) {
       _handleApiError(e);
+      _detailErrorMessage = errorMessage;
     } finally {
       _isDetailLoading = false;
       notifyListeners();
@@ -179,25 +222,33 @@ class CustomerController with ChangeNotifier {
     notifyListeners();
 
     try {
-      final customerBaseData = await restApi.getCustomerBaseList(
+      final response = await restApi.getCustomerBaseList(
         token: _getAuthHeader(),
       );
 
-      if (customerBaseData['IsSuccess'] == true) {
-        companyType = List<Map<String, dynamic>>.from(
-          customerBaseData['Data']['company_type'],
-        );
-        paymentType = List<Map<String, dynamic>>.from(
-          customerBaseData['Data']['payment_type'],
-        );
-        countries = List<Map<String, dynamic>>.from(
-          customerBaseData['Data']['countries'],
-        );
-        debugPrint('Base data fetched successfully');
-      } else {
-        debugPrint('API call failed: ${customerBaseData['Message']}');
-        errorMessage =
-            customerBaseData['Message'] ?? 'Failed to fetch base data';
+      if (response != null && response is Map<String, dynamic>) {
+        final customerBaseData = response as Map<String, dynamic>;
+
+        if (customerBaseData['IsSuccess'] == true) {
+          final data = customerBaseData['Data'];
+          if (data != null && data is Map<String, dynamic>) {
+            companyType = List<Map<String, dynamic>>.from(
+              data['company_type'] ?? [],
+            );
+            paymentType = List<Map<String, dynamic>>.from(
+              data['payment_type'] ?? [],
+            );
+            countries = List<Map<String, dynamic>>.from(
+              data['countries'] ?? [],
+            );
+            debugPrint('Base data fetched successfully');
+          }
+        } else {
+          errorMessage =
+              customerBaseData['Message'] as String? ??
+              'Failed to fetch base data';
+          debugPrint('API call failed: $errorMessage');
+        }
       }
     } catch (e) {
       _handleApiError(e);
@@ -245,21 +296,26 @@ class CustomerController with ChangeNotifier {
       );
 
       // Check response
-      if (response is Map<String, dynamic> && response['IsSuccess'] == true) {
-        debugPrint("Transaction posted successfully!");
+      if (response != null &&
+          response is Map<String, dynamic> &&
+          response['IsSuccess'] == true) {
+        debugPrint("Customer registration posted successfully!");
         return true;
-      } else if (response is Map<String, dynamic>) {
+      } else if (response != null && response is Map<String, dynamic>) {
         debugPrint(
-          "Transaction failed: ${response['Message'] ?? 'Unknown error'}",
+          "Registration failed: ${response['Message'] ?? 'Unknown error'}",
         );
-        errorMessage = response['Message'] ?? 'Failed to save transaction';
+        errorMessage =
+            response['Message'] as String? ??
+            'Failed to save customer registration';
       } else {
         debugPrint("Unknown response format");
         errorMessage = 'Unexpected response format';
       }
       return false;
     } catch (e) {
-      return _handleApiError(e);
+      _handleApiError(e);
+      return false;
     }
   }
 
@@ -293,13 +349,14 @@ class CustomerController with ChangeNotifier {
       debugPrint("Delete API Response: $response");
 
       // Handle response based on your API structure
-      if (response is Map<String, dynamic>) {
+      if (response != null && response is Map<String, dynamic>) {
         if (response['IsSuccess'] == true) {
           debugPrint("Delete successful, refreshing customer list...");
           await getCustomerData();
           debugPrint("Customer list refreshed successfully");
         } else {
-          errorMessage = response['Message'] ?? 'Failed to delete customer';
+          errorMessage =
+              response['Message'] as String? ?? 'Failed to delete customer';
           debugPrint("Delete failed: $errorMessage");
         }
       } else {
