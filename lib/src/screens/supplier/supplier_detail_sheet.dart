@@ -1,7 +1,7 @@
 // Enhanced Customer Details Bottom Sheet
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sample/src/providers/customer_controller.dart';
+import 'package:sample/src/providers/supplier_controller.dart';
 import 'package:sample/src/screens/supplier/supplier_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -17,17 +17,17 @@ class SupplierDetailSheet extends StatefulWidget {
 class _SupplierDetailSheetState extends State<SupplierDetailSheet>
     with TickerProviderStateMixin {
   late TabController _tabController;
-  late CustomerController _controller;
+  late SupplierController _controller;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _controller = context.read<CustomerController>();
+    _controller = context.read<SupplierController>();
 
     // Load detailed customer data
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _controller.getCustomerDetail(widget.supplier.id);
+      _controller.getSupplierDetail(widget.supplier.id);
     });
   }
 
@@ -93,7 +93,7 @@ class _SupplierDetailSheetState extends State<SupplierDetailSheet>
 
               // Tab Content
               Expanded(
-                child: Consumer<CustomerController>(
+                child: Consumer<SupplierController>(
                   builder: (context, controller, child) {
                     if (controller.isDetailLoading) {
                       return const Center(child: CircularProgressIndicator());
@@ -104,8 +104,8 @@ class _SupplierDetailSheetState extends State<SupplierDetailSheet>
                     }
 
                     final customerData =
-                        controller.customerDetail?.isNotEmpty == true
-                            ? controller.customerDetail!.first
+                        controller.supplierDetail?.isNotEmpty == true
+                            ? controller.supplierDetail!.first
                             : null;
 
                     return TabBarView(
@@ -182,15 +182,15 @@ class _SupplierDetailSheetState extends State<SupplierDetailSheet>
                   ),
                 ),
                 const SizedBox(height: 4),
-                Consumer<CustomerController>(
+                Consumer<SupplierController>(
                   builder: (context, controller, child) {
-                    final customerData =
-                        controller.customerDetail?.isNotEmpty == true
-                            ? controller.customerDetail!.first
+                    final supplierData =
+                        controller.supplierDetail?.isNotEmpty == true
+                            ? controller.supplierDetail!.first
                             : null;
 
                     return Text(
-                      customerData?['Representative'] ?? 'Loading...',
+                      supplierData?['Representative'] ?? 'Loading...',
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 14,
@@ -403,7 +403,7 @@ class _SupplierDetailSheetState extends State<SupplierDetailSheet>
             Icons.gps_fixed,
             'Coordinates',
             data?['latitude'] != null && data?['longitude'] != null
-                ? '${data!['latitude']}, ${data!['longitude']}'
+                ? '${data!['latitude']}, ${data['longitude']}'
                 : 'Not available',
           ),
         ]),
@@ -730,7 +730,7 @@ class _SupplierDetailSheetState extends State<SupplierDetailSheet>
           ),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: () => _controller.getCustomerDetail(widget.supplier.id),
+            onPressed: () => _controller.getSupplierDetail(widget.supplier.id),
             child: const Text('Retry'),
           ),
         ],

@@ -15,6 +15,7 @@ import 'package:sample/src/screens/investorTransactions/investor_transaction_scr
 import 'package:sample/src/screens/profile_update_screen.dart';
 import 'package:sample/src/screens/purchases/purchase_screen.dart';
 import 'package:sample/src/screens/sales/sales_screen.dart';
+import 'package:sample/src/screens/supplier/supplier_data_screen.dart';
 import 'package:sample/src/screens/supplier/supplier_list_screen.dart';
 
 import '../constants/string_constants.dart';
@@ -248,7 +249,7 @@ class Screenroutes {
         return MaterialPageRoute(
           settings: const RouteSettings(name: Screenroutes.supplierDataScreen),
           builder: (BuildContext context) {
-            return SupplierListScreen();
+            return SupplierDataScreen();
           },
         );
 

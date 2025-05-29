@@ -182,7 +182,7 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          NavigationService().pushNavigation(Screenroutes.customerDataScreen);
+          NavigationService().pushNavigation(Screenroutes.supplierDataScreen);
         },
         icon: const Icon(Icons.add),
         label: const Text('Create New'),
