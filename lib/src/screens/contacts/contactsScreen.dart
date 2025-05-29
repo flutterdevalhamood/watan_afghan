@@ -12,7 +12,6 @@ class ContactsScreen extends StatefulWidget {
 class _ContactsScreenState extends State<ContactsScreen>
     with TickerProviderStateMixin {
   static const Color primaryColor = Color(0xFF6366F1);
-  static const Color secondaryColor = Color(0xFF818CF8);
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
