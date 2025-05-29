@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sample/src/screens/change_password_screen.dart';
+import 'package:sample/src/screens/contacts/contactsScreen.dart';
 import 'package:sample/src/screens/currencyConversions/currency_conversion_data_screen.dart';
 import 'package:sample/src/screens/currencyConversions/currency_conversion_detail_screen.dart';
 import 'package:sample/src/screens/currencyConversions/currency_conversion_list_screen.dart';
@@ -14,6 +15,7 @@ import 'package:sample/src/screens/investorTransactions/investor_transaction_scr
 import 'package:sample/src/screens/profile_update_screen.dart';
 import 'package:sample/src/screens/purchases/purchase_screen.dart';
 import 'package:sample/src/screens/sales/sales_screen.dart';
+import 'package:sample/src/screens/supplier/supplier_list_screen.dart';
 
 import '../constants/string_constants.dart';
 import '../screens/dashboard_screen.dart';
@@ -54,6 +56,13 @@ class Screenroutes {
   static const String customerListScreen = "customerListScreen";
   static const String customerDataScreen = "customerDataScreen";
   static const String customerDetailScreen = "customerDetailScreen";
+
+  //supplier
+  static const String supplierListScreen = "supplierListScreen";
+  static const String supplierDataScreen = "supplierDataScreen";
+  static const String supplierDetailScreen = "supplierDetailScreen";
+
+  static const String contactsScreen = "contactsScreen";
 
   static Route<dynamic>? routes(RouteSettings settings) {
     StringConstants.currentRoute = settings.name ?? "";
@@ -219,22 +228,35 @@ class Screenroutes {
           },
         );
 
-      // case Screenroutes.customerDetailScreen:
-      //   final data = settings.arguments as Map<String, dynamic>?;
-      //   return MaterialPageRoute(
-      //     settings: const RouteSettings(
-      //       name: Screenroutes.customerDetailScreen,
-      //     ),
-      //     builder: (BuildContext context) {
-      //       return CustomerDetailScreen(transaction: data);
-      //     },
-      //   );
-
       case Screenroutes.customerDataScreen:
         return MaterialPageRoute(
           settings: const RouteSettings(name: Screenroutes.customerDataScreen),
           builder: (BuildContext context) {
             return CustomerDataScreen();
+          },
+        );
+
+      case Screenroutes.supplierListScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(name: Screenroutes.supplierListScreen),
+          builder: (BuildContext context) {
+            return SupplierListScreen();
+          },
+        );
+
+      case Screenroutes.supplierDataScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(name: Screenroutes.supplierDataScreen),
+          builder: (BuildContext context) {
+            return SupplierListScreen();
+          },
+        );
+
+      case Screenroutes.contactsScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(name: Screenroutes.contactsScreen),
+          builder: (BuildContext context) {
+            return ContactsScreen();
           },
         );
     }

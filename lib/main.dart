@@ -6,6 +6,7 @@ import 'package:sample/src/providers/customer_controller.dart';
 import 'package:sample/src/providers/dashboard_controller.dart';
 import 'package:sample/src/providers/investor_transaction_controller.dart';
 import 'package:sample/src/providers/login_controller.dart';
+import 'package:sample/src/providers/supplier_controller.dart';
 import 'package:sample/src/util/shared_pref.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -30,6 +31,7 @@ void main() async {
         ),
         ChangeNotifierProvider(create: (context) => DashboardController()),
         ChangeNotifierProvider(create: (context) => CustomerController()),
+        ChangeNotifierProvider(create: (context) => SupplierController()),
       ],
       child: const BaseScreen(),
     ),

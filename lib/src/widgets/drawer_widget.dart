@@ -290,11 +290,11 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                 _buildMenuItem(
                   context: context,
                   icon: Icons.person,
-                  title: 'Customers',
+                  title: 'Contacts',
                   onTap: () {
                     Navigator.pop(context);
                     NavigationService().pushNavigation(
-                      Screenroutes.customerListScreen,
+                      Screenroutes.contactsScreen,
                     );
                   },
                 ),

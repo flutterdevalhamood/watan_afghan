@@ -2,20 +2,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sample/src/providers/customer_controller.dart';
+import 'package:sample/src/screens/supplier/supplier_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'customer_model.dart';
+class SupplierDetailSheet extends StatefulWidget {
+  final Supplier supplier;
 
-class CustomerDetailsSheet extends StatefulWidget {
-  final Customer customer;
-
-  const CustomerDetailsSheet({super.key, required this.customer});
+  const SupplierDetailSheet({super.key, required this.supplier});
 
   @override
-  State<CustomerDetailsSheet> createState() => _CustomerDetailsSheetState();
+  State<SupplierDetailSheet> createState() => _SupplierDetailSheetState();
 }
 
-class _CustomerDetailsSheetState extends State<CustomerDetailsSheet>
+class _SupplierDetailSheetState extends State<SupplierDetailSheet>
     with TickerProviderStateMixin {
   late TabController _tabController;
   late CustomerController _controller;
@@ -28,7 +27,7 @@ class _CustomerDetailsSheetState extends State<CustomerDetailsSheet>
 
     // Load detailed customer data
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _controller.getCustomerDetail(widget.customer.id);
+      _controller.getCustomerDetail(widget.supplier.id);
     });
   }
 
@@ -156,8 +155,8 @@ class _CustomerDetailsSheetState extends State<CustomerDetailsSheet>
             ),
             child: Center(
               child: Text(
-                widget.customer.name.isNotEmpty
-                    ? widget.customer.name[0].toUpperCase()
+                widget.supplier.name.isNotEmpty
+                    ? widget.supplier.name[0].toUpperCase()
                     : 'C',
                 style: const TextStyle(
                   color: Colors.white,
@@ -175,7 +174,7 @@ class _CustomerDetailsSheetState extends State<CustomerDetailsSheet>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.customer.name,
+                  widget.supplier.name,
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -202,7 +201,7 @@ class _CustomerDetailsSheetState extends State<CustomerDetailsSheet>
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'ID: ${widget.customer.id}',
+                  'ID: ${widget.supplier.id}',
                   style: TextStyle(color: Colors.grey[500], fontSize: 12),
                 ),
               ],
@@ -316,8 +315,8 @@ class _CustomerDetailsSheetState extends State<CustomerDetailsSheet>
           _buildContactRow(
             Icons.phone_android,
             'Mobile',
-            data?['Mobile'] ?? widget.customer.mobile,
-            () => _makeCall(data?['Mobile'] ?? widget.customer.mobile),
+            data?['Mobile'] ?? widget.supplier.mobile,
+            () => _makeCall(data?['Mobile'] ?? widget.supplier.mobile),
           ),
           _buildContactRow(
             Icons.phone,
@@ -731,7 +730,7 @@ class _CustomerDetailsSheetState extends State<CustomerDetailsSheet>
           ),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: () => _controller.getCustomerDetail(widget.customer.id),
+            onPressed: () => _controller.getCustomerDetail(widget.supplier.id),
             child: const Text('Retry'),
           ),
         ],

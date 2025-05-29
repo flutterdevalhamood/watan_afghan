@@ -187,4 +187,49 @@ abstract class RestClient {
     @Field("id") int? id,
     @Field("deleteDescription") String? description,
   });
+
+  //supplier
+  @GET('/api/Supplier/paginate/{page}/{limit}')
+  Future<dynamic> getSupplier(
+    @Path("page") int page,
+    @Path("limit") int limit,
+    @Header("Authorization") String? token,
+  );
+
+  @POST('/api/Supplier')
+  @FormUrlEncoded()
+  Future<dynamic> postSupplierRegistration({
+    @Header("Authorization") String? token,
+    @Field("Name") String? name,
+    @Field("Representative") String? representative,
+    @Field("company_type_id") int? companyTypeId,
+    @Field("registrationDate") String? registrationDate,
+    @Field("payment_type_id") int? paymentTypeId,
+    @Field("to_payment_type") String? toPaymentType,
+    @Field("openingBalance") int? openingBalance,
+    @Field("openingBalanceAsOfDate") String? openingBalanceAsOfDate,
+    @Field("Mobile") String? mobile,
+    @Field("Phone") String? phone,
+    @Field("Email") String? email,
+    @Field("Address") String? address,
+    @Field("region_id") int? regionId,
+    @Field("postCode") String? postCode,
+  });
+
+  @GET('/api/SupplierDetail/{id}')
+  Future<dynamic> getSupplierDetail({
+    @Path("id") int? id,
+    @Header("Authorization") String? token,
+  });
+
+  @GET('/api/getSupplierBaseList')
+  Future<dynamic> getSupplierBaseList({@Header("Authorization") String? token});
+
+  @POST('/api/SupplierDelete')
+  @FormUrlEncoded()
+  Future<dynamic> deleteSupplier({
+    @Header("Authorization") String? token,
+    @Field("id") int? id,
+    @Field("deleteDescription") String? description,
+  });
 }
