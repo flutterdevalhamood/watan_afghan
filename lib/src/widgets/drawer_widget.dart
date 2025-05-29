@@ -289,7 +289,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                 ),
                 _buildMenuItem(
                   context: context,
-                  icon: Icons.person,
+                  icon: Icons.contact_page,
                   title: 'Contacts',
                   onTap: () {
                     Navigator.pop(context);

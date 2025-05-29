@@ -13,7 +13,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
   final _formKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
 
-  // Form controllersb
+  // Form controllers
   final _companyNameController = TextEditingController();
   final _representativeController = TextEditingController();
   final _registrationDateController = TextEditingController();
@@ -26,22 +26,6 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
   final _postCodeController = TextEditingController();
   final _noteController = TextEditingController();
 
-  // Selected values
-  int? selectedCompanyTypeId;
-  int? selectedPaymentTypeId;
-  int? selectedRegionId;
-  int? selectedCountryId;
-  int? selectedStateId;
-  int? selectedCityId;
-
-  // Dropdown lists
-  List<Map<String, dynamic>> companyTypes = [];
-  List<Map<String, dynamic>> paymentTypes = [];
-  List<Map<String, dynamic>> countries = [];
-  List<Map<String, dynamic>> states = [];
-  List<Map<String, dynamic>> cities = [];
-  List<Map<String, dynamic>> regions = [];
-
   bool _isLoading = false;
 
   @override
@@ -53,13 +37,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
 
   void _initializeData() {
     final controller = Provider.of<CustomerController>(context, listen: false);
-    controller.getCustomerBaseData().then((_) {
-      setState(() {
-        companyTypes = controller.companyType ?? [];
-        paymentTypes = controller.paymentType ?? [];
-        countries = controller.countries ?? [];
-      });
-    });
+    controller.getCustomerBaseData();
   }
 
   void _setDefaultDate() {
@@ -69,149 +47,6 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
     _registrationDateController.text = formattedDate;
     _openingBalanceAsOfDateController.text = formattedDate;
     _openingBalanceController.text = "0.00";
-  }
-
-  void _onCountryChanged(int? countryId) {
-    setState(() {
-      selectedCountryId = countryId;
-      selectedStateId = null;
-      selectedCityId = null;
-      selectedRegionId = null;
-      states = [];
-      cities = [];
-      regions = [];
-
-      if (countryId != null) {
-        final country = countries.firstWhere((c) => c['id'] == countryId);
-        states = List<Map<String, dynamic>>.from(country['states'] ?? []);
-      }
-    });
-  }
-
-  void _onStateChanged(int? stateId) {
-    setState(() {
-      selectedStateId = stateId;
-      selectedCityId = null;
-      selectedRegionId = null;
-      cities = [];
-      regions = [];
-
-      if (stateId != null) {
-        final state = states.firstWhere((s) => s['id'] == stateId);
-        cities = List<Map<String, dynamic>>.from(state['cities'] ?? []);
-      }
-    });
-  }
-
-  void _onCityChanged(int? cityId) {
-    setState(() {
-      selectedCityId = cityId;
-      selectedRegionId = null;
-      regions = [];
-
-      if (cityId != null) {
-        final city = cities.firstWhere((c) => c['id'] == cityId);
-        regions = List<Map<String, dynamic>>.from(city['region'] ?? []);
-      }
-    });
-  }
-
-  // New method to handle region selection and autofill parent locations
-  void _onRegionChanged(int? regionId) {
-    if (regionId == null) {
-      setState(() {
-        selectedRegionId = null;
-      });
-      return;
-    }
-
-    // Find the region and its parent city/state/country
-    Map<String, dynamic>? foundRegion;
-    Map<String, dynamic>? parentCity;
-    Map<String, dynamic>? parentState;
-    Map<String, dynamic>? parentCountry;
-
-    // Search through all countries to find the region
-    for (var country in countries) {
-      final countryStates = List<Map<String, dynamic>>.from(
-        country['states'] ?? [],
-      );
-      for (var state in countryStates) {
-        final stateCities = List<Map<String, dynamic>>.from(
-          state['cities'] ?? [],
-        );
-        for (var city in stateCities) {
-          final cityRegions = List<Map<String, dynamic>>.from(
-            city['region'] ?? [],
-          );
-          for (var region in cityRegions) {
-            if (region['id'] == regionId) {
-              foundRegion = region;
-              parentCity = city;
-              parentState = state;
-              parentCountry = country;
-              break;
-            }
-          }
-          if (foundRegion != null) break;
-        }
-        if (foundRegion != null) break;
-      }
-      if (foundRegion != null) break;
-    }
-
-    if (foundRegion != null &&
-        parentCity != null &&
-        parentState != null &&
-        parentCountry != null) {
-      setState(() {
-        // Set the selected values
-        selectedRegionId = regionId;
-        selectedCityId = parentCity!['id'];
-        selectedStateId = parentState!['id'];
-        selectedCountryId = parentCountry!['id'];
-
-        // Populate the dropdown lists
-        states = List<Map<String, dynamic>>.from(parentCountry['states'] ?? []);
-        cities = List<Map<String, dynamic>>.from(parentState['cities'] ?? []);
-        regions = List<Map<String, dynamic>>.from(parentCity['region'] ?? []);
-      });
-    } else {
-      // If region not found, just set the region ID
-      setState(() {
-        selectedRegionId = regionId;
-      });
-    }
-  }
-
-  // Method to get all regions from all locations for the region dropdown
-  List<Map<String, dynamic>> _getAllRegions() {
-    List<Map<String, dynamic>> allRegions = [];
-
-    for (var country in countries) {
-      final countryStates = List<Map<String, dynamic>>.from(
-        country['states'] ?? [],
-      );
-      for (var state in countryStates) {
-        final stateCities = List<Map<String, dynamic>>.from(
-          state['cities'] ?? [],
-        );
-        for (var city in stateCities) {
-          final cityRegions = List<Map<String, dynamic>>.from(
-            city['region'] ?? [],
-          );
-          allRegions.addAll(cityRegions);
-        }
-      }
-    }
-
-    // Remove duplicates based on ID
-    final uniqueRegions = <int, Map<String, dynamic>>{};
-    for (var region in allRegions) {
-      uniqueRegions[region['id']] = region;
-    }
-
-    return uniqueRegions.values.toList();
   }
 
   Future<void> _selectDate(TextEditingController controller) async {
@@ -257,9 +92,9 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
       final success = await controller.postCustomerRegistration(
         name: _companyNameController.text.trim(),
         representative: _representativeController.text.trim(),
-        companyTypeId: selectedCompanyTypeId,
+        companyTypeId: controller.selectedCompanyTypeId,
         registrationDate: _registrationDateController.text,
-        paymentTypeId: selectedPaymentTypeId,
+        paymentTypeId: controller.selectedPaymentTypeId,
         openingBalance:
             int.tryParse(_openingBalanceController.text.replaceAll('.', '')) ??
             0,
@@ -268,7 +103,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
         phone: _phoneController.text.trim(),
         email: _emailController.text.trim(),
         address: _addressController.text.trim(),
-        regionId: selectedRegionId,
+        regionId: controller.selectedRegionId,
         postCode: _postCodeController.text.trim(),
       );
 
@@ -339,307 +174,308 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
           ),
         ),
       ),
-      body: Form(
-        key: _formKey,
-        child: Column(
-          children: [
-            // Form content
-            Expanded(
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  children: [
-                    // Company Information Card
-                    _buildCard(
-                      title: 'Company Information',
-                      icon: Icons.business_outlined,
+      body: Consumer<CustomerController>(
+        builder: (context, controller, child) {
+          return Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                // Form content
+                Expanded(
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
                       children: [
-                        _buildTextField(
-                          controller: _companyNameController,
-                          label: 'Company Name',
-                          isRequired: true,
-                        ),
-                        const SizedBox(height: 20),
-                        _buildTextField(
-                          controller: _representativeController,
-                          label: 'Owner/Representative Name',
-                          isRequired: true,
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
+                        // Company Information Card
+                        _buildCard(
+                          title: 'Company Information',
+                          icon: Icons.business_outlined,
                           children: [
-                            Expanded(
-                              child: _buildDropdown(
-                                value: selectedCompanyTypeId,
-                                items: companyTypes,
-                                label: 'Company Type',
-                                isRequired: true,
-                                onChanged:
-                                    (value) => setState(
-                                      () => selectedCompanyTypeId = value,
-                                    ),
-                              ),
+                            _buildTextField(
+                              controller: _companyNameController,
+                              label: 'Company Name',
+                              isRequired: true,
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildDateField(
-                                controller: _registrationDateController,
-                                label: 'Registration Date',
-                                isRequired: true,
-                              ),
+                            const SizedBox(height: 20),
+                            _buildTextField(
+                              controller: _representativeController,
+                              label: 'Owner/Representative Name',
+                              isRequired: true,
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Payment Information Card
-                    _buildCard(
-                      title: 'Payment Information',
-                      icon: Icons.payment_outlined,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildDropdown(
-                                value: selectedPaymentTypeId,
-                                items: paymentTypes,
-                                label: 'Payment Type',
-                                isRequired: true,
-                                onChanged:
-                                    (value) => setState(
-                                      () => selectedPaymentTypeId = value,
-                                    ),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildTextField(
-                                controller: _openingBalanceController,
-                                label: 'Opening Balance',
-                                isRequired: true,
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                      decimal: true,
-                                    ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        _buildDateField(
-                          controller: _openingBalanceAsOfDateController,
-                          label: 'Opening Balance As of Date',
-                          isRequired: true,
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Contact Information Card
-                    _buildCard(
-                      title: 'Contact Information',
-                      icon: Icons.contact_phone_outlined,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildTextField(
-                                controller: _mobileController,
-                                label: 'Mobile',
-                                isRequired: true,
-                                keyboardType: TextInputType.phone,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildTextField(
-                                controller: _phoneController,
-                                label: 'Phone',
-                                keyboardType: TextInputType.phone,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        _buildTextField(
-                          controller: _emailController,
-                          label: 'Email',
-                          keyboardType: TextInputType.emailAddress,
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Address Information Card
-                    _buildCard(
-                      title: 'Address Information',
-                      icon: Icons.location_on_outlined,
-                      children: [
-                        _buildTextField(
-                          controller: _addressController,
-                          label: 'Street Address',
-                          maxLines: 2,
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'This will appear as address line in official documentation',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF6B7280),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-
-                        Row(
-                          children: [
-                            Expanded(
-                              flex: 2,
-                              child: _buildDropdown(
-                                value: selectedCountryId,
-                                items: countries,
-                                label: 'Country',
-                                onChanged: _onCountryChanged,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildTextField(
-                                controller: _postCodeController,
-                                label: 'Post Code',
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildDropdown(
-                                value: selectedStateId,
-                                items: states,
-                                label: 'State',
-                                onChanged: _onStateChanged,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildDropdown(
-                                value: selectedCityId,
-                                items: cities,
-                                label: 'City',
-                                onChanged: _onCityChanged,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-
-                        // Updated region dropdown to show all regions and use new handler
-                        _buildDropdown(
-                          value: selectedRegionId,
-                          items: _getAllRegions(),
-                          label: 'Region',
-                          isRequired: true,
-                          onChanged: _onRegionChanged,
-                        ),
-                        const SizedBox(height: 20),
-
-                        _buildTextField(
-                          controller: _noteController,
-                          label: 'Note',
-                          maxLines: 3,
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 32),
-                  ],
-                ),
-              ),
-            ),
-
-            // Bottom Action Bar
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                border: Border(
-                  top: BorderSide(color: Color(0xFFE5E7EB), width: 1),
-                ),
-              ),
-              child: SafeArea(
-                top: false,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed:
-                            _isLoading ? null : () => Navigator.pop(context),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF6B7280),
-                          side: const BorderSide(color: Color(0xFFD1D5DB)),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          'Cancel',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      flex: 2,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _submitForm,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2563EB),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
-                        ),
-                        child:
-                            _isLoading
-                                ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white,
-                                    ),
-                                  ),
-                                )
-                                : const Text(
-                                  'Save Customer',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
+                            const SizedBox(height: 20),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildDropdown(
+                                    value: controller.selectedCompanyTypeId,
+                                    items: controller.companyType ?? [],
+                                    label: 'Company Type',
+                                    isRequired: true,
+                                    onChanged: controller.setCompanyType,
                                   ),
                                 ),
-                      ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _buildDateField(
+                                    controller: _registrationDateController,
+                                    label: 'Registration Date',
+                                    isRequired: true,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Payment Information Card
+                        _buildCard(
+                          title: 'Payment Information',
+                          icon: Icons.payment_outlined,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildDropdown(
+                                    value: controller.selectedPaymentTypeId,
+                                    items: controller.paymentType ?? [],
+                                    label: 'Payment Type',
+                                    isRequired: true,
+                                    onChanged: controller.setPaymentType,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _buildTextField(
+                                    controller: _openingBalanceController,
+                                    label: 'Opening Balance',
+                                    isRequired: true,
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                          decimal: true,
+                                        ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                            _buildDateField(
+                              controller: _openingBalanceAsOfDateController,
+                              label: 'Opening Balance As of Date',
+                              isRequired: true,
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Contact Information Card
+                        _buildCard(
+                          title: 'Contact Information',
+                          icon: Icons.contact_phone_outlined,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildTextField(
+                                    controller: _mobileController,
+                                    label: 'Mobile',
+                                    isRequired: true,
+                                    keyboardType: TextInputType.phone,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _buildTextField(
+                                    controller: _phoneController,
+                                    label: 'Phone',
+                                    keyboardType: TextInputType.phone,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                            _buildTextField(
+                              controller: _emailController,
+                              label: 'Email',
+                              keyboardType: TextInputType.emailAddress,
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Address Information Card
+                        _buildCard(
+                          title: 'Address Information',
+                          icon: Icons.location_on_outlined,
+                          children: [
+                            _buildTextField(
+                              controller: _addressController,
+                              label: 'Street Address',
+                              maxLines: 2,
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'This will appear as address line in official documentation',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF6B7280),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+
+                            Row(
+                              children: [
+                                Expanded(
+                                  flex: 2,
+                                  child: _buildDropdown(
+                                    value: controller.selectedCountryId,
+                                    items: controller.countries ?? [],
+                                    label: 'Country',
+                                    onChanged: controller.onCountryChanged,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _buildTextField(
+                                    controller: _postCodeController,
+                                    label: 'Post Code',
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildDropdown(
+                                    value: controller.selectedStateId,
+                                    items: controller.states,
+                                    label: 'State',
+                                    onChanged: controller.onStateChanged,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _buildDropdown(
+                                    value: controller.selectedCityId,
+                                    items: controller.cities,
+                                    label: 'City',
+                                    onChanged: controller.onCityChanged,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+
+                            // Updated region dropdown to show all regions and use controller handler
+                            _buildDropdown(
+                              value: controller.selectedRegionId,
+                              items: controller.getAllRegions(),
+                              label: 'Region',
+                              isRequired: true,
+                              onChanged: controller.onRegionChanged,
+                            ),
+                            const SizedBox(height: 20),
+
+                            _buildTextField(
+                              controller: _noteController,
+                              label: 'Note',
+                              maxLines: 3,
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 32),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+
+                // Bottom Action Bar
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    border: Border(
+                      top: BorderSide(color: Color(0xFFE5E7EB), width: 1),
+                    ),
+                  ),
+                  child: SafeArea(
+                    top: false,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed:
+                                _isLoading
+                                    ? null
+                                    : () => Navigator.pop(context),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF6B7280),
+                              side: const BorderSide(color: Color(0xFFD1D5DB)),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text(
+                              'Cancel',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          flex: 2,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _submitForm,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2563EB),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 0,
+                            ),
+                            child:
+                                _isLoading
+                                    ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
+                                      ),
+                                    )
+                                    : const Text(
+                                      'Save Customer',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

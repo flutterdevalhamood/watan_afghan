@@ -69,7 +69,7 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
             padding: const EdgeInsets.all(16),
             child: SearchBar(
               controller: _searchController,
-              hintText: 'Search customers...',
+              hintText: 'Search suppliers...',
               leading: const Icon(Icons.search),
               trailing: [
                 if (_searchController.text.isNotEmpty)

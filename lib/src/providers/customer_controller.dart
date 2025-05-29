@@ -21,6 +21,19 @@ class CustomerController with ChangeNotifier {
   List<Customer> _filteredCustomers = [];
   String _searchQuery = '';
 
+  // Registration form state variables
+  int? selectedCompanyTypeId;
+  int? selectedPaymentTypeId;
+  int? selectedRegionId;
+  int? selectedCountryId;
+  int? selectedStateId;
+  int? selectedCityId;
+
+  // Dropdown lists
+  List<Map<String, dynamic>> states = [];
+  List<Map<String, dynamic>> cities = [];
+  List<Map<String, dynamic>> regions = [];
+
   List<Customer> get customers => _filteredCustomers;
   String get searchQuery => _searchQuery;
   bool get isEmpty => _filteredCustomers.isEmpty && !isLoading;
@@ -33,6 +46,188 @@ class CustomerController with ChangeNotifier {
   List<Map<String, dynamic>>? get customerDetailData => _customerDetail;
   bool get isDetailLoading => _isDetailLoading;
   String? get detailErrorMessage => _detailErrorMessage;
+
+  // Registration form methods
+  void onCountryChanged(int? countryId) {
+    selectedCountryId = countryId;
+    selectedStateId = null;
+    selectedCityId = null;
+    selectedRegionId = null;
+    states = [];
+    cities = [];
+    regions = [];
+
+    if (countryId != null && countries != null) {
+      final country = countries!.firstWhere(
+        (c) => c['id'] == countryId,
+        orElse: () => <String, dynamic>{},
+      );
+      if (country.isNotEmpty) {
+        states = List<Map<String, dynamic>>.from(country['states'] ?? []);
+      }
+    }
+    notifyListeners();
+  }
+
+  void onStateChanged(int? stateId) {
+    selectedStateId = stateId;
+    selectedCityId = null;
+    selectedRegionId = null;
+    cities = [];
+    regions = [];
+
+    if (stateId != null && states.isNotEmpty) {
+      final state = states.firstWhere(
+        (s) => s['id'] == stateId,
+        orElse: () => <String, dynamic>{},
+      );
+      if (state.isNotEmpty) {
+        cities = List<Map<String, dynamic>>.from(state['cities'] ?? []);
+      }
+    }
+    notifyListeners();
+  }
+
+  void onCityChanged(int? cityId) {
+    selectedCityId = cityId;
+    selectedRegionId = null;
+    regions = [];
+
+    if (cityId != null && cities.isNotEmpty) {
+      final city = cities.firstWhere(
+        (c) => c['id'] == cityId,
+        orElse: () => <String, dynamic>{},
+      );
+      if (city.isNotEmpty) {
+        regions = List<Map<String, dynamic>>.from(city['region'] ?? []);
+      }
+    }
+    notifyListeners();
+  }
+
+  // Method to handle region selection and autofill parent locations
+  void onRegionChanged(int? regionId) {
+    if (regionId == null) {
+      selectedRegionId = null;
+      notifyListeners();
+      return;
+    }
+
+    // Find the region and its parent city/state/country
+    Map<String, dynamic>? foundRegion;
+    Map<String, dynamic>? parentCity;
+    Map<String, dynamic>? parentState;
+    Map<String, dynamic>? parentCountry;
+
+    // Search through all countries to find the region
+    if (countries != null) {
+      for (var country in countries!) {
+        final countryStates = List<Map<String, dynamic>>.from(
+          country['states'] ?? [],
+        );
+        for (var state in countryStates) {
+          final stateCities = List<Map<String, dynamic>>.from(
+            state['cities'] ?? [],
+          );
+          for (var city in stateCities) {
+            final cityRegions = List<Map<String, dynamic>>.from(
+              city['region'] ?? [],
+            );
+            for (var region in cityRegions) {
+              if (region['id'] == regionId) {
+                foundRegion = region;
+                parentCity = city;
+                parentState = state;
+                parentCountry = country;
+                break;
+              }
+            }
+            if (foundRegion != null) break;
+          }
+          if (foundRegion != null) break;
+        }
+        if (foundRegion != null) break;
+      }
+    }
+
+    if (foundRegion != null &&
+        parentCity != null &&
+        parentState != null &&
+        parentCountry != null) {
+      // Set the selected values
+      selectedRegionId = regionId;
+      selectedCityId = parentCity!['id'];
+      selectedStateId = parentState!['id'];
+      selectedCountryId = parentCountry!['id'];
+
+      // Populate the dropdown lists
+      states = List<Map<String, dynamic>>.from(parentCountry['states'] ?? []);
+      cities = List<Map<String, dynamic>>.from(parentState['cities'] ?? []);
+      regions = List<Map<String, dynamic>>.from(parentCity['region'] ?? []);
+    } else {
+      // If region not found, just set the region ID
+      selectedRegionId = regionId;
+    }
+    notifyListeners();
+  }
+
+  // Method to get all regions from all locations for the region dropdown
+  List<Map<String, dynamic>> getAllRegions() {
+    List<Map<String, dynamic>> allRegions = [];
+
+    if (countries != null) {
+      for (var country in countries!) {
+        final countryStates = List<Map<String, dynamic>>.from(
+          country['states'] ?? [],
+        );
+        for (var state in countryStates) {
+          final stateCities = List<Map<String, dynamic>>.from(
+            state['cities'] ?? [],
+          );
+          for (var city in stateCities) {
+            final cityRegions = List<Map<String, dynamic>>.from(
+              city['region'] ?? [],
+            );
+            allRegions.addAll(cityRegions);
+          }
+        }
+      }
+    }
+
+    // Remove duplicates based on ID
+    final uniqueRegions = <int, Map<String, dynamic>>{};
+    for (var region in allRegions) {
+      uniqueRegions[region['id']] = region;
+    }
+
+    return uniqueRegions.values.toList();
+  }
+
+  // Method to set company type
+  void setCompanyType(int? companyTypeId) {
+    selectedCompanyTypeId = companyTypeId;
+    notifyListeners();
+  }
+
+  // Method to set payment type
+  void setPaymentType(int? paymentTypeId) {
+    selectedPaymentTypeId = paymentTypeId;
+    notifyListeners();
+  }
+
+  // Method to reset form state
+  void resetFormState() {
+    selectedCompanyTypeId = null;
+    selectedPaymentTypeId = null;
+    selectedRegionId = null;
+    selectedCountryId = null;
+    selectedStateId = null;
+    selectedCityId = null;
+    states = [];
+    cities = [];
+    regions = [];
+    notifyListeners();
+  }
 
   // Search functionality
   void searchCustomers(String query) {
@@ -113,7 +308,7 @@ class CustomerController with ChangeNotifier {
         return;
       }
 
-      final customer = response as Map<String, dynamic>;
+      final customer = response;
 
       // Check if the response indicates success
       if (customer['IsSuccess'] == true) {
@@ -187,7 +382,7 @@ class CustomerController with ChangeNotifier {
       );
 
       if (response != null && response is Map<String, dynamic>) {
-        final customerDetailData = response as Map<String, dynamic>;
+        final customerDetailData = response;
 
         if (customerDetailData['IsSuccess'] == true) {
           final data = customerDetailData['Data'];
@@ -227,7 +422,7 @@ class CustomerController with ChangeNotifier {
       );
 
       if (response != null && response is Map<String, dynamic>) {
-        final customerBaseData = response as Map<String, dynamic>;
+        final customerBaseData = response;
 
         if (customerBaseData['IsSuccess'] == true) {
           final data = customerBaseData['Data'];
@@ -300,6 +495,7 @@ class CustomerController with ChangeNotifier {
           response is Map<String, dynamic> &&
           response['IsSuccess'] == true) {
         debugPrint("Customer registration posted successfully!");
+        await getCustomerData();
         return true;
       } else if (response != null && response is Map<String, dynamic>) {
         debugPrint(
