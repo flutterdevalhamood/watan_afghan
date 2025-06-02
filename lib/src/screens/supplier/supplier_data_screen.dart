@@ -13,7 +13,7 @@ class _SupplierDataScreenState extends State<SupplierDataScreen> {
   final _formKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
 
-  // Form controllersb
+  // Form controllers
   final _companyNameController = TextEditingController();
   final _representativeController = TextEditingController();
   final _registrationDateController = TextEditingController();

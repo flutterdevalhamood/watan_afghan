@@ -1,11 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:sample/src/screens/supplier/supplier_model.dart';
+import 'package:sample/src/models/expense_model.dart';
 
 import '../data/rest_client.dart';
 import '../repo/auth_repo.dart';
 
-class SupplierController with ChangeNotifier {
+class ExpenseController with ChangeNotifier {
   bool isLoading = false;
   int currentPage = 1;
   final int totalPages = 10;
@@ -13,38 +13,52 @@ class SupplierController with ChangeNotifier {
   String? errorMessage;
   int? id;
 
-  List<Map<String, dynamic>>? supplierDetail;
-  List<Map<String, dynamic>>? companyType;
-  List<Map<String, dynamic>>? paymentType;
-  List<Map<String, dynamic>>? countries;
-  List<Supplier> _allSuppliers = [];
-  List<Supplier> _filteredSuppliers = [];
+  List<Expense> _allExpenses = [];
+  List<Expense> _filteredExpenses = [];
   String _searchQuery = '';
 
-  List<Supplier> get suppliers => _filteredSuppliers;
-  String get searchQuery => _searchQuery;
-  bool get isEmpty => _filteredSuppliers.isEmpty && !isLoading;
-  bool get hasData => _filteredSuppliers.isNotEmpty;
-
-  List<Map<String, dynamic>>? _supplierDetail;
+  // Detail properties
+  ExpenseDetail? _expenseDetail;
   bool _isDetailLoading = false;
   String? _detailErrorMessage;
 
-  List<Map<String, dynamic>>? get supplierDetailData => _supplierDetail;
+  // Getters
+  List<Expense> get expenses => _filteredExpenses;
+  List<Expense> get allExpenses => _allExpenses;
+  String get searchQuery => _searchQuery;
+  bool get hasExpenses => _filteredExpenses.isNotEmpty;
+
+  // Detail getters
+  ExpenseDetail? get expenseDetail => _expenseDetail;
   bool get isDetailLoading => _isDetailLoading;
   String? get detailErrorMessage => _detailErrorMessage;
 
+  // List<Map<String, dynamic>>? expenseDetail;
+  List<Map<String, dynamic>>? expenseCategory;
+  List<Map<String, dynamic>>? employeeType;
+  List<Map<String, dynamic>>? supplierType;
+  List<Map<String, dynamic>>? banks;
+  List<Map<String, dynamic>>? paymentType;
+  List<Map<String, dynamic>>? currency;
+
+  int? selectedPaymentTypeId;
+  int? selectedSupplierTypeId;
+  int? selectedEmployeeTypeId;
+  int? selectedEmployeeId;
+  int? selectedCurrencyTypeId;
+  int? selectedExpenseTypeId;
+  int? selectedBankTypeId;
+
   // Search functionality
-  void searchSuppliers(String query) {
+  void searchExpenses(String query) {
     _searchQuery = query.toLowerCase();
 
     if (_searchQuery.isEmpty) {
-      _filteredSuppliers = List.from(_allSuppliers);
+      _filteredExpenses = List.from(_allExpenses);
     } else {
-      _filteredSuppliers =
-          _allSuppliers.where((customer) {
-            return customer.name.toLowerCase().contains(_searchQuery) ||
-                customer.mobile.toLowerCase().contains(_searchQuery);
+      _filteredExpenses =
+          _allExpenses.where((expense) {
+            return expense.referenceNumber.toLowerCase().contains(_searchQuery);
           }).toList();
     }
 
@@ -53,7 +67,42 @@ class SupplierController with ChangeNotifier {
 
   void clearSearch() {
     _searchQuery = '';
-    _filteredSuppliers = List.from(_allSuppliers);
+    _filteredExpenses = List.from(_allExpenses);
+    notifyListeners();
+  }
+
+  void setPaymentType(int? paymentTypeId) {
+    selectedPaymentTypeId = paymentTypeId;
+    notifyListeners();
+  }
+
+  void setSupplierType(int? supplierTypeId) {
+    selectedSupplierTypeId = supplierTypeId;
+    notifyListeners();
+  }
+
+  void setEmployeeType(int? employeeTypeId) {
+    selectedEmployeeTypeId = employeeTypeId;
+    notifyListeners();
+  }
+
+  void setEmployee(int? employeeId) {
+    selectedEmployeeId = employeeId;
+    notifyListeners();
+  }
+
+  void setCurrencyType(int? currencyTypeId) {
+    selectedCurrencyTypeId = currencyTypeId;
+    notifyListeners();
+  }
+
+  void setExpenseType(int? expenseTypeId) {
+    selectedExpenseTypeId = expenseTypeId;
+    notifyListeners();
+  }
+
+  void setBankType(int? bankTypeId) {
+    selectedBankTypeId = bankTypeId;
     notifyListeners();
   }
 
@@ -84,7 +133,7 @@ class SupplierController with ChangeNotifier {
     return 'Bearer ${AuthRepo.token}';
   }
 
-  Future<void> getSupplierData({bool loadMore = false}) async {
+  Future<void> getExpenseData({bool loadMore = false}) async {
     if (!await _checkToken()) return;
 
     isLoading = true;
@@ -98,36 +147,34 @@ class SupplierController with ChangeNotifier {
 
       while (retryCount < maxRetries) {
         try {
-          final supplier = await restApi.getSupplier(
+          final expense = await restApi.getExpense(
             currentPage,
             totalPages,
             _getAuthHeader(),
           );
 
-          if (supplier is Map<String, dynamic>) {
-            if (supplier['IsSuccess'] == true) {
-              final data = supplier['Data'] as List<dynamic>?;
+          if (expense is Map<String, dynamic>) {
+            if (expense['IsSuccess'] == true) {
+              final data = expense['Data'] as List<dynamic>?;
               if (data != null) {
-                final newSupplierData =
-                    data.map((json) => Supplier.fromJson(json)).toList();
+                final newExpenseData =
+                    data.map((json) => Expense.fromJson(json)).toList();
                 if (loadMore) {
-                  _allSuppliers.addAll(newSupplierData);
+                  _allExpenses.addAll(newExpenseData);
                 } else {
-                  _allSuppliers =
-                      newSupplierData; // Replace list on initial load
+                  _allExpenses = newExpenseData; // Replace list on initial load
                 }
-                searchSuppliers(_searchQuery);
+                searchExpenses(_searchQuery);
                 hasMore = data.length == totalPages;
 
                 // Success - break out of retry loop
                 break;
               } else {
-                errorMessage = supplier['Message'] as String?;
+                errorMessage = expense['Message'] as String?;
               }
             } else {
-              debugPrint('API call failed: ${supplier['Message']}');
-              errorMessage =
-                  supplier['Message'] as String? ?? 'API call failed';
+              debugPrint('API call failed: ${expense['Message']}');
+              errorMessage = expense['Message'] as String? ?? 'API call failed';
             }
           } else {
             debugPrint('Unexpected API response format');
@@ -176,20 +223,20 @@ class SupplierController with ChangeNotifier {
   void loadMore() {
     if (hasMore && !isLoading) {
       currentPage++;
-      getSupplierData(loadMore: true);
+      getExpenseData(loadMore: true);
     }
   }
 
-  void refresh() {
+  Future<void> refresh() async {
     currentPage = 1;
     hasMore = true;
     errorMessage = null; // Clear errors on refresh
-    _allSuppliers.clear();
-    _filteredSuppliers.clear();
-    getSupplierData();
+    _allExpenses.clear();
+    _filteredExpenses.clear();
+    await getExpenseData(loadMore: false);
   }
 
-  Future<void> getSupplierDetail(int supplierId) async {
+  Future<void> getExpenseDetail(int expenseId) async {
     if (!await _checkToken()) return;
 
     _isDetailLoading = true;
@@ -197,18 +244,18 @@ class SupplierController with ChangeNotifier {
     notifyListeners();
 
     try {
-      final supplierDetailData = await restApi.getSupplierDetail(
-        id: supplierId,
+      final expenseDetailData = await restApi.getExpenseDetail(
+        id: expenseId,
         token: _getAuthHeader(),
       );
 
-      if (supplierDetailData['IsSuccess'] == true) {
-        final data = supplierDetailData['Data'] as Map<String, dynamic>;
-        supplierDetail = [data];
-        debugPrint('Supplier detail fetched: ${supplierDetail?.length}');
+      if (expenseDetailData['IsSuccess'] == true) {
+        final data = expenseDetailData['Data'] as Map<String, dynamic>;
+        _expenseDetail = ExpenseDetail.fromJson(data);
+        debugPrint('Supplier detail fetched: ${expenseDetail?.id}');
       } else {
         _detailErrorMessage =
-            supplierDetailData['Message'] ?? 'Failed to fetch supplier detail';
+            expenseDetailData['Message'] ?? 'Failed to fetch supplier detail';
         debugPrint('API call failed: $_detailErrorMessage');
       }
     } catch (e) {
@@ -220,7 +267,13 @@ class SupplierController with ChangeNotifier {
     }
   }
 
-  Future<void> getSupplierBaseData() async {
+  void clearExpenseDetail() {
+    _expenseDetail = null;
+    _detailErrorMessage = null;
+    notifyListeners();
+  }
+
+  Future<void> getExpenseBaseData() async {
     if (!await _checkToken()) return;
 
     isLoading = true;
@@ -228,25 +281,34 @@ class SupplierController with ChangeNotifier {
     notifyListeners();
 
     try {
-      final supplierBaseData = await restApi.getSupplierBaseList(
+      final expenseBaseData = await restApi.getExpenseBaseList(
         token: _getAuthHeader(),
       );
 
-      if (supplierBaseData['IsSuccess'] == true) {
-        companyType = List<Map<String, dynamic>>.from(
-          supplierBaseData['Data']['company_type'],
+      if (expenseBaseData['IsSuccess'] == true) {
+        expenseCategory = List<Map<String, dynamic>>.from(
+          expenseBaseData['Data']['expense_category'] ?? [],
+        );
+        employeeType = List<Map<String, dynamic>>.from(
+          expenseBaseData['Data']['employee'] ?? [],
+        );
+        supplierType = List<Map<String, dynamic>>.from(
+          expenseBaseData['Data']['supplier'],
+        );
+        banks = List<Map<String, dynamic>>.from(
+          expenseBaseData['Data']['banks'],
         );
         paymentType = List<Map<String, dynamic>>.from(
-          supplierBaseData['Data']['payment_type'],
+          expenseBaseData['Data']['payment_type'],
         );
-        countries = List<Map<String, dynamic>>.from(
-          supplierBaseData['Data']['countries'],
+        currency = List<Map<String, dynamic>>.from(
+          expenseBaseData['Data']['currency'],
         );
         debugPrint('Base data fetched successfully');
       } else {
-        debugPrint('API call failed: ${supplierBaseData['Message']}');
+        debugPrint('API call failed: ${expenseBaseData['Message']}');
         errorMessage =
-            supplierBaseData['Message'] ?? 'Failed to fetch base data';
+            expenseBaseData['Message'] ?? 'Failed to fetch base data';
       }
     } catch (e) {
       _handleApiError(e);
@@ -256,53 +318,53 @@ class SupplierController with ChangeNotifier {
     }
   }
 
-  Future<bool> postSupplierRegistration({
-    String? name,
-    String? representative,
-    int? companyTypeId,
-    String? registrationDate,
-    int? paymentTypeId,
-    String? toPaymentType,
-    int? openingBalance,
-    String? openingBalanceAsOfDate,
-    String? mobile,
-    String? phone,
-    String? email,
-    String? address,
-    int? regionId,
-    String? postCode,
+  Future<bool> postExpenseRegistration({
+    int? supplierId,
+    int? employeeId,
+    String? expenseDate,
+    String? referenceNumber,
+    int? currencyId,
+    String? total,
+    String? subTotal,
+    String? totalVat,
+    String? grandTotal,
+    String? expenseDetail,
+    String? paymentType,
+    int? bankId,
+    String? transferDate,
+    String? chequeNumber,
   }) async {
     if (!await _checkToken()) return false;
 
     try {
-      final response = await restApi.postSupplierRegistration(
+      final response = await restApi.postExpenseRegistration(
         token: _getAuthHeader(),
-        name: name,
-        representative: representative,
-        companyTypeId: companyTypeId,
-        registrationDate: registrationDate,
-        paymentTypeId: paymentTypeId,
-        toPaymentType: toPaymentType,
-        openingBalance: openingBalance,
-        openingBalanceAsOfDate: openingBalanceAsOfDate,
-        mobile: mobile,
-        phone: phone,
-        email: email,
-        address: address,
-        regionId: regionId,
-        postCode: postCode,
+        supplierId: supplierId,
+        employeeId: employeeId,
+        expenseDate: expenseDate,
+        referenceNumber: referenceNumber,
+        currencyId: currencyId,
+        total: total,
+        subTotal: subTotal,
+        totalVat: totalVat,
+        grandTotal: grandTotal,
+        expenseDetail: expenseDetail,
+        paymentType: paymentType,
+        bankId: bankId,
+        transferDate: transferDate,
+        chequeNumber: chequeNumber,
       );
 
       // Check response
       if (response is Map<String, dynamic> && response['IsSuccess'] == true) {
-        debugPrint("Supplier registration posted successfully!");
+        debugPrint("Expense registration posted successfully!");
         return true;
       } else if (response is Map<String, dynamic>) {
         debugPrint(
-          "Supplier registration failed: ${response['Message'] ?? 'Unknown error'}",
+          "Expense registration failed: ${response['Message'] ?? 'Unknown error'}",
         );
         errorMessage =
-            response['Message'] ?? 'Failed to save supplier registration';
+            response['Message'] ?? 'Failed to save expense registration';
       } else {
         debugPrint("Unknown response format");
         errorMessage = 'Unexpected response format';
@@ -313,7 +375,7 @@ class SupplierController with ChangeNotifier {
     }
   }
 
-  Future<void> deleteSupplier(int? id, String? descriptionText) async {
+  Future<void> deleteExpenses(int? id, String? descriptionText) async {
     if (!await _checkToken()) {
       debugPrint("Token check failed");
       return;
@@ -327,7 +389,7 @@ class SupplierController with ChangeNotifier {
     try {
       debugPrint("Calling restApi.deleteSupplier...");
 
-      final response = await restApi.deleteSupplier(
+      final response = await restApi.deleteExpense(
         token: _getAuthHeader(),
         id: id,
         description: descriptionText,
@@ -335,15 +397,15 @@ class SupplierController with ChangeNotifier {
 
       if (response is Map<String, dynamic>) {
         if (response['IsSuccess'] == true) {
-          debugPrint("Delete successful, refreshing supplier list...");
-          await getSupplierData();
+          debugPrint("Delete successful, refreshing expense list...");
+          await getExpenseData();
         } else {
-          errorMessage = response['Message'] ?? 'Failed to delete supplier';
+          errorMessage = response['Message'] ?? 'Failed to delete expense data';
           debugPrint("Delete failed: $errorMessage");
         }
       } else {
-        debugPrint("Delete completed, refreshing supplier list...");
-        await getSupplierData();
+        debugPrint("Delete completed, refreshing expense list...");
+        await getExpenseData();
       }
     } catch (e) {
       debugPrint("Delete API Exception: $e");

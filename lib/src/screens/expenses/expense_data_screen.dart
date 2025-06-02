@@ -1,5 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:sample/src/providers/expense_controller.dart';
 
 class ExpenseScreen extends StatefulWidget {
   const ExpenseScreen({super.key});
@@ -11,31 +15,26 @@ class ExpenseScreen extends StatefulWidget {
 class _ExpenseScreenState extends State<ExpenseScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // Form values
-  String? selectedSupplier;
+  // Form values - Fixed variable assignments
+  int? selectedSupplierId;
+  int? selectedEmployeeId;
+  int? selectedPaymentTypeId;
+  String? selectedPaymentType;
   String? selectedReferenceNumber;
-  String? selectedCurrency = 'AED'; // Added currency selection
+  int? selectedCurrencyId;
   String invoiceNumber = "ECFT-0087";
   DateTime invoiceDate = DateTime.now();
 
-  // Currency options
-  final List<String> currencies = ['AED', 'USD', 'EUR'];
-
   // Payment related fields
-  String? selectedPaymentType = 'Cash';
-  final List<String> paymentTypes = ['Cash', 'Bank Transfer', 'Check'];
   double paidAmount = 0.0;
   double roundOff = 0.0;
   double balanceAmount = 0.0;
 
   // Bank payment fields
-  String? selectedBankName;
+  int? selectedBankId;
   String accountNumber = '';
   DateTime transferDate = DateTime.now();
   String chequeRefNumber = '';
-
-  // Bank options
-  final List<String> bankNames = ['--Select Bank Name--', 'Bank 1'];
 
   // File upload
   String? selectedFile = 'No file chosen';
@@ -58,19 +57,6 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
   final List<double> vatRates = [0.00, 0.05]; // 0% and 5%
   final List<String> vatLabels = ['0%', '5%'];
 
-  // Dropdown options
-  final List<String> customers = ['--Select Customer--', 'Customer 1'];
-
-  @override
-  void initState() {
-    super.initState();
-    // Initialize calculations
-    _updateTotals();
-  }
-
-  final List<String> products = ['Product', 'Product 1'];
-  final List<String> units = ['UNIT', 'PCS', 'KG', 'METER'];
-
   // Controller for Terms and Customer Note
   final TextEditingController termsController = TextEditingController(
     text: 'Terms and Conditions',
@@ -88,6 +74,34 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
   String? needStamp = 'No';
   final List<String> stampOptions = ['Yes', 'No'];
 
+  // Hardcoded Payment Types
+  final List<Map<String, dynamic>> paymentTypes = [
+    {'id': 1, 'Name': 'Cash'},
+    {'id': 2, 'Name': 'Bank'},
+    {'id': 3, 'Name': 'Cheque'},
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Load base data when screen initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadBaseData();
+    });
+    // Initialize calculations
+    _updateTotals();
+  }
+
+  Future<void> _loadBaseData() async {
+    final controller = Provider.of<ExpenseController>(context, listen: false);
+    await controller.getExpenseBaseData();
+    if (controller.employeeType != null) {
+      debugPrint(
+        'Employee data loaded: ${controller.employeeType!.length} items',
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Check if we're on a mobile device
@@ -98,600 +112,650 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
         title: const Text('Expenses'),
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),
-      body: Form(
-        key: _formKey,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Customer and Project section
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.2),
-                        spreadRadius: 1,
-                        blurRadius: 3,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+      body: Consumer<ExpenseController>(
+        builder: (context, controller, child) {
+          if (controller.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (controller.errorMessage != null) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Error: ${controller.errorMessage}',
+                    style: const TextStyle(color: Colors.red),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Customer Dropdown
-                      _buildLabeledField(
-                        'Supplier Name:',
-                        required: true,
-                        child: DropdownButtonFormField<String>(
-                          decoration: const InputDecoration(
-                            hintText: 'Select Supplier',
-                          ),
-                          value: selectedSupplier,
-                          items:
-                              customers
-                                  .map(
-                                    (item) => DropdownMenuItem<String>(
-                                      value: item,
-                                      child: Text(item),
-                                    ),
-                                  )
-                                  .toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              selectedSupplier = value;
-                            });
-                          },
-                          validator: (value) {
-                            if (value == null || value == customers[0]) {
-                              return 'Please select a supplier';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _loadBaseData,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            );
+          }
 
-                      // Currency Dropdown - Added
-                      _buildLabeledField(
-                        'Currency:',
-                        required: true,
-                        child: DropdownButtonFormField<String>(
-                          decoration: const InputDecoration(
-                            hintText: 'Select Currency',
+          return Form(
+            key: _formKey,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Customer and Project section
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            spreadRadius: 1,
+                            blurRadius: 3,
+                            offset: const Offset(0, 2),
                           ),
-                          value: selectedCurrency,
-                          items:
-                              currencies
-                                  .map(
-                                    (item) => DropdownMenuItem<String>(
-                                      value: item,
-                                      child: Text(item),
-                                    ),
-                                  )
-                                  .toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              selectedCurrency = value;
-                            });
-                          },
-                          validator: (value) {
-                            if (value == null) {
-                              return 'Please select a currency';
-                            }
-                            return null;
-                          },
-                        ),
+                        ],
                       ),
-                      const SizedBox(height: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildDropdown(
+                            value: controller.selectedSupplierTypeId,
+                            items: controller.supplierType ?? [],
+                            label: 'Supplier Type',
+                            isRequired: true,
+                            onChanged: (value) {
+                              controller.setSupplierType(value);
+                              setState(() {
+                                selectedSupplierId = value;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 16),
 
-                      // Single Date Field
-                      _buildLabeledField(
-                        'Date:',
-                        required: true,
-                        child: GestureDetector(
-                          onTap:
-                              () => _selectDate(context, isTransferDate: false),
-                          child: AbsorbPointer(
+                          _buildDropdown(
+                            value: controller.selectedEmployeeId,
+                            items: controller.employeeType ?? [],
+                            label: 'Employee Type',
+                            isRequired: true,
+                            onChanged: (value) {
+                              controller.setEmployee(value);
+                              setState(() {
+                                selectedEmployeeId = value;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Single Date Field
+                          _buildLabeledField(
+                            'Expense Date:',
+                            required: true,
+                            child: GestureDetector(
+                              onTap:
+                                  () => _selectDate(
+                                    context,
+                                    isTransferDate: false,
+                                  ),
+                              child: AbsorbPointer(
+                                child: TextFormField(
+                                  decoration: const InputDecoration(
+                                    hintText: 'Select Date',
+                                    suffixIcon: Icon(Icons.calendar_today),
+                                  ),
+                                  controller: TextEditingController(
+                                    text: DateFormat(
+                                      'dd/MM/yyyy',
+                                    ).format(invoiceDate),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Reference Number
+                          _buildLabeledField(
+                            'Reference Number:',
+                            required: true,
                             child: TextFormField(
                               decoration: const InputDecoration(
-                                hintText: 'Select Date',
-                                suffixIcon: Icon(Icons.calendar_today),
+                                hintText: 'Enter Reference Number',
                               ),
-                              controller: TextEditingController(
-                                text: DateFormat(
-                                  'dd/MM/yyyy',
-                                ).format(invoiceDate),
-                              ),
+                              onChanged: (value) {
+                                setState(() {
+                                  selectedReferenceNumber = value;
+                                });
+                              },
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter a reference number';
+                                }
+                                return null;
+                              },
                             ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
+                          const SizedBox(height: 16),
 
-                      _buildLabeledField(
-                        'Reference Number:',
-                        required: true,
-                        child: DropdownButtonFormField<String>(
-                          decoration: const InputDecoration(
-                            hintText: 'Select Reference Number',
+                          _buildDropdown(
+                            value: controller.selectedCurrencyTypeId,
+                            items: controller.currency ?? [],
+                            label: 'Currency Type',
+                            isRequired: true,
+                            onChanged: (value) {
+                              controller.setCurrencyType(value);
+                              setState(() {
+                                selectedCurrencyId = value;
+                              });
+                            },
                           ),
-                          value: selectedReferenceNumber,
-                          items:
-                              customers
-                                  .map(
-                                    (item) => DropdownMenuItem<String>(
-                                      value: item,
-                                      child: Text(item),
-                                    ),
-                                  )
-                                  .toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              selectedReferenceNumber = value;
-                            });
-                          },
-                          validator: (value) {
-                            if (value == null || value == customers[0]) {
-                              return 'Please select a reference number';
-                            }
-                            return null;
-                          },
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Products Section - Modified with manual subtotal entry and VAT selection
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.2),
-                        spreadRadius: 1,
-                        blurRadius: 3,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Products Table Header
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        color: Colors.teal.shade100,
-                        child: Row(
-                          children: [
-                            Expanded(
-                              flex: 2,
-                              child: _buildTableHeaderCell('Category *'),
-                            ),
-                            Expanded(
-                              flex: 1,
-                              child: _buildTableHeaderCell('UNIT *'),
-                            ),
-                            Expanded(
-                              flex: 1,
-                              child: _buildTableHeaderCell('Qty *'),
-                            ),
-                            Expanded(
-                              flex: 1,
-                              child: _buildTableHeaderCell('Price *'),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Products Table Rows
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: salesItems.length,
-                        itemBuilder: (context, index) {
-                          return Card(
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            elevation: 1,
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Product Dropdown
-                                  _buildLabeledField(
-                                    'Category:',
-                                    required: true,
-                                    child: DropdownButtonFormField<String>(
-                                      value: salesItems[index].product,
-                                      items:
-                                          products
-                                              .map(
-                                                (item) =>
-                                                    DropdownMenuItem<String>(
-                                                      value: item,
-                                                      child: Text(item),
-                                                    ),
-                                              )
-                                              .toList(),
-                                      onChanged: (value) {
-                                        setState(() {
-                                          salesItems[index].product = value;
-                                        });
-                                      },
-                                    ),
-                                  ),
-
-                                  const SizedBox(height: 12),
-                                  // Manual Subtotal Entry - Added
-                                  _buildLabeledField(
-                                    'Subtotal:',
-                                    required: true,
-                                    child: TextFormField(
-                                      controller: subtotalController,
-                                      keyboardType: TextInputType.number,
-                                      decoration: InputDecoration(
-                                        hintText: 'Enter subtotal amount',
-                                        prefixText:
-                                            '${selectedCurrency ?? 'AED'} ',
-                                      ),
-                                      onChanged: (value) {
-                                        setState(() {
-                                          subtotal =
-                                              double.tryParse(value) ?? 0.0;
-                                          _calculateGrandTotal();
-                                        });
-                                      },
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Please enter subtotal amount';
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                  ),
-
-                                  const SizedBox(height: 16),
-
-                                  // VAT Selection - Modified
-                                  _buildLabeledField(
-                                    'VAT Rate:',
-                                    required: true,
-                                    child: DropdownButtonFormField<double>(
-                                      decoration: const InputDecoration(
-                                        hintText: 'Select VAT Rate',
-                                      ),
-                                      value: selectedVatRate,
-                                      items: List.generate(vatRates.length, (
-                                        index,
-                                      ) {
-                                        return DropdownMenuItem<double>(
-                                          value: vatRates[index],
-                                          child: Text(vatLabels[index]),
-                                        );
-                                      }),
-                                      onChanged: (value) {
-                                        setState(() {
-                                          selectedVatRate = value ?? 0.05;
-                                          _calculateGrandTotal();
-                                        });
-                                      },
-                                      validator: (value) {
-                                        if (value == null) {
-                                          return 'Please select VAT rate';
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                  ),
-
-                                  // Description TextField
-                                  _buildLabeledField(
-                                    'Description:',
-                                    child: TextFormField(
-                                      initialValue:
-                                          salesItems[index].description,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          salesItems[index].description = value;
-                                        });
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Totals Section
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Column(
-                          children: [
-                            _buildTotalRow(
-                              'Subtotal:',
-                              '${selectedCurrency ?? 'AED'} ${subtotal.toStringAsFixed(2)}',
-                            ),
-                            _buildTotalRow(
-                              'VAT (${(selectedVatRate * 100).toInt()}%):',
-                              '${selectedCurrency ?? 'AED'} ${vatAmount.toStringAsFixed(2)}',
-                            ),
-                            _buildTotalRow(
-                              'Grand Total:',
-                              '${selectedCurrency ?? 'AED'} ${grandTotal.toStringAsFixed(2)}',
-                              isBold: true,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Payment Details Section - Modified
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.2),
-                        spreadRadius: 1,
-                        blurRadius: 3,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Section Header
-                      const Text(
-                        'Payment Details',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.teal,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Payment Type Dropdown
-                      _buildLabeledField(
-                        'Payment Type:',
-                        required: true,
-                        child: DropdownButtonFormField<String>(
-                          decoration: const InputDecoration(
-                            hintText: 'Select Payment Type',
-                          ),
-                          value: selectedPaymentType,
-                          items:
-                              paymentTypes
-                                  .map(
-                                    (item) => DropdownMenuItem<String>(
-                                      value: item,
-                                      child: Text(item),
-                                    ),
-                                  )
-                                  .toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              selectedPaymentType = value;
-                              // Reset bank fields when payment type changes
-                              if (value == 'Cash') {
-                                selectedBankName = null;
-                                accountNumber = '';
-                                chequeRefNumber = '';
-                              }
-                            });
-                          },
-                          validator: (value) {
-                            if (value == null) {
-                              return 'Please select a payment type';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Conditional fields based on payment type - Modified logic
-                      if (selectedPaymentType != 'Cash')
-                        _buildPaymentSpecificFields(isMobile),
-
-                      // Paid Amount field
-                      _buildLabeledField(
-                        'Paid Amount:',
-                        required: true,
-                        child: TextFormField(
-                          controller: paidAmountController,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            hintText: 'Enter paid amount',
-                            prefixText: '${selectedCurrency ?? 'AED'} ',
-                          ),
-                          onChanged: (value) {
-                            double enteredAmount =
-                                double.tryParse(value) ?? 0.0;
-                            setState(() {
-                              paidAmount = enteredAmount;
-                              _calculateRoundOffAndBalance();
-                            });
-                          },
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter paid amount';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Round Off field
-                      _buildLabeledField(
-                        'Round Off:',
-                        child: TextFormField(
-                          readOnly: true,
-                          initialValue: roundOff.toStringAsFixed(2),
-                          decoration: InputDecoration(
-                            hintText: '0.00',
-                            prefixText: '${selectedCurrency ?? 'AED'} ',
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Balance field
-                      _buildLabeledField(
-                        'Balance:',
-                        child: TextFormField(
-                          readOnly: true,
-                          initialValue: balanceAmount.toStringAsFixed(2),
-                          decoration: InputDecoration(
-                            hintText: '0.00',
-                            prefixText: '${selectedCurrency ?? 'AED'} ',
-                            fillColor: const Color(0xFFFFEEEE),
-                            filled: true,
-                          ),
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color:
-                                balanceAmount > 0 ? Colors.red : Colors.green,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // File Upload Section - only for non-cash payments
-                      if (selectedPaymentType != 'Cash')
-                        _buildFileUploadSection(),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Submit Buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    // Cancel Button
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.close),
-                      label: const Text('Cancel'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                      ),
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
                     ),
 
-                    const SizedBox(width: 16),
+                    const SizedBox(height: 20),
 
-                    // Save Button
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.check),
-                      label: const Text('Save'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.teal,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
+                    // Products Section - FIXED
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            spreadRadius: 1,
+                            blurRadius: 3,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          // Process data
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Processing Data')),
-                          );
-                        }
-                      },
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Products Table Header
+                          Container(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            color: Colors.teal.shade100,
+                            child: const Row(
+                              children: [
+                                Expanded(
+                                  flex: 2,
+                                  child: Text(
+                                    'Category *',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child: Text(
+                                    'Amount *',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Products Table Rows
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: salesItems.length,
+                            itemBuilder: (context, index) {
+                              return Card(
+                                margin: const EdgeInsets.symmetric(vertical: 8),
+                                elevation: 1,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      _buildDropdown(
+                                        value:
+                                            salesItems[index].expenseCategoryId,
+                                        items: controller.expenseCategory ?? [],
+                                        label: 'Expense Type',
+                                        isRequired: true,
+                                        onChanged: (value) {
+                                          setState(() {
+                                            salesItems[index]
+                                                .expenseCategoryId = value;
+                                          });
+                                        },
+                                      ),
+
+                                      const SizedBox(height: 12),
+                                      // Manual Subtotal Entry - Added
+                                      _buildLabeledField(
+                                        'Amount:',
+                                        required: true,
+                                        child: TextFormField(
+                                          controller:
+                                              index == 0
+                                                  ? subtotalController
+                                                  : null,
+                                          initialValue:
+                                              index == 0
+                                                  ? null
+                                                  : salesItems[index].total
+                                                      .toString(),
+                                          keyboardType: TextInputType.number,
+                                          decoration: const InputDecoration(
+                                            hintText: 'Enter amount',
+                                          ),
+                                          onChanged: (value) {
+                                            setState(() {
+                                              double amount =
+                                                  double.tryParse(value) ?? 0.0;
+                                              salesItems[index].total = amount;
+                                              if (index == 0) {
+                                                subtotal = amount;
+                                              }
+                                              _calculateGrandTotal();
+                                            });
+                                          },
+                                          validator: (value) {
+                                            if (value == null ||
+                                                value.isEmpty) {
+                                              return 'Please enter amount';
+                                            }
+                                            return null;
+                                          },
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 16),
+
+                                      // VAT Selection - Modified
+                                      _buildLabeledField(
+                                        'VAT Rate:',
+                                        required: true,
+                                        child: DropdownButtonFormField<double>(
+                                          decoration: const InputDecoration(
+                                            hintText: 'Select VAT Rate',
+                                          ),
+                                          value:
+                                              salesItems[index].vatAmount == 0.0
+                                                  ? selectedVatRate
+                                                  : salesItems[index].vatAmount,
+                                          items: List.generate(
+                                            vatRates.length,
+                                            (vatIndex) {
+                                              return DropdownMenuItem<double>(
+                                                value: vatRates[vatIndex],
+                                                child: Text(
+                                                  vatLabels[vatIndex],
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                          onChanged: (value) {
+                                            setState(() {
+                                              double vatRate = value ?? 0.05;
+                                              salesItems[index].vatAmount =
+                                                  vatRate;
+                                              if (index == 0) {
+                                                selectedVatRate = vatRate;
+                                              }
+                                              _calculateGrandTotal();
+                                            });
+                                          },
+                                          validator: (value) {
+                                            if (value == null) {
+                                              return 'Please select VAT rate';
+                                            }
+                                            return null;
+                                          },
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 12),
+                                      // Description TextField
+                                      _buildLabeledField(
+                                        'Description:',
+                                        child: TextFormField(
+                                          initialValue:
+                                              salesItems[index].description,
+                                          onChanged: (value) {
+                                            setState(() {
+                                              salesItems[index].description =
+                                                  value;
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Totals Section
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Column(
+                              children: [
+                                _buildTotalRow(
+                                  'Subtotal:',
+                                  '${_getCurrencyCode(controller)} ${subtotal.toStringAsFixed(2)}',
+                                ),
+                                _buildTotalRow(
+                                  'VAT (${(selectedVatRate * 100).toInt()}%):',
+                                  '${_getCurrencyCode(controller)} ${vatAmount.toStringAsFixed(2)}',
+                                ),
+                                _buildTotalRow(
+                                  'Grand Total:',
+                                  '${_getCurrencyCode(controller)} ${grandTotal.toStringAsFixed(2)}',
+                                  isBold: true,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Payment Details Section - MODIFIED WITH HARDCODED PAYMENT TYPES
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            spreadRadius: 1,
+                            blurRadius: 3,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Section Header
+                          const Text(
+                            'Payment Details',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.teal,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Modified Payment Type Dropdown - Using hardcoded values
+                          _buildDropdown(
+                            value: selectedPaymentTypeId,
+                            items: paymentTypes,
+                            label: 'Payment Type',
+                            isRequired: true,
+                            onChanged: (value) {
+                              setState(() {
+                                selectedPaymentTypeId = value;
+                                // Set payment type string based on selection
+                                final paymentTypeItem = paymentTypes.firstWhere(
+                                  (item) => item['id'] == value,
+                                  orElse: () => {'Name': 'Cash'},
+                                );
+                                selectedPaymentType = paymentTypeItem['Name'];
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Conditional fields based on payment type - Modified logic
+                          if (selectedPaymentType != null &&
+                              selectedPaymentType != 'Cash')
+                            _buildPaymentSpecificFields(isMobile, controller),
+
+                          // File Upload Section - only for non-cash payments
+                          if (selectedPaymentType != null &&
+                              selectedPaymentType != 'Cash')
+                            _buildFileUploadSection(),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Submit Buttons
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        // Cancel Button
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.close),
+                          label: const Text('Cancel'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                        ),
+
+                        const SizedBox(width: 16),
+
+                        // Save Button
+                        ElevatedButton.icon(
+                          icon:
+                              controller.isLoading
+                                  ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
+                                    ),
+                                  )
+                                  : const Icon(Icons.check),
+                          label: Text(
+                            controller.isLoading ? 'Saving...' : 'Save',
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.teal,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                          ),
+                          onPressed:
+                              controller.isLoading
+                                  ? null
+                                  : () => _saveExpense(controller),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
 
-  // Build Payment Specific Fields - New method for cleaner logic
-  Widget _buildPaymentSpecificFields(bool isMobile) {
+  // Get currency code helper
+  String _getCurrencyCode(dynamic controller) {
+    if (selectedCurrencyId != null && controller.currency != null) {
+      final currency = controller.currency!.firstWhere(
+        (c) => c['id'] == selectedCurrencyId,
+        orElse: () => {'currency_code': 'AED'},
+      );
+      return currency['currency_code'] ?? currency['name'] ?? 'AED';
+    }
+    return 'AED';
+  }
+
+  // Save expense method - FIXED INTEGRATION
+  Future<void> _saveExpense(ExpenseController controller) async {
+    if (_formKey.currentState!.validate()) {
+      if (selectedSupplierId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select a supplier'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      if (selectedEmployeeId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select an employee'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      if (selectedCurrencyId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select a currency'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      List<Map<String, dynamic>> expenseDetails =
+          salesItems.map((item) {
+            double vatAmount = item.total * (item.vatAmount ?? 0);
+
+            return {
+              "expense_category_id": item.expenseCategoryId,
+              "expenseDate": DateFormat('yyyy-MM-dd').format(invoiceDate),
+              "Description": item.description ?? '',
+              "Total": item.total, // Send as number
+              "VAT": item.vatAmount ?? 0, // Send as decimal (0.05 for 5%)
+              "rowVatAmount": vatAmount, // Calculated VAT amount
+              "rowSubTotal": item.total + vatAmount, // Total + VAT
+            };
+          }).toList();
+
+      // Validate expense details
+      if (expenseDetails.isEmpty ||
+          expenseDetails.any(
+            (detail) => detail["expense_category_id"] == null,
+          )) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select an expense category and enter amount'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      try {
+        bool success = await controller.postExpenseRegistration(
+          supplierId: selectedSupplierId,
+          employeeId: selectedEmployeeId,
+          expenseDate: DateFormat('yyyy-MM-dd').format(invoiceDate),
+          referenceNumber: selectedReferenceNumber,
+          currencyId: selectedCurrencyId,
+          total: subtotal.toString(),
+          subTotal: subtotal.toString(),
+          totalVat: vatAmount.toString(),
+          grandTotal: grandTotal.toString(),
+          expenseDetail: jsonEncode(expenseDetails),
+          paymentType: selectedPaymentType,
+          bankId: selectedPaymentType == 'Cash' ? 0 : selectedBankId,
+          transferDate:
+              selectedPaymentType == 'Bank'
+                  ? DateFormat('yyyy-MM-dd').format(transferDate)
+                  : DateFormat('yyyy-MM-dd').format(DateTime.now()),
+          chequeNumber: selectedPaymentType == 'Cheque' ? chequeRefNumber : '',
+        );
+        print(jsonEncode(success));
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Expense saved successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pop(context);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Failed to save expense: ${controller.errorMessage ?? 'Unknown error'}',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving expense: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // Build Payment Specific Fields - MODIFIED FOR HARDCODED PAYMENT TYPES
+  Widget _buildPaymentSpecificFields(bool isMobile, dynamic controller) {
     return Column(
       children: [
-        // Bank Name - Required for Bank Transfer and Check
-        if (selectedPaymentType == 'Bank Transfer' ||
-            selectedPaymentType == 'Check')
-          _buildLabeledField(
-            'Bank Name:',
-            required: true,
-            child: DropdownButtonFormField<String>(
-              decoration: const InputDecoration(hintText: 'Select Bank Name'),
-              value: selectedBankName,
-              items:
-                  bankNames
-                      .map(
-                        (item) => DropdownMenuItem<String>(
-                          value: item,
-                          child: Text(item),
-                        ),
-                      )
-                      .toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedBankName = value;
-                });
-              },
-              validator: (value) {
-                if (value == null || value == bankNames[0]) {
-                  return 'Please select a bank';
-                }
-                return null;
-              },
-            ),
+        // Bank Name - Required for Bank and Cheque
+        if (selectedPaymentType == 'Bank' || selectedPaymentType == 'Cheque')
+          _buildDropdown(
+            value: controller.selectedBankTypeId,
+            items: controller.banks ?? [],
+            label: 'Bank Type',
+            isRequired: true,
+            onChanged: (value) {
+              controller.setBankType(value);
+              setState(() {
+                selectedBankId = value;
+              });
+            },
           ),
 
-        if (selectedPaymentType == 'Bank Transfer' ||
-            selectedPaymentType == 'Check')
+        if (selectedPaymentType == 'Bank' || selectedPaymentType == 'Cheque')
           const SizedBox(height: 16),
 
-        // Account Number - For Bank Transfer
-        if (selectedPaymentType == 'Bank Transfer')
+        // Account Number - For Bank
+        if (selectedPaymentType == 'Bank')
           _buildLabeledField(
             'Account Number:',
             required: true,
@@ -715,10 +779,10 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
             ),
           ),
 
-        if (selectedPaymentType == 'Bank Transfer') const SizedBox(height: 16),
+        if (selectedPaymentType == 'Bank') const SizedBox(height: 16),
 
-        // Transfer or Deposit Date - For Bank Transfer
-        if (selectedPaymentType == 'Bank Transfer')
+        // Transfer or Deposit Date - For Bank
+        if (selectedPaymentType == 'Bank')
           _buildLabeledField(
             'Transfer or Deposit Date:',
             required: true,
@@ -744,10 +808,10 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
             ),
           ),
 
-        if (selectedPaymentType == 'Bank Transfer') const SizedBox(height: 16),
+        if (selectedPaymentType == 'Bank') const SizedBox(height: 16),
 
-        // Cheque or Reference Number - For Check
-        if (selectedPaymentType == 'Check')
+        // Cheque or Reference Number - For Cheque
+        if (selectedPaymentType == 'Cheque')
           _buildLabeledField(
             'Cheque or Ref. Number:',
             required: true,
@@ -770,7 +834,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
             ),
           ),
 
-        if (selectedPaymentType == 'Check') const SizedBox(height: 16),
+        if (selectedPaymentType == 'Cheque') const SizedBox(height: 16),
       ],
     );
   }
@@ -840,17 +904,6 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     }
   }
 
-  // Function to calculate item total
-  void _calculateTotal(int index) {
-    setState(() {
-      salesItems[index].total =
-          salesItems[index].quantity * salesItems[index].price;
-      salesItems[index].subtotal = salesItems[index].total;
-      salesItems[index].vatAmount =
-          salesItems[index].subtotal * selectedVatRate;
-    });
-  }
-
   // Function to calculate grand total from manual subtotal entry
   void _calculateGrandTotal() {
     setState(() {
@@ -889,9 +942,90 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     });
   }
 
-  // Helper for building labeled form fields
+  Widget _buildDropdown({
+    required int? value,
+    required List<Map<String, dynamic>> items,
+    required String label,
+    bool isRequired = false,
+    required ValueChanged<int?> onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        RichText(
+          text: TextSpan(
+            text: label,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF374151),
+            ),
+            children:
+                isRequired
+                    ? [
+                      const TextSpan(
+                        text: ' *',
+                        style: TextStyle(color: Color(0xFFEF4444)),
+                      ),
+                    ]
+                    : [],
+          ),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<int>(
+          value: value,
+          style: const TextStyle(fontSize: 16, color: Color(0xFF1F2937)),
+          decoration: InputDecoration(
+            hintText: 'Select ',
+            hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF2563EB), width: 2),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFEF4444), width: 2),
+            ),
+            filled: true,
+            fillColor: const Color(0xFFFAFAFA),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 16,
+            ),
+          ),
+          items:
+              items.map<DropdownMenuItem<int>>((item) {
+                return DropdownMenuItem<int>(
+                  value: item['id'],
+                  child: Text(
+                    item['Name'] ?? '',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                );
+              }).toList(),
+          onChanged: onChanged,
+          validator:
+              isRequired
+                  ? (value) {
+                    if (value == null) {
+                      return '$label is required';
+                    }
+                    return null;
+                  }
+                  : null,
+        ),
+      ],
+    );
+  }
 
-  // Helper for building labeled form fields
   Widget _buildLabeledField(
     String label, {
     required Widget child,
@@ -966,6 +1100,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
 
 // Model class for Sales Item
 class SalesItem {
+  int? expenseCategoryId;
   String? product = 'Product';
   String? unit = 'UNIT';
   String description = '';
@@ -977,6 +1112,7 @@ class SalesItem {
   double subtotal = 0.0;
 
   SalesItem({
+    this.expenseCategoryId,
     this.product,
     this.unit,
     this.description = '',

@@ -232,4 +232,57 @@ abstract class RestClient {
     @Field("id") int? id,
     @Field("deleteDescription") String? description,
   });
+
+  //expenses
+  @GET('/api/Expense/paginate/{page}/{limit}')
+  Future<dynamic> getExpense(
+    @Path("page") int page,
+    @Path("limit") int limit,
+    @Header("Authorization") String? token,
+  );
+
+  @POST('/api/Expense')
+  @FormUrlEncoded()
+  Future<dynamic> postExpenseRegistration({
+    @Header("Authorization") String? token,
+    @Field("supplier_id") int? supplierId,
+    @Field("employee_id") int? employeeId,
+    @Field("expenseDate") String? expenseDate,
+    @Field("referenceNumber") String? referenceNumber,
+    @Field("currency_id") int? currencyId,
+    @Field("Total") String? total,
+    @Field("subTotal") String? subTotal,
+    @Field("totalVat") String? totalVat,
+    @Field("grandTotal") String? grandTotal,
+    @Field("expense_detail") String? expenseDetail,
+    @Field("payment_type") String? paymentType,
+    @Field("bank_id") int? bankId,
+    @Field("transferDate") String? transferDate,
+    @Field("ChequeNumber") String? chequeNumber,
+  });
+
+  @GET('/api/ExpenseDetail/{id}')
+  Future<dynamic> getExpenseDetail({
+    @Path("id") int? id,
+    @Header("Authorization") String? token,
+  });
+
+  @GET('/api/getExpenseBaseList')
+  Future<dynamic> getExpenseBaseList({@Header("Authorization") String? token});
+
+  @POST('/api/ExpenseDelete')
+  @FormUrlEncoded()
+  Future<dynamic> deleteExpense({
+    @Header("Authorization") String? token,
+    @Field("id") int? id,
+    @Field("deleteDescription") String? description,
+  });
+
+  @POST('/api/CheckExpenseReferenceExist')
+  @FormUrlEncoded()
+  Future<dynamic> checkExpenseReferenceExist({
+    @Header("Authorization") String? token,
+    @Field("referenceNumber") String? referenceNumber,
+    @Field("supplier_id") String? supplierId,
+  });
 }

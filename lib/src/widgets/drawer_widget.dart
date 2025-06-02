@@ -324,7 +324,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                   title: 'Expenses',
                   onTap: () {
                     NavigationService().pushNavigation(
-                      Screenroutes.expenseScreen,
+                      Screenroutes.expenseListScreen,
                     );
                   },
                 ),
