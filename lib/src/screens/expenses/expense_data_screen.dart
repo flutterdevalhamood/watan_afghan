@@ -1,5 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -14,6 +17,9 @@ class ExpenseScreen extends StatefulWidget {
 
 class _ExpenseScreenState extends State<ExpenseScreen> {
   final _formKey = GlobalKey<FormState>();
+  bool _isExpenseRegistered = false;
+  int? _savedExpenseId;
+  PlatformFile? _selectedFile;
 
   // Form values - Fixed variable assignments
   int? selectedSupplierId;
@@ -35,9 +41,6 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
   String accountNumber = '';
   DateTime transferDate = DateTime.now();
   String chequeRefNumber = '';
-
-  // File upload
-  String? selectedFile = 'No file chosen';
 
   // Product table data
   List<SalesItem> salesItems = [SalesItem()];
@@ -144,461 +147,530 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Customer and Project section
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.2),
-                            spreadRadius: 1,
-                            blurRadius: 3,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildDropdown(
-                            value: controller.selectedSupplierTypeId,
-                            items: controller.supplierType ?? [],
-                            label: 'Supplier Type',
-                            isRequired: true,
-                            onChanged: (value) {
-                              controller.setSupplierType(value);
-                              setState(() {
-                                selectedSupplierId = value;
-                              });
-                            },
-                          ),
-                          const SizedBox(height: 16),
-
-                          _buildDropdown(
-                            value: controller.selectedEmployeeId,
-                            items: controller.employeeType ?? [],
-                            label: 'Employee Type',
-                            isRequired: true,
-                            onChanged: (value) {
-                              controller.setEmployee(value);
-                              setState(() {
-                                selectedEmployeeId = value;
-                              });
-                            },
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Single Date Field
-                          _buildLabeledField(
-                            'Expense Date:',
-                            required: true,
-                            child: GestureDetector(
-                              onTap:
-                                  () => _selectDate(
-                                    context,
-                                    isTransferDate: false,
-                                  ),
-                              child: AbsorbPointer(
-                                child: TextFormField(
-                                  decoration: const InputDecoration(
-                                    hintText: 'Select Date',
-                                    suffixIcon: Icon(Icons.calendar_today),
-                                  ),
-                                  controller: TextEditingController(
-                                    text: DateFormat(
-                                      'dd/MM/yyyy',
-                                    ).format(invoiceDate),
-                                  ),
-                                ),
-                              ),
+                    if (!_isExpenseRegistered) ...[
+                      // Customer and Project section
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.2),
+                              spreadRadius: 1,
+                              blurRadius: 3,
+                              offset: const Offset(0, 2),
                             ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Reference Number
-                          _buildLabeledField(
-                            'Reference Number:',
-                            required: true,
-                            child: TextFormField(
-                              decoration: const InputDecoration(
-                                hintText: 'Enter Reference Number',
-                              ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildDropdown(
+                              value: controller.selectedSupplierTypeId,
+                              items: controller.supplierType ?? [],
+                              label: 'Supplier Type',
+                              isRequired: true,
                               onChanged: (value) {
+                                controller.setSupplierType(value);
                                 setState(() {
-                                  selectedReferenceNumber = value;
+                                  selectedSupplierId = value;
                                 });
                               },
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter a reference number';
-                                }
-                                return null;
+                            ),
+                            const SizedBox(height: 16),
+
+                            _buildDropdown(
+                              value: controller.selectedEmployeeId,
+                              items: controller.employeeType ?? [],
+                              label: 'Employee Type',
+                              isRequired: true,
+                              onChanged: (value) {
+                                controller.setEmployee(value);
+                                setState(() {
+                                  selectedEmployeeId = value;
+                                });
                               },
                             ),
-                          ),
-                          const SizedBox(height: 16),
+                            const SizedBox(height: 16),
 
-                          _buildDropdown(
-                            value: controller.selectedCurrencyTypeId,
-                            items: controller.currency ?? [],
-                            label: 'Currency Type',
-                            isRequired: true,
-                            onChanged: (value) {
-                              controller.setCurrencyType(value);
-                              setState(() {
-                                selectedCurrencyId = value;
-                              });
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Products Section - FIXED
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.2),
-                            spreadRadius: 1,
-                            blurRadius: 3,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Products Table Header
-                          Container(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            color: Colors.teal.shade100,
-                            child: const Row(
-                              children: [
-                                Expanded(
-                                  flex: 2,
-                                  child: Text(
-                                    'Category *',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
+                            // Single Date Field
+                            _buildLabeledField(
+                              'Expense Date:',
+                              required: true,
+                              child: GestureDetector(
+                                onTap:
+                                    () => _selectDate(
+                                      context,
+                                      isTransferDate: false,
                                     ),
-                                    textAlign: TextAlign.center,
+                                child: AbsorbPointer(
+                                  child: TextFormField(
+                                    decoration: const InputDecoration(
+                                      hintText: 'Select Date',
+                                      suffixIcon: Icon(Icons.calendar_today),
+                                    ),
+                                    controller: TextEditingController(
+                                      text: DateFormat(
+                                        'dd/MM/yyyy',
+                                      ).format(invoiceDate),
+                                    ),
                                   ),
                                 ),
-                                Expanded(
-                                  flex: 1,
-                                  child: Text(
-                                    'Amount *',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
-                          ),
+                            const SizedBox(height: 16),
 
-                          // Products Table Rows
-                          ListView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: salesItems.length,
-                            itemBuilder: (context, index) {
-                              return Card(
-                                margin: const EdgeInsets.symmetric(vertical: 8),
-                                elevation: 1,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(12),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      _buildDropdown(
-                                        value:
-                                            salesItems[index].expenseCategoryId,
-                                        items: controller.expenseCategory ?? [],
-                                        label: 'Expense Type',
-                                        isRequired: true,
-                                        onChanged: (value) {
-                                          setState(() {
-                                            salesItems[index]
-                                                .expenseCategoryId = value;
-                                          });
-                                        },
+                            // Reference Number
+                            _buildLabeledField(
+                              'Reference Number:',
+                              required: true,
+                              child: TextFormField(
+                                decoration: const InputDecoration(
+                                  hintText: 'Enter Reference Number',
+                                ),
+                                onChanged: (value) {
+                                  setState(() {
+                                    selectedReferenceNumber = value;
+                                  });
+                                },
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter a reference number';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            _buildDropdown(
+                              value: controller.selectedCurrencyTypeId,
+                              items: controller.currency ?? [],
+                              label: 'Currency Type',
+                              isRequired: true,
+                              onChanged: (value) {
+                                controller.setCurrencyType(value);
+                                setState(() {
+                                  selectedCurrencyId = value;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Products Section
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.2),
+                              spreadRadius: 1,
+                              blurRadius: 3,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Products Table Header
+                            Container(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              color: Colors.teal.shade100,
+                              child: const Row(
+                                children: [
+                                  Expanded(
+                                    flex: 2,
+                                    child: Text(
+                                      'Category *',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
                                       ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 1,
+                                    child: Text(
+                                      'Amount *',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
 
-                                      const SizedBox(height: 12),
-                                      // Manual Subtotal Entry - Added
-                                      _buildLabeledField(
-                                        'Amount:',
-                                        required: true,
-                                        child: TextFormField(
-                                          controller:
-                                              index == 0
-                                                  ? subtotalController
-                                                  : null,
-                                          initialValue:
-                                              index == 0
-                                                  ? null
-                                                  : salesItems[index].total
-                                                      .toString(),
-                                          keyboardType: TextInputType.number,
-                                          decoration: const InputDecoration(
-                                            hintText: 'Enter amount',
-                                          ),
+                            // Products Table Rows
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: salesItems.length,
+                              itemBuilder: (context, index) {
+                                return Card(
+                                  margin: const EdgeInsets.symmetric(
+                                    vertical: 8,
+                                  ),
+                                  elevation: 1,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        _buildDropdown(
+                                          value:
+                                              salesItems[index]
+                                                  .expenseCategoryId,
+                                          items:
+                                              controller.expenseCategory ?? [],
+                                          label: 'Expense Type',
+                                          isRequired: true,
                                           onChanged: (value) {
                                             setState(() {
-                                              double amount =
-                                                  double.tryParse(value) ?? 0.0;
-                                              salesItems[index].total = amount;
-                                              if (index == 0) {
-                                                subtotal = amount;
-                                              }
-                                              _calculateGrandTotal();
+                                              salesItems[index]
+                                                  .expenseCategoryId = value;
                                             });
                                           },
-                                          validator: (value) {
-                                            if (value == null ||
-                                                value.isEmpty) {
-                                              return 'Please enter amount';
-                                            }
-                                            return null;
-                                          },
                                         ),
-                                      ),
 
-                                      const SizedBox(height: 16),
-
-                                      // VAT Selection - Modified
-                                      _buildLabeledField(
-                                        'VAT Rate:',
-                                        required: true,
-                                        child: DropdownButtonFormField<double>(
-                                          decoration: const InputDecoration(
-                                            hintText: 'Select VAT Rate',
-                                          ),
-                                          value:
-                                              salesItems[index].vatAmount == 0.0
-                                                  ? selectedVatRate
-                                                  : salesItems[index].vatAmount,
-                                          items: List.generate(
-                                            vatRates.length,
-                                            (vatIndex) {
-                                              return DropdownMenuItem<double>(
-                                                value: vatRates[vatIndex],
-                                                child: Text(
-                                                  vatLabels[vatIndex],
-                                                ),
-                                              );
+                                        const SizedBox(height: 12),
+                                        // Manual Subtotal Entry
+                                        _buildLabeledField(
+                                          'Amount:',
+                                          required: true,
+                                          child: TextFormField(
+                                            controller:
+                                                index == 0
+                                                    ? subtotalController
+                                                    : null,
+                                            initialValue:
+                                                index == 0
+                                                    ? null
+                                                    : salesItems[index].total
+                                                        .toString(),
+                                            keyboardType: TextInputType.number,
+                                            decoration: const InputDecoration(
+                                              hintText: 'Enter amount',
+                                            ),
+                                            onChanged: (value) {
+                                              setState(() {
+                                                double amount =
+                                                    double.tryParse(value) ??
+                                                    0.0;
+                                                salesItems[index].total =
+                                                    amount;
+                                                if (index == 0) {
+                                                  subtotal = amount;
+                                                }
+                                                _calculateGrandTotal();
+                                              });
+                                            },
+                                            validator: (value) {
+                                              if (value == null ||
+                                                  value.isEmpty) {
+                                                return 'Please enter amount';
+                                              }
+                                              return null;
                                             },
                                           ),
-                                          onChanged: (value) {
-                                            setState(() {
-                                              double vatRate = value ?? 0.05;
-                                              salesItems[index].vatAmount =
-                                                  vatRate;
-                                              if (index == 0) {
-                                                selectedVatRate = vatRate;
-                                              }
-                                              _calculateGrandTotal();
-                                            });
-                                          },
-                                          validator: (value) {
-                                            if (value == null) {
-                                              return 'Please select VAT rate';
-                                            }
-                                            return null;
-                                          },
                                         ),
-                                      ),
 
-                                      const SizedBox(height: 12),
-                                      // Description TextField
-                                      _buildLabeledField(
-                                        'Description:',
-                                        child: TextFormField(
-                                          initialValue:
-                                              salesItems[index].description,
-                                          onChanged: (value) {
-                                            setState(() {
-                                              salesItems[index].description =
-                                                  value;
-                                            });
-                                          },
+                                        const SizedBox(height: 16),
+
+                                        // VAT Selection
+                                        _buildLabeledField(
+                                          'VAT Rate:',
+                                          required: true,
+                                          child: DropdownButtonFormField<
+                                            double
+                                          >(
+                                            decoration: const InputDecoration(
+                                              hintText: 'Select VAT Rate',
+                                            ),
+                                            value:
+                                                salesItems[index].vatAmount ==
+                                                        0.0
+                                                    ? selectedVatRate
+                                                    : salesItems[index]
+                                                        .vatAmount,
+                                            items: List.generate(
+                                              vatRates.length,
+                                              (vatIndex) {
+                                                return DropdownMenuItem<double>(
+                                                  value: vatRates[vatIndex],
+                                                  child: Text(
+                                                    vatLabels[vatIndex],
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                            onChanged: (value) {
+                                              setState(() {
+                                                double vatRate = value ?? 0.05;
+                                                salesItems[index].vatAmount =
+                                                    vatRate;
+                                                if (index == 0) {
+                                                  selectedVatRate = vatRate;
+                                                }
+                                                _calculateGrandTotal();
+                                              });
+                                            },
+                                            validator: (value) {
+                                              if (value == null) {
+                                                return 'Please select VAT rate';
+                                              }
+                                              return null;
+                                            },
+                                          ),
                                         ),
-                                      ),
-                                    ],
+
+                                        const SizedBox(height: 12),
+                                        // Description TextField
+                                        _buildLabeledField(
+                                          'Description:',
+                                          child: TextFormField(
+                                            initialValue:
+                                                salesItems[index].description,
+                                            onChanged: (value) {
+                                              setState(() {
+                                                salesItems[index].description =
+                                                    value;
+                                              });
+                                            },
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              );
+                                );
+                              },
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // Totals Section
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Column(
+                                children: [
+                                  _buildTotalRow(
+                                    'Subtotal:',
+                                    '${_getCurrencyCode(controller)} ${subtotal.toStringAsFixed(2)}',
+                                  ),
+                                  _buildTotalRow(
+                                    'VAT (${(selectedVatRate * 100).toInt()}%):',
+                                    '${_getCurrencyCode(controller)} ${vatAmount.toStringAsFixed(2)}',
+                                  ),
+                                  _buildTotalRow(
+                                    'Grand Total:',
+                                    '${_getCurrencyCode(controller)} ${grandTotal.toStringAsFixed(2)}',
+                                    isBold: true,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Payment Details Section
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.2),
+                              spreadRadius: 1,
+                              blurRadius: 3,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Section Header
+                            const Text(
+                              'Payment Details',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.teal,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Payment Type Dropdown
+                            _buildDropdown(
+                              value: selectedPaymentTypeId,
+                              items: paymentTypes,
+                              label: 'Payment Type',
+                              isRequired: true,
+                              onChanged: (value) {
+                                setState(() {
+                                  selectedPaymentTypeId = value;
+                                  // Set payment type string based on selection
+                                  final paymentTypeItem = paymentTypes
+                                      .firstWhere(
+                                        (item) => item['id'] == value,
+                                        orElse: () => {'Name': 'Cash'},
+                                      );
+                                  selectedPaymentType = paymentTypeItem['Name'];
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Conditional fields based on payment type
+                            if (selectedPaymentType != null &&
+                                selectedPaymentType != 'Cash')
+                              _buildPaymentSpecificFields(isMobile, controller),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Submit Buttons
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          // Cancel Button
+                          ElevatedButton.icon(
+                            icon: const Icon(Icons.close),
+                            label: const Text('Cancel'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                            ),
+                            onPressed: () {
+                              Navigator.pop(context);
                             },
                           ),
 
-                          const SizedBox(height: 16),
+                          const SizedBox(width: 16),
 
-                          // Totals Section
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(8),
+                          // Save Button
+                          ElevatedButton.icon(
+                            icon:
+                                controller.isLoading
+                                    ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
+                                      ),
+                                    )
+                                    : const Icon(Icons.check),
+                            label: Text(
+                              controller.isLoading ? 'Saving...' : 'Save',
                             ),
-                            child: Column(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.teal,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                            ),
+                            onPressed:
+                                controller.isLoading
+                                    ? null
+                                    : () => _saveExpense(controller),
+                          ),
+                        ],
+                      ),
+                    ],
+
+                    // Document Upload Section (only shown after successful registration)
+                    if (_isExpenseRegistered)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        margin: const EdgeInsets.only(top: 20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.2),
+                              spreadRadius: 1,
+                              blurRadius: 3,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Upload Documents',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.teal,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            _buildFileUploadSection(),
+                            const SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
                               children: [
-                                _buildTotalRow(
-                                  'Subtotal:',
-                                  '${_getCurrencyCode(controller)} ${subtotal.toStringAsFixed(2)}',
+                                ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.grey.shade300,
+                                    foregroundColor: Colors.black,
+                                  ),
+                                  child: const Text('Skip'),
                                 ),
-                                _buildTotalRow(
-                                  'VAT (${(selectedVatRate * 100).toInt()}%):',
-                                  '${_getCurrencyCode(controller)} ${vatAmount.toStringAsFixed(2)}',
-                                ),
-                                _buildTotalRow(
-                                  'Grand Total:',
-                                  '${_getCurrencyCode(controller)} ${grandTotal.toStringAsFixed(2)}',
-                                  isBold: true,
+                                const SizedBox(width: 16),
+                                ElevatedButton(
+                                  onPressed: _uploadDocuments,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.teal,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  child: const Text('Upload Documents'),
                                 ),
                               ],
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Payment Details Section - MODIFIED WITH HARDCODED PAYMENT TYPES
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.2),
-                            spreadRadius: 1,
-                            blurRadius: 3,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Section Header
-                          const Text(
-                            'Payment Details',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.teal,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Modified Payment Type Dropdown - Using hardcoded values
-                          _buildDropdown(
-                            value: selectedPaymentTypeId,
-                            items: paymentTypes,
-                            label: 'Payment Type',
-                            isRequired: true,
-                            onChanged: (value) {
-                              setState(() {
-                                selectedPaymentTypeId = value;
-                                // Set payment type string based on selection
-                                final paymentTypeItem = paymentTypes.firstWhere(
-                                  (item) => item['id'] == value,
-                                  orElse: () => {'Name': 'Cash'},
-                                );
-                                selectedPaymentType = paymentTypeItem['Name'];
-                              });
-                            },
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Conditional fields based on payment type - Modified logic
-                          if (selectedPaymentType != null &&
-                              selectedPaymentType != 'Cash')
-                            _buildPaymentSpecificFields(isMobile, controller),
-
-                          // File Upload Section - only for non-cash payments
-                          if (selectedPaymentType != null &&
-                              selectedPaymentType != 'Cash')
-                            _buildFileUploadSection(),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Submit Buttons
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        // Cancel Button
-                        ElevatedButton.icon(
-                          icon: const Icon(Icons.close),
-                          label: const Text('Cancel'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                          ),
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
+                          ],
                         ),
-
-                        const SizedBox(width: 16),
-
-                        // Save Button
-                        ElevatedButton.icon(
-                          icon:
-                              controller.isLoading
-                                  ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white,
-                                      ),
-                                    ),
-                                  )
-                                  : const Icon(Icons.check),
-                          label: Text(
-                            controller.isLoading ? 'Saving...' : 'Save',
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.teal,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 12,
-                            ),
-                          ),
-                          onPressed:
-                              controller.isLoading
-                                  ? null
-                                  : () => _saveExpense(controller),
-                        ),
-                      ],
-                    ),
+                      ),
                   ],
                 ),
               ),
@@ -621,7 +693,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     return 'AED';
   }
 
-  // Save expense method - FIXED INTEGRATION
+  // Save expense method
   Future<void> _saveExpense(ExpenseController controller) async {
     if (_formKey.currentState!.validate()) {
       if (selectedSupplierId == null) {
@@ -702,15 +774,21 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                   : DateFormat('yyyy-MM-dd').format(DateTime.now()),
           chequeNumber: selectedPaymentType == 'Cheque' ? chequeRefNumber : '',
         );
-        print(jsonEncode(success));
+
         if (success) {
+          setState(() {
+            _isExpenseRegistered = true;
+            _savedExpenseId = controller.savedExpenseId;
+          });
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Expense saved successfully!'),
+              content: Text(
+                'Expense saved successfully! You can now upload documents.',
+              ),
               backgroundColor: Colors.green,
             ),
           );
-          Navigator.pop(context);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -732,7 +810,124 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     }
   }
 
-  // Build Payment Specific Fields - MODIFIED FOR HARDCODED PAYMENT TYPES
+  // Upload documents method
+  Future<void> _uploadDocuments() async {
+    if (_selectedFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a file to upload'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_savedExpenseId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No expense ID found for document upload'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final controller = Provider.of<ExpenseController>(context, listen: false);
+
+    try {
+      // Create MultipartFile from selected file
+      final file = File(_selectedFile!.path!);
+      final fileName = _selectedFile!.name;
+      final fileStream = file.openRead();
+      final length = await file.length();
+
+      final multipartFile = MultipartFile(
+        fileStream,
+        length,
+        filename: fileName,
+      );
+
+      bool success = await controller.postExpenseDocumentUpload(
+        id: _savedExpenseId,
+        files: [multipartFile],
+      );
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Documents uploaded successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Failed to upload documents: ${controller.errorMessage ?? 'Unknown error'}',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error uploading documents: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // Build File Upload Section
+  Widget _buildFileUploadSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Select File(s):',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            ElevatedButton(
+              onPressed: () async {
+                final result = await FilePicker.platform.pickFiles();
+                if (result != null) {
+                  setState(() {
+                    _selectedFile = result.files.first;
+                  });
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey.shade200,
+                foregroundColor: Colors.black,
+              ),
+              child: const Text('Choose Files'),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _selectedFile?.name ?? 'No file chosen',
+                style: TextStyle(color: Colors.grey.shade700),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (_selectedFile != null)
+          Text(
+            'Ready to upload: ${_selectedFile!.name}',
+            style: const TextStyle(color: Colors.green),
+          ),
+      ],
+    );
+  }
+
+  // Build Payment Specific Fields
   Widget _buildPaymentSpecificFields(bool isMobile, dynamic controller) {
     return Column(
       children: [
@@ -835,49 +1030,6 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
           ),
 
         if (selectedPaymentType == 'Cheque') const SizedBox(height: 16),
-      ],
-    );
-  }
-
-  // Build File Upload Section
-  Widget _buildFileUploadSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Select File(s):',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            // File Upload button
-            ElevatedButton(
-              onPressed: () {
-                // Implement file picker functionality here
-                setState(() {
-                  selectedFile = 'receipt.pdf'; // Demo value
-                });
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey.shade200,
-                foregroundColor: Colors.black,
-              ),
-              child: const Text('Choose Files'),
-            ),
-            const SizedBox(width: 12),
-
-            // Selected file name
-            Expanded(
-              child: Text(
-                selectedFile ?? 'No file chosen',
-                style: TextStyle(color: Colors.grey.shade700),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
       ],
     );
   }

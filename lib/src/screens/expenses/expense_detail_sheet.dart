@@ -423,7 +423,7 @@ class ExpenseDetailsSheet extends StatelessWidget {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Image.network(
-                      image.imageUrl,
+                      image.title,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(

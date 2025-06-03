@@ -215,20 +215,20 @@ class Employee {
 
 class ExpenseImage {
   final int id;
-  final String imageUrl;
-  final String imageName;
+  final String title;
+  final String relationId;
 
   ExpenseImage({
     required this.id,
-    required this.imageUrl,
-    required this.imageName,
+    required this.title,
+    required this.relationId,
   });
 
   factory ExpenseImage.fromJson(Map<String, dynamic> json) {
     return ExpenseImage(
       id: json['id'] ?? 0,
-      imageUrl: json['image_url'] ?? '',
-      imageName: json['image_name'] ?? '',
+      title: json['Title'] ?? '',
+      relationId: json['RelationId'] ?? '',
     );
   }
 }

@@ -49,6 +49,8 @@ class ExpenseController with ChangeNotifier {
   int? selectedExpenseTypeId;
   int? selectedBankTypeId;
 
+  int? savedExpenseId;
+
   // Search functionality
   void searchExpenses(String query) {
     _searchQuery = query.toLowerCase();
@@ -251,6 +253,7 @@ class ExpenseController with ChangeNotifier {
 
       if (expenseDetailData['IsSuccess'] == true) {
         final data = expenseDetailData['Data'] as Map<String, dynamic>;
+        final expenseId = expenseDetailData['Data']['id'];
         _expenseDetail = ExpenseDetail.fromJson(data);
         debugPrint('Supplier detail fetched: ${expenseDetail?.id}');
       } else {
@@ -355,23 +358,45 @@ class ExpenseController with ChangeNotifier {
         chequeNumber: chequeNumber,
       );
 
-      // Check response
-      if (response is Map<String, dynamic> && response['IsSuccess'] == true) {
-        debugPrint("Expense registration posted successfully!");
+      if (response is Map<String, dynamic>) {
+        if (response['IsSuccess'] == true) {
+          // Check if the response contains the ID directly or in a Data field
+          if (response['Data'] != null) {
+            // Case 1: ID is in the Data field (as object or direct value)
+            if (response['Data'] is Map) {
+              savedExpenseId = response['Data']['id'];
+            } else if (response['Data'] is int) {
+              savedExpenseId = response['Data'];
+            }
+          } else if (response['id'] != null) {
+            // Case 2: ID is at root level
+            savedExpenseId = response['id'];
+          }
+
+          if (savedExpenseId != null) {
+            return true;
+          } else {
+            errorMessage = 'Expense saved but no ID returned';
+            return false;
+          }
+        } else {
+          errorMessage = response['Message'] ?? 'Failed to save expense';
+          return false;
+        }
+      } else if (response is int) {
+        // Case 3: API returns just the ID as integer
+        savedExpenseId = response;
         return true;
-      } else if (response is Map<String, dynamic>) {
-        debugPrint(
-          "Expense registration failed: ${response['Message'] ?? 'Unknown error'}",
-        );
-        errorMessage =
-            response['Message'] ?? 'Failed to save expense registration';
       } else {
-        debugPrint("Unknown response format");
         errorMessage = 'Unexpected response format';
+        return false;
       }
-      return false;
     } catch (e) {
-      return _handleApiError(e);
+      errorMessage = 'Error saving expense: ${e.toString()}';
+      return false;
+    } finally {
+      isLoading = false;
+      notifyListeners();
     }
   }
 
@@ -413,6 +438,33 @@ class ExpenseController with ChangeNotifier {
     } finally {
       isLoading = false;
       notifyListeners();
+    }
+  }
+
+  Future<bool> postExpenseDocumentUpload({
+    int? id,
+    List<MultipartFile>? files,
+  }) async {
+    try {
+      final postExpenseDocumentUploadData = await restApi
+          .postExpenseDocumentsUpload(
+            token: _getAuthHeader(),
+            id: id,
+            files: files,
+          );
+
+      if (postExpenseDocumentUploadData['IsSuccess'] == true) {
+        getExpenseData();
+        return true;
+      } else {
+        print('API call failed: ${postExpenseDocumentUploadData['Message']}');
+        return false;
+      }
+    } catch (e) {
+      if (e is DioException) {
+        print("Dio Exception $e");
+      }
+      return false;
     }
   }
 

@@ -285,4 +285,38 @@ abstract class RestClient {
     @Field("referenceNumber") String? referenceNumber,
     @Field("supplier_id") String? supplierId,
   });
+
+  @POST('/api/ExpenseDocumentsUpload')
+  Future<dynamic> postExpenseDocumentsUpload({
+    @Header("Authorization") String? token,
+    @Part(name: "id") int? id,
+    @Part(name: 'document[]') List<MultipartFile>? files,
+  });
+
+  @GET('/Product/paginate/{page}/{limit}')
+  Future<dynamic> getProductData(
+    @Path("page") int page,
+    @Path("limit") int limit,
+    @Header("Authorization") String? token,
+  );
+
+  @POST('/Product')
+  Future<dynamic> registerProduct({
+    @Header("Authorization") String? token,
+    @Field("Name") String? name,
+  });
+
+  @POST('/ProductUpdate')
+  Future<dynamic> updateProduct({
+    @Header("Authorization") String? token,
+    @Field("id") int? id,
+    @Field("Name") String? name,
+  });
+
+  @POST('/ProductDelete')
+  Future<dynamic> deleteProduct({
+    @Header("Authorization") String? token,
+    @Field("id") int? id,
+    @Field("deleteDescription") String? deleteDescription,
+  });
 }
