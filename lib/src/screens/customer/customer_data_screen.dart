@@ -284,6 +284,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
                                     label: 'Mobile',
                                     isRequired: true,
                                     keyboardType: TextInputType.phone,
+                                    isMobile: true,
                                   ),
                                 ),
                                 const SizedBox(width: 16),
@@ -540,6 +541,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
     bool isRequired = false,
     TextInputType? keyboardType,
     int maxLines = 1,
+    bool isMobile = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -568,6 +570,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
           controller: controller,
           keyboardType: keyboardType,
           maxLines: maxLines,
+          maxLength: isMobile ? 15 : null,
           style: const TextStyle(fontSize: 16, color: Color(0xFF1F2937)),
           decoration: InputDecoration(
             hintText: 'Enter ${label.toLowerCase()}',
@@ -598,16 +601,22 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
               horizontal: 16,
               vertical: 16,
             ),
+            counterText: '',
           ),
-          validator:
-              isRequired
-                  ? (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return '$label is required';
-                    }
-                    return null;
-                  }
-                  : null,
+          validator: (value) {
+            if (isRequired && (value == null || value.trim().isEmpty)) {
+              return '$label is required';
+            }
+            if (isMobile && value != null && value.isNotEmpty) {
+              if (value.length > 15) {
+                return 'Mobile number cannot exceed 15 digits';
+              }
+              if (!RegExp(r'^[0-9]+$').hasMatch(value)) {
+                return 'Only digits are allowed';
+              }
+            }
+            return null;
+          },
         ),
       ],
     );

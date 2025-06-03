@@ -54,106 +54,113 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
           'Suppliers',
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
         ),
-        actions: [
-          IconButton(
-            onPressed: () => _controller.refresh(),
-            icon: const Icon(Icons.refresh_rounded),
-          ),
-        ],
       ),
-      body: Column(
-        children: [
-          // Search Bar
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.all(16),
-            child: SearchBar(
-              controller: _searchController,
-              hintText: 'Search suppliers...',
-              leading: const Icon(Icons.search),
-              trailing: [
-                if (_searchController.text.isNotEmpty)
-                  IconButton(
-                    onPressed: () {
-                      _searchController.clear();
-                      _controller.clearSearch();
-                    },
-                    icon: const Icon(Icons.clear),
-                  ),
-              ],
-              onChanged: (value) => _controller.searchSuppliers(value),
-              backgroundColor: WidgetStateProperty.all(Colors.grey[100]),
-              elevation: WidgetStateProperty.all(0),
+      body: RefreshIndicator(
+        onRefresh: () async => _controller.refresh(),
+        child: Column(
+          children: [
+            // Search Bar
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.all(16),
+              child: SearchBar(
+                controller: _searchController,
+                hintText: 'Search suppliers...',
+                leading: const Icon(Icons.search),
+                trailing: [
+                  if (_searchController.text.isNotEmpty)
+                    IconButton(
+                      onPressed: () {
+                        _searchController.clear();
+                        _controller.clearSearch();
+                      },
+                      icon: const Icon(Icons.clear),
+                    ),
+                ],
+                onChanged: (value) => _controller.searchSuppliers(value),
+                backgroundColor: WidgetStateProperty.all(Colors.grey[100]),
+                elevation: WidgetStateProperty.all(0),
+              ),
             ),
-          ),
 
-          // Customer List
-          Expanded(
-            child: Consumer<SupplierController>(
-              builder: (context, controller, child) {
-                if (controller.isLoading && controller.suppliers.isEmpty) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+            // Supplier List
+            Expanded(
+              child: Consumer<SupplierController>(
+                builder: (context, controller, child) {
+                  if (controller.isLoading && controller.suppliers.isEmpty) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-                if (controller.errorMessage != null) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 64,
-                          color: Colors.red[300],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          controller.errorMessage!,
-                          style: TextStyle(
-                            color: Colors.red[600],
-                            fontSize: 16,
+                  if (controller.errorMessage != null) {
+                    return SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.6,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                size: 64,
+                                color: Colors.red[300],
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                controller.errorMessage!,
+                                style: TextStyle(
+                                  color: Colors.red[600],
+                                  fontSize: 16,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: () => controller.refresh(),
+                                child: const Text('Try Again'),
+                              ),
+                            ],
                           ),
-                          textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () => controller.refresh(),
-                          child: const Text('Try Again'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
+                      ),
+                    );
+                  }
 
-                if (controller.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.people_outline,
-                          size: 64,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          controller.searchQuery.isNotEmpty
-                              ? 'No suppliers found for "${controller.searchQuery}"'
-                              : 'No suppliers found',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 16,
+                  if (controller.isEmpty) {
+                    return SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.6,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.people_outline,
+                                size: 64,
+                                color: Colors.grey[400],
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                controller.searchQuery.isNotEmpty
+                                    ? 'No suppliers found for "${controller.searchQuery}"'
+                                    : 'No suppliers found',
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 16,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
                           ),
-                          textAlign: TextAlign.center,
                         ),
-                      ],
-                    ),
-                  );
-                }
+                      ),
+                    );
+                  }
 
-                return RefreshIndicator(
-                  onRefresh: () async => controller.refresh(),
-                  child: ListView.builder(
+                  return ListView.builder(
                     controller: _scrollController,
+                    physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(16),
                     itemCount:
                         controller.suppliers.length +
@@ -173,12 +180,12 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
                         onDelete: () => _showDeleteConfirmation(supplier),
                       );
                     },
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {

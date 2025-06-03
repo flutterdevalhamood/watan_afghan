@@ -4,7 +4,10 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:sample/src/providers/expense_controller.dart';
 
@@ -20,6 +23,9 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
   bool _isExpenseRegistered = false;
   int? _savedExpenseId;
   PlatformFile? _selectedFile;
+
+  final ImagePicker _picker = ImagePicker();
+  File? _cameraImage;
 
   // Form values - Fixed variable assignments
   int? selectedSupplierId;
@@ -93,6 +99,54 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     });
     // Initialize calculations
     _updateTotals();
+  }
+
+  Future<void> _captureImageFromCamera() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 80, // Reduce quality to avoid large file issues
+        maxWidth: 1920,
+        maxHeight: 1080,
+      );
+
+      if (image != null) {
+        // Create a copy of the image in app's directory to avoid permission issues
+        final Directory appDir = await getApplicationDocumentsDirectory();
+        final String fileName =
+            'camera_image_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final String newPath = '${appDir.path}/$fileName';
+
+        // Copy the image to app directory
+        final File originalFile = File(image.path);
+        final File newFile = await originalFile.copy(newPath);
+
+        // Verify the file exists and has content
+        if (await newFile.exists()) {
+          final int fileSize = await newFile.length();
+          print('Camera image saved: $newPath, Size: $fileSize bytes');
+
+          setState(() {
+            _cameraImage = newFile;
+            _selectedFile = PlatformFile(
+              name: fileName,
+              path: newPath,
+              size: fileSize,
+            );
+          });
+        } else {
+          throw Exception('Failed to save camera image');
+        }
+      }
+    } catch (e) {
+      print('Camera capture error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error capturing image: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Future<void> _loadBaseData() async {
@@ -183,7 +237,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                             _buildDropdown(
                               value: controller.selectedEmployeeId,
                               items: controller.employeeType ?? [],
-                              label: 'Employee Type',
+                              label: 'Employee Name',
                               isRequired: true,
                               onChanged: (value) {
                                 controller.setEmployee(value);
@@ -810,12 +864,11 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     }
   }
 
-  // Upload documents method
   Future<void> _uploadDocuments() async {
-    if (_selectedFile == null) {
+    if (_selectedFile == null && _cameraImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please select a file to upload'),
+          content: Text('Please select a file or capture an image to upload'),
           backgroundColor: Colors.red,
         ),
       );
@@ -835,16 +888,46 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     final controller = Provider.of<ExpenseController>(context, listen: false);
 
     try {
-      // Create MultipartFile from selected file
-      final file = File(_selectedFile!.path!);
-      final fileName = _selectedFile!.name;
-      final fileStream = file.openRead();
-      final length = await file.length();
+      MultipartFile multipartFile;
+      File fileToUpload;
+      String fileName;
 
-      final multipartFile = MultipartFile(
-        fileStream,
-        length,
+      if (_cameraImage != null) {
+        // Handle camera image
+        fileToUpload = _cameraImage!;
+        fileName =
+            _selectedFile?.name ??
+            'camera_image_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      } else {
+        // Handle picked file
+        fileToUpload = File(_selectedFile!.path!);
+        fileName = _selectedFile!.name;
+      }
+
+      // Verify file exists and has content
+      if (!await fileToUpload.exists()) {
+        throw Exception('File does not exist: ${fileToUpload.path}');
+      }
+
+      final int fileSize = await fileToUpload.length();
+      if (fileSize == 0) {
+        throw Exception('File is empty');
+      }
+
+      print('Uploading file: ${fileToUpload.path}, Size: $fileSize bytes');
+
+      // Create MultipartFile
+      multipartFile = await MultipartFile.fromFile(
+        fileToUpload.path,
         filename: fileName,
+        contentType:
+            _cameraImage != null
+                ? MediaType('image', 'jpeg')
+                : null, // Let dio determine content type for other files
+      );
+
+      print(
+        'MultipartFile created: ${multipartFile.filename}, Length: ${multipartFile.length}',
       );
 
       bool success = await controller.postExpenseDocumentUpload(
@@ -871,16 +954,95 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
         );
       }
     } catch (e) {
+      print('Upload error details: $e');
+      print('Stack trace: ${StackTrace.current}');
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error uploading documents: $e'),
+          content: Text('Error uploading documents: ${e.toString()}'),
           backgroundColor: Colors.red,
         ),
       );
     }
   }
 
-  // Build File Upload Section
+  // Future<void> _uploadDocuments() async {
+  //   if (_selectedFile == null && _cameraImage == null) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(
+  //         content: Text('Please select a file or capture an image to upload'),
+  //         backgroundColor: Colors.red,
+  //       ),
+  //     );
+  //     return;
+  //   }
+  //
+  //   if (_savedExpenseId == null) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(
+  //         content: Text('No expense ID found for document upload'),
+  //         backgroundColor: Colors.red,
+  //       ),
+  //     );
+  //     return;
+  //   }
+  //
+  //   final controller = Provider.of<ExpenseController>(context, listen: false);
+  //
+  //   try {
+  //     MultipartFile multipartFile;
+  //
+  //     if (_cameraImage != null) {
+  //       // Handle camera image
+  //       final file = _cameraImage!;
+  //       final fileName = 'expense_${DateTime.now().millisecondsSinceEpoch}.jpg';
+  //       final fileStream = file.openRead();
+  //       final length = await file.length();
+  //
+  //       multipartFile = MultipartFile(fileStream, length, filename: fileName);
+  //     } else {
+  //       // Handle picked file
+  //       final file = File(_selectedFile!.path!);
+  //       final fileName = _selectedFile!.name;
+  //       final fileStream = file.openRead();
+  //       final length = await file.length();
+  //
+  //       multipartFile = MultipartFile(fileStream, length, filename: fileName);
+  //     }
+  //
+  //     bool success = await controller.postExpenseDocumentUpload(
+  //       id: _savedExpenseId,
+  //       files: [multipartFile],
+  //     );
+  //
+  //     if (success) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(
+  //           content: Text('Documents uploaded successfully!'),
+  //           backgroundColor: Colors.green,
+  //         ),
+  //       );
+  //       Navigator.pop(context);
+  //     } else {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //           content: Text(
+  //             'Failed to upload documents: ${controller.errorMessage ?? 'Unknown error'}',
+  //           ),
+  //           backgroundColor: Colors.red,
+  //         ),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text('Error uploading documents: $e'),
+  //         backgroundColor: Colors.red,
+  //       ),
+  //     );
+  //   }
+  // }
+
   Widget _buildFileUploadSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -892,12 +1054,32 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
         const SizedBox(height: 8),
         Row(
           children: [
+            // Camera button
+            ElevatedButton(
+              onPressed: _captureImageFromCamera,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue.shade100,
+                foregroundColor: Colors.blue.shade800,
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.camera_alt),
+                  SizedBox(width: 8),
+                  Text('Take Photo'),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            // File picker button
             ElevatedButton(
               onPressed: () async {
                 final result = await FilePicker.platform.pickFiles();
                 if (result != null) {
                   setState(() {
                     _selectedFile = result.files.first;
+                    _cameraImage =
+                        null; // Clear any camera image when selecting a file
                   });
                 }
               },
@@ -905,23 +1087,35 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                 backgroundColor: Colors.grey.shade200,
                 foregroundColor: Colors.black,
               ),
-              child: const Text('Choose Files'),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                _selectedFile?.name ?? 'No file chosen',
-                style: TextStyle(color: Colors.grey.shade700),
-                overflow: TextOverflow.ellipsis,
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.attach_file),
+                  SizedBox(width: 8),
+                  Text('Choose Files'),
+                ],
               ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
-        if (_selectedFile != null)
-          Text(
-            'Ready to upload: ${_selectedFile!.name}',
-            style: const TextStyle(color: Colors.green),
+        const SizedBox(height: 12),
+        if (_selectedFile != null || _cameraImage != null)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Selected file: ${_selectedFile?.name ?? 'Camera Image'}',
+                style: const TextStyle(color: Colors.green),
+              ),
+              if (_cameraImage != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: SizedBox(
+                    height: 150,
+                    child: Image.file(_cameraImage!),
+                  ),
+                ),
+            ],
           ),
       ],
     );

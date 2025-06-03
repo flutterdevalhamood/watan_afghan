@@ -295,6 +295,7 @@ class SupplierController with ChangeNotifier {
 
       // Check response
       if (response is Map<String, dynamic> && response['IsSuccess'] == true) {
+        await getSupplierData();
         debugPrint("Supplier registration posted successfully!");
         return true;
       } else if (response is Map<String, dynamic>) {
