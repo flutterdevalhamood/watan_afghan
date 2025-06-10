@@ -1,5 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:sample/src/providers/purchase_controller.dart';
+import 'package:sample/src/util/snack.dart';
 
 class PurchaseScreen extends StatefulWidget {
   const PurchaseScreen({super.key});
@@ -13,11 +18,10 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
 
   // Form values
   String? selectedSupplier;
-  String? selectedReferenceNumber;
+  String? selectedCurrency;
   String invoiceNumber = "ECFT-0087";
   DateTime invoiceDate = DateTime.now();
 
-  // Product table data
   List<SalesItem> salesItems = [SalesItem()];
 
   // Totals
@@ -26,27 +30,24 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
   double grandTotal = 0.0;
   final double vatRate = 0.05; // 5% VAT
 
-  // Dropdown options
-  final List<String> customers = [
-    '--Select Customer--',
-    'Customer 1',
-    'Customer 2',
-    'Customer 3',
-  ];
+  // Tax percentage options
+  final List<double> taxOptions = [0.0, 5.0];
+
   @override
   void initState() {
     super.initState();
-    // Initialize calculations
+    invoiceNumberController.text = invoiceNumber;
     _updateTotals();
-  }
 
-  final List<String> products = [
-    'Product',
-    'Product 1',
-    'Product 2',
-    'Product 3',
-  ];
-  final List<String> units = ['UNIT', 'PCS', 'KG', 'METER'];
+    // Load base data when screen initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final controller = Provider.of<PurchaseController>(
+        context,
+        listen: false,
+      );
+      controller.getPurchaseBaseData();
+    });
+  }
 
   // Controller for Terms and Customer Note
   final TextEditingController termsController = TextEditingController(
@@ -55,438 +56,742 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
   final TextEditingController notesController = TextEditingController(
     text: 'Customer Notes',
   );
-
-  // Stamp and signature
-  String? needStamp = 'No';
-  final List<String> stampOptions = ['Yes', 'No'];
+  final TextEditingController invoiceNumberController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Purchase'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-      ),
-      body: Form(
-        key: _formKey,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Customer and Project section
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.2),
-                        spreadRadius: 1,
-                        blurRadius: 3,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Customer Dropdown
-                      _buildLabeledField(
-                        'Supplier Name:',
-                        required: true,
-                        child: DropdownButtonFormField<String>(
-                          decoration: const InputDecoration(
-                            hintText: 'Select Supplier',
-                          ),
-                          value: selectedSupplier,
-                          items:
-                              customers
-                                  .map(
-                                    (item) => DropdownMenuItem<String>(
-                                      value: item,
-                                      child: Text(item),
-                                    ),
-                                  )
-                                  .toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              selectedSupplier = value;
-                            });
-                          },
-                          validator: (value) {
-                            if (value == null || value == customers[0]) {
-                              return 'Please select a customer';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Single Date Field
-                      _buildLabeledField(
-                        'Purchase date:',
-                        required: true,
-                        child: GestureDetector(
-                          onTap: () => _selectDate(context),
-                          child: AbsorbPointer(
-                            child: TextFormField(
-                              decoration: const InputDecoration(
-                                hintText: 'Select Date',
-                                suffixIcon: Icon(Icons.calendar_today),
-                              ),
-                              controller: TextEditingController(
-                                text: DateFormat(
-                                  'dd/MM/yyyy',
-                                ).format(invoiceDate),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      _buildLabeledField(
-                        'Reference Number:',
-                        required: true,
-                        child: DropdownButtonFormField<String>(
-                          decoration: const InputDecoration(
-                            hintText: 'Select Reference Number',
-                          ),
-                          value: selectedReferenceNumber,
-                          items:
-                              customers
-                                  .map(
-                                    (item) => DropdownMenuItem<String>(
-                                      value: item,
-                                      child: Text(item),
-                                    ),
-                                  )
-                                  .toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              selectedReferenceNumber = value;
-                            });
-                          },
-                          validator: (value) {
-                            if (value == null || value == customers[0]) {
-                              return 'Please select a reference number';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Products Section
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.2),
-                        spreadRadius: 1,
-                        blurRadius: 3,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Warning removed
-                      const SizedBox(height: 8),
-
-                      // Products Table Header
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        color: Colors.teal.shade100,
-                        child: Row(
+    return Consumer<PurchaseController>(
+      builder: (context, controller, child) {
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Purchase'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
+          body:
+              controller.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : Form(
+                    key: _formKey,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              flex: 2,
-                              child: _buildTableHeaderCell('Product *'),
-                            ),
-                            Expanded(
-                              flex: 1,
-                              child: _buildTableHeaderCell('UNIT *'),
-                            ),
-                            Expanded(
-                              flex: 1,
-                              child: _buildTableHeaderCell('Qty *'),
-                            ),
-                            Expanded(
-                              flex: 1,
-                              child: _buildTableHeaderCell('Price *'),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Products Table Rows - Vertical layout to avoid overflow
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: salesItems.length,
-                        itemBuilder: (context, index) {
-                          return Card(
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            elevation: 1,
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
+                            // Customer and Project section
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.2),
+                                    spreadRadius: 1,
+                                    blurRadius: 3,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Product Dropdown
+                                  // Supplier Dropdown
                                   _buildLabeledField(
-                                    'Product:',
+                                    'Supplier Name:',
                                     required: true,
                                     child: DropdownButtonFormField<String>(
-                                      value: salesItems[index].product,
+                                      decoration: const InputDecoration(
+                                        hintText: 'Select Supplier',
+                                      ),
+                                      value:
+                                          controller.selectedSupplierId
+                                              ?.toString(),
                                       items:
-                                          products
-                                              .map(
-                                                (item) =>
-                                                    DropdownMenuItem<String>(
-                                                      value: item,
-                                                      child: Text(item),
-                                                    ),
+                                          controller.supplier
+                                              ?.map(
+                                                (
+                                                  item,
+                                                ) => DropdownMenuItem<String>(
+                                                  value: item['id'].toString(),
+                                                  child: Text(
+                                                    item['Name'] ??
+                                                        item['supplier_name'] ??
+                                                        'Unknown',
+                                                  ),
+                                                ),
                                               )
-                                              .toList(),
+                                              .toList() ??
+                                          [],
                                       onChanged: (value) {
-                                        setState(() {
-                                          salesItems[index].product = value;
-                                        });
+                                        if (value != null) {
+                                          controller.setSupplier(
+                                            int.parse(value),
+                                          );
+                                          setState(() {
+                                            selectedSupplier = value;
+                                          });
+                                        }
+                                      },
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Please select a supplier';
+                                        }
+                                        return null;
                                       },
                                     ),
                                   ),
+                                  const SizedBox(height: 16),
 
-                                  const SizedBox(height: 12),
-
-                                  // Total for this item
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    color: Colors.grey.shade100,
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        const Text(
-                                          'Item Total:',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        Text(
-                                          '${salesItems[index].total.toStringAsFixed(2)}',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-
-                                  // Unit Dropdown
+                                  // Invoice Number Field
                                   _buildLabeledField(
-                                    'Unit:',
+                                    'Invoice Number:',
                                     required: true,
-                                    child: DropdownButtonFormField<String>(
-                                      value: salesItems[index].unit,
-                                      items:
-                                          units
-                                              .map(
-                                                (item) =>
-                                                    DropdownMenuItem<String>(
-                                                      value: item,
-                                                      child: Text(item),
-                                                    ),
-                                              )
-                                              .toList(),
-                                      onChanged: (value) {
-                                        setState(() {
-                                          salesItems[index].unit = value;
-                                        });
-                                      },
-                                    ),
-                                  ),
-
-                                  const SizedBox(height: 12),
-
-                                  Row(
-                                    children: [
-                                      // Quantity TextField
-                                      Expanded(
-                                        child: _buildLabeledField(
-                                          'Quantity:',
-                                          required: true,
-                                          child: TextFormField(
-                                            initialValue:
-                                                salesItems[index].quantity
-                                                    .toString(),
-                                            keyboardType: TextInputType.number,
-                                            onChanged: (value) {
-                                              setState(() {
-                                                salesItems[index].quantity =
-                                                    int.tryParse(value) ?? 0;
-                                                _calculateTotal(index);
-                                                _updateTotals();
-                                              });
-                                            },
-                                          ),
-                                        ),
-                                      ),
-
-                                      const SizedBox(width: 16),
-
-                                      // Price TextField
-                                      Expanded(
-                                        child: _buildLabeledField(
-                                          'Price:',
-                                          required: true,
-                                          child: TextFormField(
-                                            initialValue:
-                                                salesItems[index].price
-                                                    .toString(),
-                                            keyboardType: TextInputType.number,
-                                            onChanged: (value) {
-                                              setState(() {
-                                                salesItems[index].price =
-                                                    double.tryParse(value) ??
-                                                    0.0;
-                                                _calculateTotal(index);
-                                                _updateTotals();
-                                              });
-                                            },
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-
-                                  const SizedBox(height: 12),
-
-                                  // Description TextField
-                                  _buildLabeledField(
-                                    'Description:',
                                     child: TextFormField(
-                                      initialValue:
-                                          salesItems[index].description,
+                                      controller: invoiceNumberController,
+                                      decoration: const InputDecoration(
+                                        hintText: 'Enter Invoice Number',
+                                        border: OutlineInputBorder(),
+                                      ),
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Please enter invoice number';
+                                        }
+                                        return null;
+                                      },
                                       onChanged: (value) {
                                         setState(() {
-                                          salesItems[index].description = value;
+                                          invoiceNumber = value;
                                         });
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+
+                                  // Single Date Field
+                                  _buildLabeledField(
+                                    'Purchase date:',
+                                    required: true,
+                                    child: GestureDetector(
+                                      onTap: () => _selectDate(context),
+                                      child: AbsorbPointer(
+                                        child: TextFormField(
+                                          decoration: const InputDecoration(
+                                            hintText: 'Select Date',
+                                            suffixIcon: Icon(
+                                              Icons.calendar_today,
+                                            ),
+                                          ),
+                                          controller: TextEditingController(
+                                            text: DateFormat(
+                                              'dd/MM/yyyy',
+                                            ).format(invoiceDate),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+
+                                  // Currency Dropdown
+                                  _buildLabeledField(
+                                    'Currency',
+                                    required: true,
+                                    child: DropdownButtonFormField<String>(
+                                      decoration: const InputDecoration(
+                                        hintText: 'Select Currency',
+                                      ),
+                                      value:
+                                          controller.selectedCurrencyTypeId
+                                              ?.toString(),
+                                      items:
+                                          controller.currencyType
+                                              ?.map(
+                                                (
+                                                  item,
+                                                ) => DropdownMenuItem<String>(
+                                                  value: item['id'].toString(),
+                                                  child: Text(
+                                                    item['Name'] ??
+                                                        item['currency_name'] ??
+                                                        'Unknown',
+                                                  ),
+                                                ),
+                                              )
+                                              .toList() ??
+                                          [],
+                                      onChanged: (value) {
+                                        if (value != null) {
+                                          controller.setCurrencyType(
+                                            int.parse(value),
+                                          );
+                                          setState(() {
+                                            selectedCurrency = value;
+                                          });
+                                        }
+                                      },
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Please select a currency';
+                                        }
+                                        return null;
                                       },
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                          );
-                        },
-                      ),
 
-                      const SizedBox(height: 16),
+                            const SizedBox(height: 20),
 
-                      // Description TextField removed (moved into each item card)
-                      const SizedBox(height: 16),
+                            // Products Section
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.2),
+                                    spreadRadius: 1,
+                                    blurRadius: 3,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 8),
 
-                      // Add Row Button removed
-                      const SizedBox(height: 16),
+                                  // Products Table Header
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 8,
+                                    ),
+                                    color: Colors.teal.shade100,
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          flex: 1,
+                                          child: _buildTableHeaderCell(
+                                            'Product',
+                                          ),
+                                        ),
+                                        Expanded(
+                                          flex: 1,
+                                          child: _buildTableHeaderCell('UNIT'),
+                                        ),
+                                        Expanded(
+                                          flex: 1,
+                                          child: _buildTableHeaderCell('Qty'),
+                                        ),
+                                        Expanded(
+                                          flex: 1,
+                                          child: _buildTableHeaderCell('Price'),
+                                        ),
+                                        Expanded(
+                                          flex: 1,
+                                          child: _buildTableHeaderCell(
+                                            'Amount',
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
 
-                      // Totals Section
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Column(
-                          children: [
-                            _buildTotalRow(
-                              'Subtotal:',
-                              subtotal.toStringAsFixed(2),
+                                  // Products Table Rows
+                                  ListView.builder(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    itemCount: salesItems.length,
+                                    itemBuilder: (context, index) {
+                                      return Card(
+                                        margin: const EdgeInsets.symmetric(
+                                          vertical: 8,
+                                        ),
+                                        elevation: 1,
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(12),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              // Product Dropdown
+                                              _buildLabeledField(
+                                                'Product:',
+                                                required: true,
+                                                child: DropdownButtonFormField<
+                                                  String
+                                                >(
+                                                  value:
+                                                      salesItems[index]
+                                                          .productId
+                                                          ?.toString(),
+                                                  items:
+                                                      controller.productType
+                                                          ?.map(
+                                                            (
+                                                              item,
+                                                            ) => DropdownMenuItem<
+                                                              String
+                                                            >(
+                                                              value:
+                                                                  item['id']
+                                                                      .toString(),
+                                                              child: Text(
+                                                                item['Name'] ??
+                                                                    item['product_name'] ??
+                                                                    'Unknown',
+                                                              ),
+                                                            ),
+                                                          )
+                                                          .toList() ??
+                                                      [],
+                                                  onChanged: (value) {
+                                                    if (value != null) {
+                                                      setState(() {
+                                                        salesItems[index]
+                                                                .productId =
+                                                            int.parse(value);
+                                                        salesItems[index]
+                                                                .product =
+                                                            controller
+                                                                .productType
+                                                                ?.firstWhere(
+                                                                  (item) =>
+                                                                      item['id']
+                                                                          .toString() ==
+                                                                      value,
+                                                                )?['Name'] ??
+                                                            'Unknown';
+                                                      });
+                                                    }
+                                                  },
+                                                ),
+                                              ),
+
+                                              const SizedBox(height: 12),
+
+                                              // Unit Dropdown
+                                              _buildLabeledField(
+                                                'Unit:',
+                                                required: true,
+                                                child: DropdownButtonFormField<
+                                                  String
+                                                >(
+                                                  value:
+                                                      salesItems[index].unitId
+                                                          ?.toString(),
+                                                  items:
+                                                      controller.unitType
+                                                          ?.map(
+                                                            (
+                                                              item,
+                                                            ) => DropdownMenuItem<
+                                                              String
+                                                            >(
+                                                              value:
+                                                                  item['id']
+                                                                      .toString(),
+                                                              child: Text(
+                                                                item['Name'] ??
+                                                                    item['unit_name'] ??
+                                                                    'Unknown',
+                                                              ),
+                                                            ),
+                                                          )
+                                                          .toList() ??
+                                                      [],
+                                                  onChanged: (value) {
+                                                    if (value != null) {
+                                                      setState(() {
+                                                        salesItems[index]
+                                                            .unitId = int.parse(
+                                                          value,
+                                                        );
+                                                        salesItems[index].unit =
+                                                            controller.unitType
+                                                                ?.firstWhere(
+                                                                  (item) =>
+                                                                      item['id']
+                                                                          .toString() ==
+                                                                      value,
+                                                                )?['name'] ??
+                                                            'Unknown';
+                                                      });
+                                                    }
+                                                  },
+                                                ),
+                                              ),
+
+                                              const SizedBox(height: 12),
+
+                                              Row(
+                                                children: [
+                                                  // Quantity TextField
+                                                  Expanded(
+                                                    child: _buildLabeledField(
+                                                      'Quantity:',
+                                                      required: true,
+                                                      child: TextFormField(
+                                                        initialValue:
+                                                            salesItems[index]
+                                                                .quantity
+                                                                .toString(),
+                                                        keyboardType:
+                                                            TextInputType
+                                                                .number,
+                                                        onChanged: (value) {
+                                                          setState(() {
+                                                            salesItems[index]
+                                                                    .quantity =
+                                                                int.tryParse(
+                                                                  value,
+                                                                ) ??
+                                                                0;
+                                                            _calculateTotal(
+                                                              index,
+                                                            );
+                                                            _updateTotals();
+                                                          });
+                                                        },
+                                                      ),
+                                                    ),
+                                                  ),
+
+                                                  const SizedBox(width: 16),
+
+                                                  // Price TextField
+                                                  Expanded(
+                                                    child: _buildLabeledField(
+                                                      'Price:',
+                                                      required: true,
+                                                      child: TextFormField(
+                                                        initialValue:
+                                                            salesItems[index]
+                                                                .price
+                                                                .toString(),
+                                                        keyboardType:
+                                                            TextInputType
+                                                                .number,
+                                                        onChanged: (value) {
+                                                          setState(() {
+                                                            salesItems[index]
+                                                                    .price =
+                                                                double.tryParse(
+                                                                  value,
+                                                                ) ??
+                                                                0.0;
+                                                            _calculateTotal(
+                                                              index,
+                                                            );
+                                                            _updateTotals();
+                                                          });
+                                                        },
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+
+                                              const SizedBox(height: 12),
+
+                                              Row(
+                                                children: [
+                                                  // Tax Percentage Dropdown
+                                                  Expanded(
+                                                    child: _buildLabeledField(
+                                                      'Tax %:',
+                                                      required: true,
+                                                      child: DropdownButtonFormField<
+                                                        double
+                                                      >(
+                                                        value:
+                                                            salesItems[index]
+                                                                .taxRate,
+                                                        items:
+                                                            taxOptions
+                                                                .map(
+                                                                  (
+                                                                    rate,
+                                                                  ) => DropdownMenuItem<
+                                                                    double
+                                                                  >(
+                                                                    value: rate,
+                                                                    child: Text(
+                                                                      '${rate}%',
+                                                                    ),
+                                                                  ),
+                                                                )
+                                                                .toList(),
+                                                        onChanged: (value) {
+                                                          setState(() {
+                                                            salesItems[index]
+                                                                    .taxRate =
+                                                                value ?? 0.0;
+                                                            _calculateTotal(
+                                                              index,
+                                                            );
+                                                            _updateTotals();
+                                                          });
+                                                        },
+                                                        decoration:
+                                                            const InputDecoration(
+                                                              hintText:
+                                                                  'Select Tax',
+                                                            ),
+                                                      ),
+                                                    ),
+                                                  ),
+
+                                                  const SizedBox(width: 16),
+
+                                                  // Amount (Auto-calculated, read-only)
+                                                  Expanded(
+                                                    child: _buildLabeledField(
+                                                      'Amount:',
+                                                      child: TextFormField(
+                                                        readOnly: true,
+                                                        decoration:
+                                                            const InputDecoration(
+                                                              filled: true,
+                                                              fillColor: Color(
+                                                                0xFFF5F5F5,
+                                                              ),
+                                                            ),
+                                                        controller:
+                                                            TextEditingController(
+                                                              text: salesItems[index]
+                                                                  .totalWithTax
+                                                                  .toStringAsFixed(
+                                                                    2,
+                                                                  ),
+                                                            ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+
+                                              const SizedBox(height: 12),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+
+                                  const SizedBox(height: 16),
+
+                                  // Totals Section
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade100,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        _buildTotalRow(
+                                          'Subtotal:',
+                                          subtotal.toStringAsFixed(2),
+                                        ),
+                                        _buildTotalRow(
+                                          'Total Tax:',
+                                          _calculateTotalTax().toStringAsFixed(
+                                            2,
+                                          ),
+                                        ),
+                                        _buildTotalRow(
+                                          'Grand Total:',
+                                          grandTotal.toStringAsFixed(2),
+                                          isBold: true,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            _buildTotalRow(
-                              'VAT (5%):',
-                              vatAmount.toStringAsFixed(2),
+
+                            const SizedBox(height: 20),
+
+                            // Notes Section
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.2),
+                                    spreadRadius: 1,
+                                    blurRadius: 3,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildLabeledField(
+                                    'Notes:',
+                                    child: TextFormField(
+                                      controller: notesController,
+                                      maxLines: 4,
+                                      decoration: const InputDecoration(
+                                        hintText:
+                                            'Enter any additional notes or comments...',
+                                        border: OutlineInputBorder(),
+                                        alignLabelWithHint: true,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                ],
+                              ),
                             ),
-                            _buildTotalRow(
-                              'Grand Total:',
-                              grandTotal.toStringAsFixed(2),
-                              isBold: true,
+
+                            const SizedBox(height: 20),
+
+                            // Error Message Display
+                            if (controller.errorMessage != null)
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(16),
+                                margin: const EdgeInsets.only(bottom: 20),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade50,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Colors.red.shade200,
+                                  ),
+                                ),
+                                child: Text(
+                                  controller.errorMessage!,
+                                  style: TextStyle(color: Colors.red.shade700),
+                                ),
+                              ),
+
+                            // Submit Buttons
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                // Cancel Button
+                                ElevatedButton.icon(
+                                  icon: const Icon(Icons.close),
+                                  label: const Text('Cancel'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                ),
+
+                                const SizedBox(width: 16),
+
+                                // Save Button
+                                ElevatedButton.icon(
+                                  icon:
+                                      controller.isLoading
+                                          ? const SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                    Colors.white,
+                                                  ),
+                                            ),
+                                          )
+                                          : const Icon(Icons.check),
+                                  label: Text(
+                                    controller.isLoading ? 'Saving...' : 'Save',
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.teal,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                      vertical: 12,
+                                    ),
+                                  ),
+                                  onPressed:
+                                      controller.isLoading
+                                          ? null
+                                          : () async {
+                                            if (_formKey.currentState!
+                                                .validate()) {
+                                              await _savePurchase(controller);
+                                            }
+                                          },
+                                ),
+                              ],
                             ),
                           ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Submit Buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    // Cancel Button
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.close),
-                      label: const Text('Cancel'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                      ),
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                    ),
-
-                    const SizedBox(width: 16),
-
-                    // Save Button
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.check),
-                      label: const Text('Save'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.teal,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                      ),
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          // Process data
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Processing Data')),
-                          );
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  // Function to select date - simplified for single date
+  // Save purchase function
+  Future<void> _savePurchase(PurchaseController controller) async {
+    // Prepare product details JSON
+    List<Map<String, dynamic>> productDetails =
+        salesItems.map((item) {
+          return {
+            'product_id': item.productId,
+            'unit_id': item.unitId,
+            'qty': item.quantity,
+            'cost': item.price,
+            'total_before_tax': subtotal.toString(),
+            'tax_per': item.taxRate,
+            'tax_amount': item.taxAmount,
+            'total_amount': item.totalWithTax,
+          };
+        }).toList();
+
+    final success = await controller.postPurchaseRegistration(
+      supplierId: controller.selectedSupplierId,
+      currencyId: controller.selectedCurrencyTypeId,
+      purchaseDate: DateFormat('yyyy-MM-dd').format(invoiceDate),
+      invoiceNumber: invoiceNumber,
+      finalTotalBeforeTax: subtotal.toString(),
+      totalTax: _calculateTotalTax().toString(),
+      grandTotal: grandTotal.toString(),
+      customerNote: notesController.text,
+      productDetails: jsonEncode(productDetails),
+    );
+
+    if (success) {
+      if (mounted) {
+        showSuccessSnack(
+          'Purchase saved successfully! ID: ${controller.savedPurchaseId}',
+        );
+
+        Navigator.pop(context);
+      }
+    } else {
+      if (mounted) {
+        showErrorSnack(controller.errorMessage ?? 'Failed to save purchase');
+      }
+    }
+  }
+
+  // Function to select date
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -504,25 +809,34 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
   // Function to calculate item total
   void _calculateTotal(int index) {
     setState(() {
+      // Calculate base total (quantity * price)
       salesItems[index].total =
           salesItems[index].quantity * salesItems[index].price;
+
+      // Calculate tax amount
+      salesItems[index].taxAmount =
+          salesItems[index].total * (salesItems[index].taxRate / 100);
+
+      // Calculate total with tax
+      salesItems[index].totalWithTax =
+          salesItems[index].total + salesItems[index].taxAmount;
+
       salesItems[index].subtotal = salesItems[index].total;
       // Apply VAT to this item
       salesItems[index].vatAmount = salesItems[index].subtotal * vatRate;
     });
   }
 
-  // Function to update grand totals
+  // Function to calculate total tax from all items
+  double _calculateTotalTax() {
+    return salesItems.fold(0, (sum, item) => sum + item.taxAmount);
+  }
+
   void _updateTotals() {
     setState(() {
-      // Calculate subtotal (sum of all item totals)
       subtotal = salesItems.fold(0, (sum, item) => sum + item.total);
-
-      // Calculate VAT amount
-      vatAmount = subtotal * vatRate;
-
-      // Calculate grand total
-      grandTotal = subtotal + vatAmount;
+      double totalItemTax = _calculateTotalTax();
+      grandTotal = subtotal + totalItemTax;
     });
   }
 
@@ -599,25 +913,35 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
   }
 }
 
-// Model class for Sales Item
+// Updated Model class for Sales Item
 class SalesItem {
+  int? productId;
+  int? unitId;
   String? product = 'Product';
   String? unit = 'UNIT';
   String description = '';
   int quantity = 0;
   double price = 0.0;
   double total = 0.0;
+  double taxRate = 0.0; // Tax percentage (0.0 or 0.5)
+  double taxAmount = 0.0; // Calculated tax amount
+  double totalWithTax = 0.0; // Total including tax
   double discount = 0.0;
   double vatAmount = 0.0;
   double subtotal = 0.0;
 
   SalesItem({
+    this.productId,
+    this.unitId,
     this.product,
     this.unit,
     this.description = '',
     this.quantity = 0,
     this.price = 0.0,
     this.total = 0.0,
+    this.taxRate = 0.0,
+    this.taxAmount = 0.0,
+    this.totalWithTax = 0.0,
     this.discount = 0.0,
     this.vatAmount = 0.0,
     this.subtotal = 0.0,

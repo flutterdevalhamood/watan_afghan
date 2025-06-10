@@ -13,11 +13,20 @@ import 'package:sample/src/screens/investorTransactions/investor_transaction_dat
 import 'package:sample/src/screens/investorTransactions/investor_transaction_detail_screen.dart';
 import 'package:sample/src/screens/investorTransactions/investor_transaction_reports_screen.dart';
 import 'package:sample/src/screens/investorTransactions/investor_transaction_screen.dart';
+import 'package:sample/src/screens/master/master_screen.dart';
+import 'package:sample/src/screens/products/product_edit_screen.dart';
+import 'package:sample/src/screens/products/product_list_screen.dart';
+import 'package:sample/src/screens/products/product_registration_screen.dart';
 import 'package:sample/src/screens/profile_update_screen.dart';
+import 'package:sample/src/screens/purchases/purchase_list_screen.dart';
 import 'package:sample/src/screens/purchases/purchase_screen.dart';
+import 'package:sample/src/screens/sales/sales_list_screen.dart';
 import 'package:sample/src/screens/sales/sales_screen.dart';
 import 'package:sample/src/screens/supplier/supplier_data_screen.dart';
 import 'package:sample/src/screens/supplier/supplier_list_screen.dart';
+import 'package:sample/src/screens/units/unit_list_screen.dart';
+import 'package:sample/src/screens/units/unit_registration_screen.dart';
+import 'package:sample/src/screens/units/unit_update_screen.dart';
 
 import '../constants/string_constants.dart';
 import '../screens/dashboard_screen.dart';
@@ -29,8 +38,6 @@ class Screenroutes {
 
   static const String login = "login";
   static const String dashboard = "DashBoard";
-  static const String salesScreen = "salesScreen";
-  static const String purchaseScreen = "purchaseScreen";
   static const String expenseScreen = "expenseScreen";
   static const String financialTransactions = "financialTransactions";
 
@@ -65,11 +72,30 @@ class Screenroutes {
   static const String supplierDetailScreen = "supplierDetailScreen";
 
   static const String contactsScreen = "contactsScreen";
+  static const String masterScreen = "masterScreen";
 
   //expenses
   static const String expenseListScreen = "expenseListScreen";
   static const String expenseDataScreen = "expenseDataScreen";
   static const String expenseDetailScreen = "expenseDetailScreen";
+
+  //product
+  static const String productList = "productList";
+  static const String productRegistration = "productRegistration";
+  static const String productEdit = "productEdit";
+
+  //unit
+  static const String unitList = "unitList";
+  static const String unitRegistration = "unitRegistration";
+  static const String unitEdit = "unitEdit";
+
+  //purchase
+  static const String purchaseListScreen = "purchaseListScreen";
+  static const String purchaseRegistration = "purchaseRegistration";
+
+  //sales
+  static const String salesListScreen = "salesListScreen";
+  static const String salesRegistration = "salesRegistration";
 
   static Route<dynamic>? routes(RouteSettings settings) {
     StringConstants.currentRoute = settings.name ?? "";
@@ -87,22 +113,6 @@ class Screenroutes {
           settings: const RouteSettings(name: Screenroutes.dashboard),
           builder: (BuildContext context) {
             return DashboardScreen();
-          },
-        );
-
-      case Screenroutes.salesScreen:
-        return MaterialPageRoute(
-          settings: const RouteSettings(name: Screenroutes.salesScreen),
-          builder: (BuildContext context) {
-            return SalesScreen();
-          },
-        );
-
-      case Screenroutes.purchaseScreen:
-        return MaterialPageRoute(
-          settings: const RouteSettings(name: Screenroutes.purchaseScreen),
-          builder: (BuildContext context) {
-            return PurchaseScreen();
           },
         );
 
@@ -280,6 +290,99 @@ class Screenroutes {
           settings: const RouteSettings(name: Screenroutes.expenseDataScreen),
           builder: (BuildContext context) {
             return ExpenseScreen();
+          },
+        );
+
+      case Screenroutes.masterScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(name: Screenroutes.masterScreen),
+          builder: (BuildContext context) {
+            return MasterScreen();
+          },
+        );
+
+      //product
+      case Screenroutes.productList:
+        return MaterialPageRoute(
+          settings: const RouteSettings(name: Screenroutes.productList),
+          builder: (BuildContext context) {
+            return ProductListScreen();
+          },
+        );
+
+      case Screenroutes.productRegistration:
+        return MaterialPageRoute(
+          settings: const RouteSettings(name: Screenroutes.productRegistration),
+          builder: (BuildContext context) {
+            return ProductRegistrationScreen();
+          },
+        );
+
+      case Screenroutes.productEdit:
+        final product = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          settings: const RouteSettings(name: Screenroutes.productEdit),
+          builder: (BuildContext context) {
+            return EditProductScreen(data: product ?? {});
+          },
+        );
+
+      case Screenroutes.unitList:
+        return MaterialPageRoute(
+          settings: const RouteSettings(name: Screenroutes.unitList),
+          builder: (BuildContext context) {
+            return UnitListScreen();
+          },
+        );
+
+      case Screenroutes.unitRegistration:
+        return MaterialPageRoute(
+          settings: const RouteSettings(name: Screenroutes.unitRegistration),
+          builder: (BuildContext context) {
+            return UnitRegistrationScreen();
+          },
+        );
+
+      case Screenroutes.unitEdit:
+        final product = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          settings: const RouteSettings(name: Screenroutes.unitEdit),
+          builder: (BuildContext context) {
+            return UnitUpdateScreen(data: product ?? {});
+          },
+        );
+
+      case Screenroutes.purchaseListScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(name: Screenroutes.purchaseListScreen),
+          builder: (BuildContext context) {
+            return PurchaseListScreen();
+          },
+        );
+
+      case Screenroutes.purchaseRegistration:
+        return MaterialPageRoute(
+          settings: const RouteSettings(
+            name: Screenroutes.purchaseRegistration,
+          ),
+          builder: (BuildContext context) {
+            return PurchaseScreen();
+          },
+        );
+
+      case Screenroutes.salesListScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(name: Screenroutes.salesListScreen),
+          builder: (BuildContext context) {
+            return SalesListScreen();
+          },
+        );
+
+      case Screenroutes.salesRegistration:
+        return MaterialPageRoute(
+          settings: const RouteSettings(name: Screenroutes.salesRegistration),
+          builder: (BuildContext context) {
+            return SalesScreen();
           },
         );
     }

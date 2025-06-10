@@ -7,7 +7,11 @@ import 'package:sample/src/providers/dashboard_controller.dart';
 import 'package:sample/src/providers/expense_controller.dart';
 import 'package:sample/src/providers/investor_transaction_controller.dart';
 import 'package:sample/src/providers/login_controller.dart';
+import 'package:sample/src/providers/product_controller.dart';
+import 'package:sample/src/providers/purchase_controller.dart';
+import 'package:sample/src/providers/sales_controller.dart';
 import 'package:sample/src/providers/supplier_controller.dart';
+import 'package:sample/src/providers/unit_controller.dart';
 import 'package:sample/src/util/shared_pref.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -34,6 +38,10 @@ void main() async {
         ChangeNotifierProvider(create: (context) => CustomerController()),
         ChangeNotifierProvider(create: (context) => SupplierController()),
         ChangeNotifierProvider(create: (context) => ExpenseController()),
+        ChangeNotifierProvider(create: (context) => ProductController()),
+        ChangeNotifierProvider(create: (context) => UnitController()),
+        ChangeNotifierProvider(create: (context) => PurchaseController()),
+        ChangeNotifierProvider(create: (context) => SalesController()),
       ],
       child: const BaseScreen(),
     ),

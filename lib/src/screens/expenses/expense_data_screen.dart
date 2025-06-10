@@ -85,9 +85,9 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
 
   // Hardcoded Payment Types
   final List<Map<String, dynamic>> paymentTypes = [
-    {'id': 1, 'Name': 'Cash'},
-    {'id': 2, 'Name': 'Bank'},
-    {'id': 3, 'Name': 'Cheque'},
+    {'id': 1, 'Name': 'cash'},
+    {'id': 2, 'Name': 'bank'},
+    {'id': 3, 'Name': 'cheque'},
   ];
 
   @override
@@ -589,7 +589,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                                   final paymentTypeItem = paymentTypes
                                       .firstWhere(
                                         (item) => item['id'] == value,
-                                        orElse: () => {'Name': 'Cash'},
+                                        orElse: () => {'Name': 'cash'},
                                       );
                                   selectedPaymentType = paymentTypeItem['Name'];
                                 });
@@ -599,7 +599,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
 
                             // Conditional fields based on payment type
                             if (selectedPaymentType != null &&
-                                selectedPaymentType != 'Cash')
+                                selectedPaymentType != 'cash')
                               _buildPaymentSpecificFields(isMobile, controller),
                           ],
                         ),
@@ -821,12 +821,12 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
           grandTotal: grandTotal.toString(),
           expenseDetail: jsonEncode(expenseDetails),
           paymentType: selectedPaymentType,
-          bankId: selectedPaymentType == 'Cash' ? 0 : selectedBankId,
+          bankId: selectedPaymentType == 'cash' ? 0 : selectedBankId,
           transferDate:
-              selectedPaymentType == 'Bank'
+              selectedPaymentType == 'bank'
                   ? DateFormat('yyyy-MM-dd').format(transferDate)
                   : DateFormat('yyyy-MM-dd').format(DateTime.now()),
-          chequeNumber: selectedPaymentType == 'Cheque' ? chequeRefNumber : '',
+          chequeNumber: selectedPaymentType == 'cheque' ? chequeRefNumber : '',
         );
 
         if (success) {
@@ -1126,7 +1126,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     return Column(
       children: [
         // Bank Name - Required for Bank and Cheque
-        if (selectedPaymentType == 'Bank' || selectedPaymentType == 'Cheque')
+        if (selectedPaymentType == 'bank' || selectedPaymentType == 'cheque')
           _buildDropdown(
             value: controller.selectedBankTypeId,
             items: controller.banks ?? [],
@@ -1140,11 +1140,11 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
             },
           ),
 
-        if (selectedPaymentType == 'Bank' || selectedPaymentType == 'Cheque')
+        if (selectedPaymentType == 'bank' || selectedPaymentType == 'cheque')
           const SizedBox(height: 16),
 
         // Account Number - For Bank
-        if (selectedPaymentType == 'Bank')
+        if (selectedPaymentType == 'bank')
           _buildLabeledField(
             'Account Number:',
             required: true,
@@ -1168,10 +1168,10 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
             ),
           ),
 
-        if (selectedPaymentType == 'Bank') const SizedBox(height: 16),
+        if (selectedPaymentType == 'bank') const SizedBox(height: 16),
 
         // Transfer or Deposit Date - For Bank
-        if (selectedPaymentType == 'Bank')
+        if (selectedPaymentType == 'bank')
           _buildLabeledField(
             'Transfer or Deposit Date:',
             required: true,
@@ -1200,7 +1200,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
         if (selectedPaymentType == 'Bank') const SizedBox(height: 16),
 
         // Cheque or Reference Number - For Cheque
-        if (selectedPaymentType == 'Cheque')
+        if (selectedPaymentType == 'cheque')
           _buildLabeledField(
             'Cheque or Ref. Number:',
             required: true,
@@ -1223,7 +1223,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
             ),
           ),
 
-        if (selectedPaymentType == 'Cheque') const SizedBox(height: 16),
+        if (selectedPaymentType == 'cheque') const SizedBox(height: 16),
       ],
     );
   }

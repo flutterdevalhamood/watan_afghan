@@ -304,7 +304,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                   title: 'Purchases',
                   onTap: () {
                     NavigationService().pushNavigation(
-                      Screenroutes.purchaseScreen,
+                      Screenroutes.purchaseListScreen,
                     );
                   },
                 ),
@@ -314,7 +314,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                   title: 'Sales',
                   onTap: () {
                     NavigationService().pushNavigation(
-                      Screenroutes.salesScreen,
+                      Screenroutes.salesListScreen,
                     );
                   },
                 ),
@@ -335,6 +335,16 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                   onTap: () {
                     NavigationService().pushNavigation(
                       Screenroutes.financialTransactions,
+                    );
+                  },
+                ),
+                _buildMenuItem(
+                  context: context,
+                  icon: Icons.dataset_rounded,
+                  title: 'Master',
+                  onTap: () {
+                    NavigationService().pushNavigation(
+                      Screenroutes.masterScreen,
                     );
                   },
                 ),

@@ -293,28 +293,94 @@ abstract class RestClient {
     @Part(name: 'document[]') List<MultipartFile>? files,
   });
 
-  @GET('/Product/paginate/{page}/{limit}')
+  @GET('/api/Product/paginate/{page}/{limit}')
   Future<dynamic> getProductData(
     @Path("page") int page,
     @Path("limit") int limit,
     @Header("Authorization") String? token,
   );
 
-  @POST('/Product')
+  @POST('/api/Product')
   Future<dynamic> registerProduct({
+    @Header("Authorization") String? token,
+    @Part(name: "Name") String? name,
+    @Part(name: 'image') List<MultipartFile>? files,
+  });
+
+  @POST('/api/ProductUpdate')
+  Future<dynamic> updateProduct({
+    @Header("Authorization") String? token,
+    @Part(name: "id") int? id,
+    @Part(name: "Name") String? name,
+    @Part(name: "image") List<MultipartFile>? files,
+  });
+
+  @POST('/api/ProductDelete')
+  Future<dynamic> deleteProduct({
+    @Header("Authorization") String? token,
+    @Field("id") int? id,
+    @Field("deleteDescription") String? deleteDescription,
+  });
+
+  @GET('/api/Unit/paginate/{page}/{limit}')
+  Future<dynamic> getUnitData(
+    @Path("page") int page,
+    @Path("limit") int limit,
+    @Header("Authorization") String? token,
+  );
+
+  @POST('/api/Unit')
+  Future<dynamic> registerUnit({
     @Header("Authorization") String? token,
     @Field("Name") String? name,
   });
 
-  @POST('/ProductUpdate')
-  Future<dynamic> updateProduct({
+  @POST('/api/UnitUpdate')
+  Future<dynamic> updateUnit({
     @Header("Authorization") String? token,
     @Field("id") int? id,
     @Field("Name") String? name,
   });
 
-  @POST('/ProductDelete')
-  Future<dynamic> deleteProduct({
+  @POST('/api/UnitDelete')
+  Future<dynamic> deleteUnit({
+    @Header("Authorization") String? token,
+    @Field("id") int? id,
+    @Field("deleteDescription") String? deleteDescription,
+  });
+
+  @GET('/api/Purchase/paginate/{page}/{limit}')
+  Future<dynamic> getPurchaseData(
+    @Path("page") int page,
+    @Path("limit") int limit,
+    @Header("Authorization") String? token,
+  );
+
+  @POST('/api/Purchase')
+  Future<dynamic> registerPurchase({
+    @Header("Authorization") String? token,
+    @Field("supplier_id") int? supplierId,
+    @Field("currency_id") int? currencyId,
+    @Field("purchase_date") String? purchaseDate,
+    @Field("InvoiceNumber") String? invoiceNumber,
+    @Field("final_total_before_tax") String? finalTotalBeforeTax,
+    @Field("total_tax") String? totalTax,
+    @Field("grand_total") String? grandTotal,
+    @Field("CustomerNote") String? customerNote,
+    @Field("product_details") String? productDetails,
+  });
+
+  @GET('/api/getPurchaseBaseList')
+  Future<dynamic> getPurchaseBaseList({@Header("Authorization") String? token});
+
+  @GET('/api/PurchaseDetail/{id}')
+  Future<dynamic> getPurchaseDetail({
+    @Path("id") int? id,
+    @Header("Authorization") String? token,
+  });
+
+  @POST('/api/PurchaseDelete')
+  Future<dynamic> deletePurchase({
     @Header("Authorization") String? token,
     @Field("id") int? id,
     @Field("deleteDescription") String? deleteDescription,

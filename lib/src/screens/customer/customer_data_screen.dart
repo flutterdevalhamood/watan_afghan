@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:sample/src/providers/customer_controller.dart';
 
 class CustomerDataScreen extends StatefulWidget {
-  const CustomerDataScreen({Key? key}) : super(key: key);
+  const CustomerDataScreen({super.key});
 
   @override
   State<CustomerDataScreen> createState() => _CustomerRegistrationScreenState();
