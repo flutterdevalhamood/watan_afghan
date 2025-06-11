@@ -42,7 +42,6 @@ class _DrawerWidgetState extends State<DrawerWidget> {
     if (mounted) {
       setState(() {
         _currentUser = _authController.userData;
-        print('User data updated: $_currentUser');
       });
     }
   }

@@ -55,131 +55,47 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
           'Customers',
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
         ),
-        actions: [
-          IconButton(
-            onPressed: () => _controller.refresh(),
-            icon: const Icon(Icons.refresh_rounded),
-          ),
-        ],
       ),
-      body: Column(
-        children: [
-          // Search Bar
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.all(16),
-            child: SearchBar(
-              controller: _searchController,
-              hintText: 'Search customers...',
-              leading: const Icon(Icons.search),
-              trailing: [
-                if (_searchController.text.isNotEmpty)
-                  IconButton(
-                    onPressed: () {
-                      _searchController.clear();
-                      _controller.clearSearch();
-                    },
-                    icon: const Icon(Icons.clear),
-                  ),
-              ],
-              onChanged: (value) => _controller.searchCustomers(value),
-              backgroundColor: WidgetStateProperty.all(Colors.grey[100]),
-              elevation: WidgetStateProperty.all(0),
-            ),
-          ),
-
-          // Customer List
-          Expanded(
-            child: Consumer<CustomerController>(
-              builder: (context, controller, child) {
-                if (controller.isLoading && controller.customers.isEmpty) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (controller.errorMessage != null) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 64,
-                          color: Colors.red[300],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          controller.errorMessage!,
-                          style: TextStyle(
-                            color: Colors.red[600],
-                            fontSize: 16,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () => controller.refresh(),
-                          child: const Text('Try Again'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                if (controller.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.people_outline,
-                          size: 64,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          controller.searchQuery.isNotEmpty
-                              ? 'No customers found for "${controller.searchQuery}"'
-                              : 'No customers found',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 16,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                return RefreshIndicator(
-                  onRefresh: () async => controller.refresh(),
-                  child: ListView.builder(
-                    controller: _scrollController,
+      body: Consumer<CustomerController>(
+        builder: (context, controller, child) {
+          return RefreshIndicator(
+            onRefresh: () async => controller.refresh(),
+            child: CustomScrollView(
+              slivers: [
+                // Search Bar
+                SliverToBoxAdapter(
+                  child: Container(
+                    color: Colors.white,
                     padding: const EdgeInsets.all(16),
-                    itemCount:
-                        controller.customers.length +
-                        (controller.hasMore ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index == controller.customers.length) {
-                        return const Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Center(child: CircularProgressIndicator()),
-                        );
-                      }
-
-                      final customer = controller.customers[index];
-                      return CustomerCard(
-                        customer: customer,
-                        onTap: () => _showCustomerDetails(customer),
-                        onDelete: () => _showDeleteConfirmation(customer),
-                      );
-                    },
+                    child: SearchBar(
+                      controller: _searchController,
+                      hintText: 'Search customers...',
+                      leading: const Icon(Icons.search),
+                      trailing: [
+                        if (_searchController.text.isNotEmpty)
+                          IconButton(
+                            onPressed: () {
+                              _searchController.clear();
+                              controller.clearSearch();
+                            },
+                            icon: const Icon(Icons.clear),
+                          ),
+                      ],
+                      onChanged: (value) => controller.searchCustomers(value),
+                      backgroundColor: WidgetStateProperty.all(
+                        Colors.grey[100],
+                      ),
+                      elevation: WidgetStateProperty.all(0),
+                    ),
                   ),
-                );
-              },
+                ),
+
+                // Content Area
+                SliverFillRemaining(child: _buildContent(controller)),
+              ],
             ),
-          ),
-        ],
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
@@ -189,6 +105,74 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
         label: const Text('Create New'),
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),
+    );
+  }
+
+  Widget _buildContent(CustomerController controller) {
+    if (controller.isLoading && controller.customers.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (controller.errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+            const SizedBox(height: 16),
+            Text(
+              controller.errorMessage!,
+              style: TextStyle(color: Colors.red[600], fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => controller.refresh(),
+              child: const Text('Try Again'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (controller.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.people_outline, size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              controller.searchQuery.isNotEmpty
+                  ? 'No customers found for "${controller.searchQuery}"'
+                  : 'No customers found',
+              style: TextStyle(color: Colors.grey[600], fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      controller: _scrollController,
+      padding: const EdgeInsets.all(16),
+      itemCount: controller.customers.length + (controller.hasMore ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index == controller.customers.length) {
+          return const Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final customer = controller.customers[index];
+        return CustomerCard(
+          customer: customer,
+          onTap: () => _showCustomerDetails(customer),
+          onDelete: () => _showDeleteConfirmation(customer),
+        );
+      },
     );
   }
 

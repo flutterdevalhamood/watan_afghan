@@ -45,6 +45,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
         context,
         listen: false,
       );
+      controller.clearSelections();
       controller.getPurchaseBaseData();
     });
   }

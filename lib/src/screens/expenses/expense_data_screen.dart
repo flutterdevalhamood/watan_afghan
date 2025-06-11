@@ -151,6 +151,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
 
   Future<void> _loadBaseData() async {
     final controller = Provider.of<ExpenseController>(context, listen: false);
+    controller.clearSelections();
     await controller.getExpenseBaseData();
     if (controller.employeeType != null) {
       debugPrint(

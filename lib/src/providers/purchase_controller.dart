@@ -88,6 +88,14 @@ class PurchaseController with ChangeNotifier {
     notifyListeners();
   }
 
+  void clearSelections() {
+    selectedSupplierId = null;
+    selectedCurrencyTypeId = null;
+    selectedUnitTypeId = null;
+    selectedProductTypeId = null;
+    notifyListeners();
+  }
+
   Future<bool> _checkToken() async {
     final token = AuthRepo.token;
 

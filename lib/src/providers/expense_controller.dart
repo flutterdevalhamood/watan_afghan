@@ -108,6 +108,18 @@ class ExpenseController with ChangeNotifier {
     notifyListeners();
   }
 
+  void clearSelections() {
+    selectedPaymentTypeId = null;
+    selectedSupplierTypeId = null;
+    selectedEmployeeTypeId = null;
+    selectedEmployeeId = null;
+    selectedCurrencyTypeId = null;
+    selectedExpenseTypeId = null;
+    selectedBankTypeId = null;
+    savedExpenseId = null;
+    notifyListeners();
+  }
+
   Future<bool> _checkToken() async {
     final token = AuthRepo.token;
 

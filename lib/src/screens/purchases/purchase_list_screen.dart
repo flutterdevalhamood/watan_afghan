@@ -59,59 +59,59 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
           'Purchase List',
           style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => context.read<PurchaseController>().refresh(),
-          ),
-        ],
       ),
       body: Consumer<PurchaseController>(
         builder: (context, controller, child) {
-          return Column(
-            children: [
-              // Search Bar
-              Container(
-                color: Colors.white,
-                padding: const EdgeInsets.all(16),
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: controller.searchExpenses,
-                  decoration: InputDecoration(
-                    hintText: 'Search by invoice number...',
-                    prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                    suffixIcon:
-                        controller.searchQuery.isNotEmpty
-                            ? IconButton(
-                              icon: const Icon(Icons.clear, color: Colors.grey),
-                              onPressed: () {
-                                _searchController.clear();
-                                controller.clearSearch();
-                              },
-                            )
-                            : null,
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+          return RefreshIndicator(
+            onRefresh: controller.refresh,
+            child: CustomScrollView(
+              slivers: [
+                // Search Bar
+                SliverToBoxAdapter(
+                  child: Container(
+                    color: Colors.white,
+                    padding: const EdgeInsets.all(16),
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: controller.searchExpenses,
+                      decoration: InputDecoration(
+                        hintText: 'Search by invoice number...',
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: Colors.grey,
+                        ),
+                        suffixIcon:
+                            controller.searchQuery.isNotEmpty
+                                ? IconButton(
+                                  icon: const Icon(
+                                    Icons.clear,
+                                    color: Colors.grey,
+                                  ),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    controller.clearSearch();
+                                  },
+                                )
+                                : null,
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
 
-              // Content
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: controller.refresh,
-                  child: _buildContent(controller),
-                ),
-              ),
-            ],
+                // Content
+                SliverFillRemaining(child: _buildContent(controller)),
+              ],
+            ),
           );
         },
       ),
