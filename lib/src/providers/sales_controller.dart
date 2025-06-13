@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:sample/src/models/purchase_model.dart';
+import 'package:sample/src/models/sales_model.dart';
 
 import '../data/rest_client.dart';
 import '../repo/auth_repo.dart';
@@ -13,49 +13,53 @@ class SalesController with ChangeNotifier {
   String? errorMessage;
   int? id;
 
-  List<Purchase> _allPurchases = [];
-  List<Purchase> _filteredPurchases = [];
+  List<Sales> _allSales = [];
+  List<Sales> _filteredSales = [];
   String _searchQuery = '';
 
   // Detail properties
-  PurchaseDetail? _purchaseDetail;
+  // SalesDetail? _salesDetail;
   bool _isDetailLoading = false;
   String? _detailErrorMessage;
 
   // Getters
-  List<Purchase> get purchases => _filteredPurchases;
-  List<Purchase> get allPurchases => _allPurchases;
+  List<Sales> get sales => _filteredSales;
+  List<Sales> get allSales => _allSales;
   String get searchQuery => _searchQuery;
-  bool get hasExpenses => _filteredPurchases.isNotEmpty;
+  bool get hasExpenses => _filteredSales.isNotEmpty;
 
   // Detail getters
-  PurchaseDetail? get purchaseDetail => _purchaseDetail;
+  // SalesDetail? get purchaseDetail => _salesDetail;
   bool get isDetailLoading => _isDetailLoading;
   String? get detailErrorMessage => _detailErrorMessage;
+
+  bool _isLoadingInvoices = false;
+  bool get isLoadingInvoices => _isLoadingInvoices;
 
   // List<Map<String, dynamic>>? expenseDetail;
   List<Map<String, dynamic>>? productType;
   List<Map<String, dynamic>>? currencyType;
   List<Map<String, dynamic>>? unitType;
-  List<Map<String, dynamic>>? supplier;
+  List<Map<String, dynamic>>? customer;
 
   int? selectedProductTypeId;
   int? selectedCurrencyTypeId;
   int? selectedUnitTypeId;
-  int? selectedSupplierId;
+  int? selectedCustomerId;
 
-  String? savedPurchaseId;
+  String? savedSalesId;
+  List<Map<String, dynamic>>? invoicesOfProductData;
 
   // Search functionality
   void searchExpenses(String query) {
     _searchQuery = query.toLowerCase();
 
     if (_searchQuery.isEmpty) {
-      _filteredPurchases = List.from(_allPurchases);
+      _filteredSales = List.from(_allSales);
     } else {
-      _filteredPurchases =
-          _allPurchases.where((purchase) {
-            return purchase.InvoiceNumber.toLowerCase().contains(_searchQuery);
+      _filteredSales =
+          _allSales.where((sales) {
+            return sales.InvoiceNumber.toLowerCase().contains(_searchQuery);
           }).toList();
     }
 
@@ -64,7 +68,7 @@ class SalesController with ChangeNotifier {
 
   void clearSearch() {
     _searchQuery = '';
-    _filteredPurchases = List.from(_allPurchases);
+    _filteredSales = List.from(_allSales);
     notifyListeners();
   }
 
@@ -83,8 +87,17 @@ class SalesController with ChangeNotifier {
     notifyListeners();
   }
 
-  void setSupplier(int? supplierId) {
-    selectedSupplierId = supplierId;
+  void setCustomer(int? customerId) {
+    selectedCustomerId = customerId;
+    notifyListeners();
+  }
+
+  void clearSelections() {
+    selectedProductTypeId = null;
+    selectedCurrencyTypeId = null;
+    selectedUnitTypeId = null;
+    selectedCustomerId = null;
+    invoicesOfProductData = null;
     notifyListeners();
   }
 
@@ -115,7 +128,7 @@ class SalesController with ChangeNotifier {
     return 'Bearer ${AuthRepo.token}';
   }
 
-  Future<void> getPurchaseData({bool loadMore = false}) async {
+  Future<void> getSalesData({bool loadMore = false}) async {
     if (!await _checkToken()) return;
 
     isLoading = true;
@@ -129,23 +142,22 @@ class SalesController with ChangeNotifier {
 
       while (retryCount < maxRetries) {
         try {
-          final purchase = await restApi.getPurchaseData(
+          final sales = await restApi.getSalesData(
             currentPage,
             totalPages,
             _getAuthHeader(),
           );
 
-          if (purchase is Map<String, dynamic>) {
-            if (purchase['IsSuccess'] == true) {
-              final data = purchase['Data'] as List<dynamic>?;
+          if (sales is Map<String, dynamic>) {
+            if (sales['IsSuccess'] == true) {
+              final data = sales['Data'] as List<dynamic>?;
               if (data != null) {
-                final newPurchaseData =
-                    data.map((json) => Purchase.fromJson(json)).toList();
+                final newSalesData =
+                    data.map((json) => Sales.fromJson(json)).toList();
                 if (loadMore) {
-                  _allPurchases.addAll(newPurchaseData);
+                  _allSales.addAll(newSalesData);
                 } else {
-                  _allPurchases =
-                      newPurchaseData; // Replace list on initial load
+                  _allSales = newSalesData; // Replace list on initial load
                 }
                 searchExpenses(_searchQuery);
                 hasMore = data.length == totalPages;
@@ -153,12 +165,11 @@ class SalesController with ChangeNotifier {
                 // Success - break out of retry loop
                 break;
               } else {
-                errorMessage = purchase['Message'] as String?;
+                errorMessage = sales['Message'] as String?;
               }
             } else {
-              debugPrint('API call failed: ${purchase['Message']}');
-              errorMessage =
-                  purchase['Message'] as String? ?? 'API call failed';
+              debugPrint('API call failed: ${sales['Message']}');
+              errorMessage = sales['Message'] as String? ?? 'API call failed';
             }
           } else {
             debugPrint('Unexpected API response format');
@@ -207,7 +218,7 @@ class SalesController with ChangeNotifier {
   void loadMore() {
     if (hasMore && !isLoading) {
       currentPage++;
-      getPurchaseData(loadMore: true);
+      getSalesData(loadMore: true);
     }
   }
 
@@ -215,50 +226,50 @@ class SalesController with ChangeNotifier {
     currentPage = 1;
     hasMore = true;
     errorMessage = null; // Clear errors on refresh
-    _allPurchases.clear();
-    _filteredPurchases.clear();
-    await getPurchaseData(loadMore: false);
+    _allSales.clear();
+    _filteredSales.clear();
+    await getSalesData(loadMore: false);
   }
 
-  Future<void> getPurchaseDetail(int purchaseId) async {
-    if (!await _checkToken()) return;
+  // Future<void> getSalesDetail(int salesId) async {
+  //   if (!await _checkToken()) return;
+  //
+  //   _isDetailLoading = true;
+  //   _detailErrorMessage = null;
+  //   notifyListeners();
+  //
+  //   try {
+  //     final salesDetailData = await restApi.getSalesDetail(
+  //       id: salesId,
+  //       token: _getAuthHeader(),
+  //     );
+  //
+  //     if (salesDetailData['IsSuccess'] == true) {
+  //       final data = salesDetailData['Data'] as Map<String, dynamic>;
+  //       final salesId = salesDetailData['Data']['id'];
+  //       _salesDetail = salesDetail.fromJson(data);
+  //       debugPrint('Supplier detail fetched: ${salesDetail?.sales.id}');
+  //     } else {
+  //       _detailErrorMessage =
+  //           salesDetailData['Message'] ?? 'Failed to fetch supplier detail';
+  //       debugPrint('API call failed: $_detailErrorMessage');
+  //     }
+  //   } catch (e) {
+  //     _detailErrorMessage = _getErrorMessage(e);
+  //     debugPrint('Supplier detail error: $_detailErrorMessage');
+  //   } finally {
+  //     _isDetailLoading = false;
+  //     notifyListeners();
+  //   }
+  // }
+  //
+  // void clearSalesDetail() {
+  //   _salesDetail = null;
+  //   _detailErrorMessage = null;
+  //   notifyListeners();
+  // }
 
-    _isDetailLoading = true;
-    _detailErrorMessage = null;
-    notifyListeners();
-
-    try {
-      final purchaseDetailData = await restApi.getPurchaseDetail(
-        id: purchaseId,
-        token: _getAuthHeader(),
-      );
-
-      if (purchaseDetailData['IsSuccess'] == true) {
-        final data = purchaseDetailData['Data'] as Map<String, dynamic>;
-        final purchaseId = purchaseDetailData['Data']['id'];
-        _purchaseDetail = PurchaseDetail.fromJson(data);
-        debugPrint('Supplier detail fetched: ${purchaseDetail?.purchase.id}');
-      } else {
-        _detailErrorMessage =
-            purchaseDetailData['Message'] ?? 'Failed to fetch supplier detail';
-        debugPrint('API call failed: $_detailErrorMessage');
-      }
-    } catch (e) {
-      _detailErrorMessage = _getErrorMessage(e);
-      debugPrint('Supplier detail error: $_detailErrorMessage');
-    } finally {
-      _isDetailLoading = false;
-      notifyListeners();
-    }
-  }
-
-  void clearPurchaseDetail() {
-    _purchaseDetail = null;
-    _detailErrorMessage = null;
-    notifyListeners();
-  }
-
-  Future<void> getPurchaseBaseData() async {
+  Future<void> getSalesBaseData() async {
     if (!await _checkToken()) return;
 
     isLoading = true;
@@ -266,29 +277,29 @@ class SalesController with ChangeNotifier {
     notifyListeners();
 
     try {
-      final purchaseBaseData = await restApi.getPurchaseBaseList(
+      final salesBaseData = await restApi.getSalesBaseList(
         token: _getAuthHeader(),
       );
 
-      if (purchaseBaseData['IsSuccess'] == true) {
+      if (salesBaseData['IsSuccess'] == true) {
         productType = List<Map<String, dynamic>>.from(
-          purchaseBaseData['Data']['product'] ?? [],
+          salesBaseData['Data']['products'] ?? [],
         );
+
         currencyType = List<Map<String, dynamic>>.from(
-          purchaseBaseData['Data']['currency'] ?? [],
+          salesBaseData['Data']['currency'] ?? [],
         );
         unitType = List<Map<String, dynamic>>.from(
-          purchaseBaseData['Data']['unit'],
+          salesBaseData['Data']['units'],
         );
-        supplier = List<Map<String, dynamic>>.from(
-          purchaseBaseData['Data']['supplier'],
+        customer = List<Map<String, dynamic>>.from(
+          salesBaseData['Data']['customers'],
         );
 
         debugPrint('Base data fetched successfully');
       } else {
-        debugPrint('API call failed: ${purchaseBaseData['Message']}');
-        errorMessage =
-            purchaseBaseData['Message'] ?? 'Failed to fetch base data';
+        debugPrint('API call failed: ${salesBaseData['Message']}');
+        errorMessage = salesBaseData['Message'] ?? 'Failed to fetch base data';
       }
     } catch (e) {
       _handleApiError(e);
@@ -298,10 +309,69 @@ class SalesController with ChangeNotifier {
     }
   }
 
-  Future<bool> postPurchaseRegistration({
-    int? supplierId,
+  Future<void> getInvoicesOfProduct(int selectedProductTypeId) async {
+    if (!await _checkToken()) return;
+
+    // Use separate loading state for invoices to avoid affecting main screen
+    _isLoadingInvoices = true;
+    // Don't set main errorMessage to null here to avoid clearing other errors
+
+    // Clear previous invoices data
+    invoicesOfProductData = null;
+    notifyListeners();
+
+    try {
+      final invoicesOfProductResponse = await restApi
+          .getAllInvoicesOfProductFromInventory(
+            id: selectedProductTypeId,
+            token: _getAuthHeader(),
+          );
+
+      if (invoicesOfProductResponse['IsSuccess'] == true) {
+        // Handle the API response which returns array of strings (invoice numbers)
+        final invoiceNumbers = List<String>.from(
+          invoicesOfProductResponse['Data'] ?? [],
+        );
+
+        // Convert string array to Map format for dropdown compatibility
+        invoicesOfProductData =
+            invoiceNumbers.asMap().entries.map((entry) {
+              return {
+                'id': entry.key.toString(), // Use index as ID
+                'invoice_number': entry.value, // The actual invoice number
+                'display_name':
+                    entry.value, // Display name same as invoice number
+              };
+            }).toList();
+
+        debugPrint(
+          'Invoices data fetched successfully: ${invoicesOfProductData?.length} invoices',
+        );
+        debugPrint('Invoice numbers: ${invoiceNumbers.join(', ')}');
+      } else {
+        debugPrint('API call failed: ${invoicesOfProductResponse['Message']}');
+        // Don't set main errorMessage here to avoid affecting main screen
+        invoicesOfProductData = []; // Set empty list on failure
+      }
+    } catch (e) {
+      debugPrint('Error fetching invoices: $e');
+      invoicesOfProductData = []; // Set empty list on error
+      // Don't call _handleApiError here as it might affect main loading state
+    } finally {
+      _isLoadingInvoices = false;
+      notifyListeners();
+    }
+  }
+
+  void clearInvoicesOfProduct() {
+    invoicesOfProductData = null;
+    notifyListeners();
+  }
+
+  Future<bool> postSalesRegistration({
+    int? customerId,
     int? currencyId,
-    String? purchaseDate,
+    String? saleDate,
     String? invoiceNumber,
     String? finalTotalBeforeTax,
     String? totalTax,
@@ -312,11 +382,11 @@ class SalesController with ChangeNotifier {
     if (!await _checkToken()) return false;
 
     try {
-      final response = await restApi.registerPurchase(
+      final response = await restApi.registerSales(
         token: _getAuthHeader(),
-        supplierId: supplierId,
+        customerId: customerId,
         currencyId: currencyId,
-        purchaseDate: purchaseDate,
+        saleDate: saleDate,
         invoiceNumber: invoiceNumber,
         finalTotalBeforeTax: finalTotalBeforeTax,
         totalTax: totalTax,
@@ -327,20 +397,17 @@ class SalesController with ChangeNotifier {
 
       if (response is Map<String, dynamic>) {
         if (response['IsSuccess'] == true) {
-          // Check if the response contains the ID directly or in a Data field
           if (response['Data'] != null) {
-            // Case 1: ID is in the Data field (as object or direct value)
             if (response['Data'] is Map) {
-              savedPurchaseId = response['Data']['id'];
+              savedSalesId = response['Data']['id'];
             } else if (response['Data'] is int) {
-              savedPurchaseId = response['Data'];
+              savedSalesId = response['Data'];
             }
           }
         }
         return true;
       } else if (response is int) {
-        // Case 3: API returns just the ID as integer
-        savedPurchaseId = response.toString();
+        savedSalesId = response.toString();
         return true;
       } else {
         errorMessage = 'Unexpected response format';
@@ -355,7 +422,26 @@ class SalesController with ChangeNotifier {
     }
   }
 
-  Future<void> deletePurchases(int? id, String? descriptionText) async {
+  Future<double?> postAvailableQtyForInvoice(String? invoiceNumber) async {
+    if (!await _checkToken()) return null;
+
+    try {
+      final response = await restApi.postAvailableQtyForInvoiceInventory(
+        token: _getAuthHeader(),
+        fromInvoice: invoiceNumber,
+      );
+
+      if (response['IsSuccess'] == true && response['Data'] != null) {
+        return double.tryParse(response['Data']['Debit'] ?? '0');
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error getting available quantity: $e');
+      return null;
+    }
+  }
+
+  Future<void> deleteSales(int? id, String? descriptionText) async {
     if (!await _checkToken()) {
       debugPrint("Token check failed");
       return;
@@ -369,7 +455,7 @@ class SalesController with ChangeNotifier {
     try {
       debugPrint("Calling restApi.deleteSupplier...");
 
-      final response = await restApi.deletePurchase(
+      final response = await restApi.deleteSales(
         token: _getAuthHeader(),
         id: id,
         deleteDescription: descriptionText,
@@ -378,7 +464,7 @@ class SalesController with ChangeNotifier {
       if (response is Map<String, dynamic>) {
         if (response['IsSuccess'] == true) {
           debugPrint("Delete successful, refreshing purchase list...");
-          await getPurchaseData();
+          await getSalesData();
         } else {
           errorMessage =
               response['Message'] ?? 'Failed to delete purchase data';
@@ -386,7 +472,7 @@ class SalesController with ChangeNotifier {
         }
       } else {
         debugPrint("Delete completed, refreshing purchase list...");
-        await getPurchaseData();
+        await getSalesData();
       }
     } catch (e) {
       debugPrint("Delete API Exception: $e");

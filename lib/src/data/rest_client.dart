@@ -385,4 +385,59 @@ abstract class RestClient {
     @Field("id") int? id,
     @Field("deleteDescription") String? deleteDescription,
   });
+
+  @GET('/api/Sales/paginate/{page}/{limit}')
+  Future<dynamic> getSalesData(
+    @Path("page") int page,
+    @Path("limit") int limit,
+    @Header("Authorization") String? token,
+  );
+
+  @POST('/api/Sales')
+  Future<dynamic> registerSales({
+    @Header("Authorization") String? token,
+    @Field("customer_id") int? customerId,
+    @Field("currency_id") int? currencyId,
+    @Field("sale_date") String? saleDate,
+    @Field("InvoiceNumber") String? invoiceNumber,
+    @Field("final_total_before_tax") String? finalTotalBeforeTax,
+    @Field("total_tax") String? totalTax,
+    @Field("grand_total") String? grandTotal,
+    @Field("CustomerNote") String? customerNote,
+    @Field("product_details") String? productDetails,
+  });
+
+  @GET('/api/getSalesBaseList')
+  Future<dynamic> getSalesBaseList({@Header("Authorization") String? token});
+
+  @GET('/api/SaleDetail/{id}')
+  Future<dynamic> getSalesDetail({
+    @Path("id") int? id,
+    @Header("Authorization") String? token,
+  });
+
+  @POST('/api/SaleDelete')
+  Future<dynamic> deleteSales({
+    @Header("Authorization") String? token,
+    @Field("id") int? id,
+    @Field("deleteDescription") String? deleteDescription,
+  });
+
+  @GET('/api/getAllInvoicesOfProductFromInventory/{id}')
+  Future<dynamic> getAllInvoicesOfProductFromInventory({
+    @Path("id") int? id,
+    @Header("Authorization") String? token,
+  });
+
+  @POST('/api/getAvailableQtyForInvoiceInventory')
+  Future<dynamic> postAvailableQtyForInvoiceInventory({
+    @Header("Authorization") String? token,
+    @Field("from_invoice") String? fromInvoice,
+  });
+
+  @GET('/api/getSalesPDF/{id}')
+  Future<dynamic> getSalesPDF({
+    @Path("id") int? id,
+    @Header("Authorization") String? token,
+  });
 }
