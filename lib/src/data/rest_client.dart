@@ -435,6 +435,12 @@ abstract class RestClient {
     @Field("from_invoice") String? fromInvoice,
   });
 
+  @POST('/api/CheckSalesInvoiceExist')
+  Future<dynamic> postCheckSalesInvoiceExist({
+    @Header("Authorization") String? token,
+    @Field("InvoiceNumber") String? invoiceNumber,
+  });
+
   @GET('/api/getSalesPDF/{id}')
   Future<dynamic> getSalesPDF({
     @Path("id") int? id,

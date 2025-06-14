@@ -1637,6 +1637,33 @@ class _RestClient implements RestClient {
   }
 
   @override
+  Future<dynamic> postCheckSalesInvoiceExist({
+    String? token,
+    String? invoiceNumber,
+  }) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{r'Authorization': token};
+    _headers.removeWhere((k, v) => v == null);
+    final _data = {'InvoiceNumber': invoiceNumber};
+    _data.removeWhere((k, v) => v == null);
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/api/CheckSalesInvoiceExist',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
   Future<dynamic> getSalesPDF({int? id, String? token}) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};

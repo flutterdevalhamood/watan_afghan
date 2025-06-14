@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sample/src/models/sales_model.dart';
 import 'package:sample/src/providers/sales_controller.dart';
+import 'package:sample/src/screens/sales/sales_detail_bottom_sheet.dart';
 import 'package:sample/src/util/app_navigation.dart';
 import 'package:sample/src/util/app_routes.dart';
 
@@ -16,6 +17,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   late SalesController _controller;
+  final TextEditingController _deleteReasonController = TextEditingController();
 
   @override
   void initState() {
@@ -45,6 +47,56 @@ class _SalesListScreenState extends State<SalesListScreen> {
     super.dispose();
   }
 
+  void _showDeleteConfirmation(Sales sale) async {
+    _deleteReasonController.clear();
+    final bool? result = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Purchase Data'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Are you sure you want to delete this purchase data?'),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _deleteReasonController,
+                decoration: const InputDecoration(
+                  labelText: 'Reason for deletion',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed:
+                  () => NavigationService().popNavigation(arguments: false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed:
+                  () => NavigationService().popNavigation(arguments: true),
+              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == true) {
+      _controller.deleteSales(sale.id, _deleteReasonController.text);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sale Data deleted successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,20 +112,18 @@ class _SalesListScreenState extends State<SalesListScreen> {
       ),
       body: Consumer<SalesController>(
         builder: (context, controller, child) {
-          return Column(
-            children: [
-              // Search Bar
-              _buildSearchBar(controller),
+          return RefreshIndicator(
+            onRefresh: controller.refresh,
+            color: Colors.indigo[600],
+            child: CustomScrollView(
+              slivers: [
+                // Search Bar
+                SliverToBoxAdapter(child: _buildSearchBar(controller)),
 
-              // Main Content
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: controller.refresh,
-                  color: Colors.indigo[600],
-                  child: _buildContent(controller),
-                ),
-              ),
-            ],
+                // Main Content
+                SliverFillRemaining(child: _buildContent(controller)),
+              ],
+            ),
           );
         },
       ),
@@ -282,8 +332,12 @@ class _SalesListScreenState extends State<SalesListScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: () {
-          // Navigate to sales detail screen
-          // Navigator.push(context, MaterialPageRoute(builder: (context) => SalesDetailScreen(salesId: sale.id)));
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (context) => SalesDetailBottomSheet(salesId: sale.id),
+          );
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
@@ -366,6 +420,20 @@ class _SalesListScreenState extends State<SalesListScreen> {
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.green[600],
+                    ),
+                  ),
+
+                  IconButton(
+                    onPressed: () {
+                      _showDeleteConfirmation(sale);
+                    },
+                    icon: const Icon(Icons.delete_outline),
+                    color: Colors.red[400],
+                    tooltip: 'Delete Expense data',
+                    padding: const EdgeInsets.all(8),
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
                     ),
                   ),
                 ],

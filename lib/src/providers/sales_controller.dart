@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:sample/src/models/Sales_detail_model.dart';
 import 'package:sample/src/models/sales_model.dart';
 
 import '../data/rest_client.dart';
@@ -18,7 +19,7 @@ class SalesController with ChangeNotifier {
   String _searchQuery = '';
 
   // Detail properties
-  // SalesDetail? _salesDetail;
+  SalesData? _salesDetail;
   bool _isDetailLoading = false;
   String? _detailErrorMessage;
 
@@ -29,7 +30,7 @@ class SalesController with ChangeNotifier {
   bool get hasExpenses => _filteredSales.isNotEmpty;
 
   // Detail getters
-  // SalesDetail? get purchaseDetail => _salesDetail;
+  SalesData? get salesDetail => _salesDetail;
   bool get isDetailLoading => _isDetailLoading;
   String? get detailErrorMessage => _detailErrorMessage;
 
@@ -49,6 +50,21 @@ class SalesController with ChangeNotifier {
 
   String? savedSalesId;
   List<Map<String, dynamic>>? invoicesOfProductData;
+
+  Map<String, double> _availableQuantities = {};
+  bool _isLoadingAvailableQty = false;
+
+  Map<String, double> get availableQuantities => _availableQuantities;
+  bool get isLoadingAvailableQty => _isLoadingAvailableQty;
+
+  bool _isCheckingInvoice = false;
+  bool get isCheckingInvoice => _isCheckingInvoice;
+
+  bool? _invoiceExists;
+  bool? get invoiceExists => _invoiceExists;
+
+  String? _invoiceCheckMessage;
+  String? get invoiceCheckMessage => _invoiceCheckMessage;
 
   // Search functionality
   void searchExpenses(String query) {
@@ -231,43 +247,43 @@ class SalesController with ChangeNotifier {
     await getSalesData(loadMore: false);
   }
 
-  // Future<void> getSalesDetail(int salesId) async {
-  //   if (!await _checkToken()) return;
-  //
-  //   _isDetailLoading = true;
-  //   _detailErrorMessage = null;
-  //   notifyListeners();
-  //
-  //   try {
-  //     final salesDetailData = await restApi.getSalesDetail(
-  //       id: salesId,
-  //       token: _getAuthHeader(),
-  //     );
-  //
-  //     if (salesDetailData['IsSuccess'] == true) {
-  //       final data = salesDetailData['Data'] as Map<String, dynamic>;
-  //       final salesId = salesDetailData['Data']['id'];
-  //       _salesDetail = salesDetail.fromJson(data);
-  //       debugPrint('Supplier detail fetched: ${salesDetail?.sales.id}');
-  //     } else {
-  //       _detailErrorMessage =
-  //           salesDetailData['Message'] ?? 'Failed to fetch supplier detail';
-  //       debugPrint('API call failed: $_detailErrorMessage');
-  //     }
-  //   } catch (e) {
-  //     _detailErrorMessage = _getErrorMessage(e);
-  //     debugPrint('Supplier detail error: $_detailErrorMessage');
-  //   } finally {
-  //     _isDetailLoading = false;
-  //     notifyListeners();
-  //   }
-  // }
-  //
-  // void clearSalesDetail() {
-  //   _salesDetail = null;
-  //   _detailErrorMessage = null;
-  //   notifyListeners();
-  // }
+  Future<void> getSalesDetail(int salesId) async {
+    if (!await _checkToken()) return;
+
+    _isDetailLoading = true;
+    _detailErrorMessage = null;
+    notifyListeners();
+
+    try {
+      final salesDetailData = await restApi.getSalesDetail(
+        id: salesId,
+        token: _getAuthHeader(),
+      );
+
+      if (salesDetailData['IsSuccess'] == true) {
+        final data = salesDetailData['Data'] as Map<String, dynamic>;
+        final salesId = salesDetailData['Data']['id'];
+        _salesDetail = SalesData.fromJson(data);
+        debugPrint('Supplier detail fetched: ${salesDetail?.sale?.id}');
+      } else {
+        _detailErrorMessage =
+            salesDetailData['Message'] ?? 'Failed to fetch supplier detail';
+        debugPrint('API call failed: $_detailErrorMessage');
+      }
+    } catch (e) {
+      _detailErrorMessage = _getErrorMessage(e);
+      debugPrint('Supplier detail error: $_detailErrorMessage');
+    } finally {
+      _isDetailLoading = false;
+      notifyListeners();
+    }
+  }
+
+  void clearSalesDetail() {
+    _salesDetail = null;
+    _detailErrorMessage = null;
+    notifyListeners();
+  }
 
   Future<void> getSalesBaseData() async {
     if (!await _checkToken()) return;
@@ -422,7 +438,9 @@ class SalesController with ChangeNotifier {
     }
   }
 
+  // In your SalesController class
   Future<double?> postAvailableQtyForInvoice(String? invoiceNumber) async {
+    if (invoiceNumber == null || invoiceNumber.isEmpty) return null;
     if (!await _checkToken()) return null;
 
     try {
@@ -432,13 +450,80 @@ class SalesController with ChangeNotifier {
       );
 
       if (response['IsSuccess'] == true && response['Data'] != null) {
-        return double.tryParse(response['Data']['Debit'] ?? '0');
+        return double.tryParse(response['Data']?.toString() ?? '0');
       }
       return null;
     } catch (e) {
       debugPrint('Error getting available quantity: $e');
       return null;
     }
+  }
+
+  Future<bool> checkInvoiceExists(String? invoiceNumber) async {
+    if (invoiceNumber == null || invoiceNumber.isEmpty) {
+      _invoiceExists = null;
+      _invoiceCheckMessage = null;
+      notifyListeners();
+      return false;
+    }
+
+    _isCheckingInvoice = true;
+    _invoiceExists = null;
+    _invoiceCheckMessage = null;
+    notifyListeners();
+
+    if (!await _checkToken()) {
+      _isCheckingInvoice = false;
+      _invoiceCheckMessage = 'Authentication failed';
+      notifyListeners();
+      return false;
+    }
+
+    try {
+      final response = await restApi.postCheckSalesInvoiceExist(
+        token: _getAuthHeader(),
+        invoiceNumber: invoiceNumber,
+      );
+
+      _isCheckingInvoice = false;
+
+      if (response['IsSuccess'] == true) {
+        // Check if the response data indicates invoice exists
+        // Based on your API response, it returns "false" as string when invoice doesn't exist
+        final data = response['Data'];
+
+        if (data == "false" || data == false) {
+          _invoiceExists = false;
+          _invoiceCheckMessage = 'Invoice number is available';
+        } else {
+          _invoiceExists = true;
+          _invoiceCheckMessage =
+              'Invoice number already exists. Please use a different number.';
+        }
+      } else {
+        _invoiceExists = null;
+        _invoiceCheckMessage =
+            response['Message'] ?? 'Failed to check invoice number';
+      }
+
+      notifyListeners();
+      return _invoiceExists == true;
+    } catch (e) {
+      _isCheckingInvoice = false;
+      _invoiceExists = null;
+      _invoiceCheckMessage = 'Error checking invoice number: $e';
+      notifyListeners();
+      debugPrint('Error checking invoice existence: $e');
+      return false;
+    }
+  }
+
+  // Clear invoice check state
+  void clearInvoiceCheck() {
+    _invoiceExists = null;
+    _invoiceCheckMessage = null;
+    _isCheckingInvoice = false;
+    notifyListeners();
   }
 
   Future<void> deleteSales(int? id, String? descriptionText) async {

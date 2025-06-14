@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -33,6 +34,13 @@ class _SalesScreenState extends State<SalesScreen> {
   // Tax percentage options
   final List<double> taxOptions = [0.0, 5.0];
 
+  // Available quantity tracking
+  Map<int, double?> availableQuantities = {};
+  Map<int, bool> isLoadingQuantity = {};
+
+  Timer? _invoiceDebounceTimer;
+  final FocusNode _invoiceNumberFocusNode = FocusNode();
+
   @override
   void initState() {
     super.initState();
@@ -47,6 +55,13 @@ class _SalesScreenState extends State<SalesScreen> {
     });
   }
 
+  @override
+  void dispose() {
+    _invoiceDebounceTimer?.cancel();
+    _invoiceNumberFocusNode.dispose();
+    super.dispose();
+  }
+
   // Controller for Terms and Customer Note
   final TextEditingController termsController = TextEditingController(
     text: 'Terms and Conditions',
@@ -55,6 +70,48 @@ class _SalesScreenState extends State<SalesScreen> {
     text: 'Customer Notes',
   );
   final TextEditingController invoiceNumberController = TextEditingController();
+
+  // Method to get available quantity for selected invoice
+  Future<void> _getAvailableQuantity(
+    int itemIndex,
+    String invoiceNumber,
+  ) async {
+    setState(() {
+      isLoadingQuantity[itemIndex] = true;
+    });
+
+    final controller = Provider.of<SalesController>(context, listen: false);
+    final availableQty = await controller.postAvailableQtyForInvoice(
+      invoiceNumber,
+    );
+
+    setState(() {
+      availableQuantities[itemIndex] = availableQty;
+      isLoadingQuantity[itemIndex] = false;
+    });
+  }
+
+  void _onInvoiceNumberChanged(String value, SalesController controller) {
+    setState(() {
+      invoiceNumber = value;
+    });
+
+    // Cancel previous timer
+    _invoiceDebounceTimer?.cancel();
+
+    // Clear previous check state if input is empty
+    if (value.trim().isEmpty) {
+      controller.clearInvoiceCheck();
+      return;
+    }
+
+    // Start new timer for debouncing
+    _invoiceDebounceTimer = Timer(const Duration(milliseconds: 800), () {
+      if (value.trim().isNotEmpty) {
+        controller.checkInvoiceExists(value.trim());
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -141,27 +198,163 @@ class _SalesScreenState extends State<SalesScreen> {
                                   ),
                                   const SizedBox(height: 16),
 
-                                  // Invoice Number Field
                                   _buildLabeledField(
                                     'Invoice Number:',
                                     required: true,
-                                    child: TextFormField(
-                                      controller: invoiceNumberController,
-                                      decoration: const InputDecoration(
-                                        hintText: 'Enter Invoice Number',
-                                        border: OutlineInputBorder(),
-                                      ),
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Please enter invoice number';
-                                        }
-                                        return null;
-                                      },
-                                      onChanged: (value) {
-                                        setState(() {
-                                          invoiceNumber = value;
-                                        });
-                                      },
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        TextFormField(
+                                          controller: invoiceNumberController,
+                                          focusNode: _invoiceNumberFocusNode,
+                                          decoration: InputDecoration(
+                                            hintText: 'Enter Invoice Number',
+                                            border: OutlineInputBorder(
+                                              borderSide: BorderSide(
+                                                color:
+                                                    controller.invoiceExists ==
+                                                            true
+                                                        ? Colors.red
+                                                        : controller
+                                                                .invoiceExists ==
+                                                            false
+                                                        ? Colors.green
+                                                        : Colors.grey,
+                                              ),
+                                            ),
+                                            enabledBorder: OutlineInputBorder(
+                                              borderSide: BorderSide(
+                                                color:
+                                                    controller.invoiceExists ==
+                                                            true
+                                                        ? Colors.red
+                                                        : controller
+                                                                .invoiceExists ==
+                                                            false
+                                                        ? Colors.green
+                                                        : Colors.grey,
+                                              ),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderSide: BorderSide(
+                                                color:
+                                                    controller.invoiceExists ==
+                                                            true
+                                                        ? Colors.red
+                                                        : controller
+                                                                .invoiceExists ==
+                                                            false
+                                                        ? Colors.green
+                                                        : Theme.of(
+                                                          context,
+                                                        ).primaryColor,
+                                                width: 2,
+                                              ),
+                                            ),
+                                            suffixIcon:
+                                                controller.isCheckingInvoice
+                                                    ? const SizedBox(
+                                                      width: 20,
+                                                      height: 20,
+                                                      child: Padding(
+                                                        padding: EdgeInsets.all(
+                                                          12.0,
+                                                        ),
+                                                        child:
+                                                            CircularProgressIndicator(
+                                                              strokeWidth: 2,
+                                                            ),
+                                                      ),
+                                                    )
+                                                    : controller
+                                                            .invoiceExists !=
+                                                        null
+                                                    ? Icon(
+                                                      controller.invoiceExists ==
+                                                              true
+                                                          ? Icons.error
+                                                          : Icons.check_circle,
+                                                      color:
+                                                          controller.invoiceExists ==
+                                                                  true
+                                                              ? Colors.red
+                                                              : Colors.green,
+                                                    )
+                                                    : null,
+                                          ),
+                                          validator: (value) {
+                                            if (value == null ||
+                                                value.isEmpty) {
+                                              return 'Please enter invoice number';
+                                            }
+                                            if (controller.invoiceExists ==
+                                                true) {
+                                              return 'Invoice number already exists';
+                                            }
+                                            return null;
+                                          },
+                                          onChanged:
+                                              (value) =>
+                                                  _onInvoiceNumberChanged(
+                                                    value,
+                                                    controller,
+                                                  ),
+                                        ),
+
+                                        // Invoice check status message
+                                        if (controller.invoiceCheckMessage !=
+                                            null)
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                              top: 8.0,
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  controller.invoiceExists ==
+                                                          true
+                                                      ? Icons.error_outline
+                                                      : controller
+                                                              .invoiceExists ==
+                                                          false
+                                                      ? Icons
+                                                          .check_circle_outline
+                                                      : Icons.info_outline,
+                                                  size: 16,
+                                                  color:
+                                                      controller.invoiceExists ==
+                                                              true
+                                                          ? Colors.red
+                                                          : controller
+                                                                  .invoiceExists ==
+                                                              false
+                                                          ? Colors.green
+                                                          : Colors.orange,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Expanded(
+                                                  child: Text(
+                                                    controller
+                                                        .invoiceCheckMessage!,
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color:
+                                                          controller.invoiceExists ==
+                                                                  true
+                                                              ? Colors.red
+                                                              : controller
+                                                                      .invoiceExists ==
+                                                                  false
+                                                              ? Colors.green
+                                                              : Colors.orange,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                      ],
                                     ),
                                   ),
                                   const SizedBox(height: 16),
@@ -289,6 +482,12 @@ class _SalesScreenState extends State<SalesScreen> {
                                         ),
                                         Expanded(
                                           flex: 1,
+                                          child: _buildTableHeaderCell(
+                                            'Available',
+                                          ),
+                                        ),
+                                        Expanded(
+                                          flex: 1,
                                           child: _buildTableHeaderCell('Qty'),
                                         ),
                                         Expanded(
@@ -372,9 +571,11 @@ class _SalesScreenState extends State<SalesScreen> {
                                                                 )?['Name'] ??
                                                             'Unknown';
 
-                                                        // Reset from inventory dropdown when product changes
+                                                        // Reset from inventory dropdown and available quantity when product changes
                                                         salesItems[index]
                                                             .fromInvId = null;
+                                                        availableQuantities[index] =
+                                                            null;
                                                       });
 
                                                       // Call API to get invoices for selected product
@@ -484,31 +685,51 @@ class _SalesScreenState extends State<SalesScreen> {
                                                               controller
                                                                   .isLoadingInvoices
                                                           ? null
-                                                          : (value) {
+                                                          : (value) async {
                                                             if (value != null) {
                                                               setState(() {
                                                                 salesItems[index]
                                                                         .fromInvId =
                                                                     value;
-                                                                // Find the selected invoice number by index
-                                                                final selectedInvoice = controller
-                                                                    .invoicesOfProductData
-                                                                    ?.firstWhere(
-                                                                      (item) =>
-                                                                          item['id']
-                                                                              .toString() ==
-                                                                          value,
-                                                                      orElse:
-                                                                          () => {
-                                                                            'invoice_number':
-                                                                                'Unknown',
-                                                                          },
-                                                                    );
+
+                                                                // Safer approach: Find the invoice without using firstWhere
+                                                                String
+                                                                invoiceNumber =
+                                                                    'Unknown';
+                                                                if (controller
+                                                                        .invoicesOfProductData !=
+                                                                    null) {
+                                                                  for (var item
+                                                                      in controller
+                                                                          .invoicesOfProductData!) {
+                                                                    if (item['id']
+                                                                            .toString() ==
+                                                                        value) {
+                                                                      invoiceNumber =
+                                                                          item['invoice_number'] ??
+                                                                          'Unknown';
+                                                                      break;
+                                                                    }
+                                                                  }
+                                                                }
                                                                 salesItems[index]
                                                                         .fromInv =
-                                                                    selectedInvoice?['invoice_number'] ??
-                                                                    'Unknown';
+                                                                    invoiceNumber;
                                                               });
+
+                                                              // Get available quantity for selected invoice
+                                                              final invoiceNumber =
+                                                                  salesItems[index]
+                                                                      .fromInv;
+                                                              if (invoiceNumber !=
+                                                                      null &&
+                                                                  invoiceNumber !=
+                                                                      'Unknown') {
+                                                                await _getAvailableQuantity(
+                                                                  index,
+                                                                  invoiceNumber,
+                                                                );
+                                                              }
                                                             }
                                                           },
                                                   decoration: InputDecoration(
@@ -559,6 +780,72 @@ class _SalesScreenState extends State<SalesScreen> {
 
                                               const SizedBox(height: 12),
 
+                                              // Available Quantity Display
+                                              _buildLabeledField(
+                                                'Available Qty:',
+                                                child: Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 12,
+                                                        vertical: 16,
+                                                      ),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.blue.shade50,
+                                                    border: Border.all(
+                                                      color:
+                                                          Colors.blue.shade200,
+                                                    ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          4,
+                                                        ),
+                                                  ),
+                                                  child: Row(
+                                                    children: [
+                                                      if (isLoadingQuantity[index] ==
+                                                          true)
+                                                        const SizedBox(
+                                                          width: 16,
+                                                          height: 16,
+                                                          child:
+                                                              CircularProgressIndicator(
+                                                                strokeWidth: 2,
+                                                              ),
+                                                        )
+                                                      else
+                                                        Icon(
+                                                          Icons.inventory_2,
+                                                          color:
+                                                              Colors
+                                                                  .blue
+                                                                  .shade600,
+                                                          size: 16,
+                                                        ),
+                                                      const SizedBox(width: 8),
+                                                      Text(
+                                                        isLoadingQuantity[index] ==
+                                                                true
+                                                            ? 'Loading...'
+                                                            : availableQuantities[index] !=
+                                                                null
+                                                            ? '${availableQuantities[index]!.toStringAsFixed(2)} units'
+                                                            : 'Select invoice first',
+                                                        style: TextStyle(
+                                                          color:
+                                                              Colors
+                                                                  .blue
+                                                                  .shade700,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+
+                                              const SizedBox(height: 12),
+
                                               Row(
                                                 children: [
                                                   // Quantity TextField
@@ -574,6 +861,18 @@ class _SalesScreenState extends State<SalesScreen> {
                                                         keyboardType:
                                                             TextInputType
                                                                 .number,
+                                                        decoration: InputDecoration(
+                                                          hintText:
+                                                              'Enter quantity',
+                                                          errorText:
+                                                              availableQuantities[index] !=
+                                                                          null &&
+                                                                      salesItems[index]
+                                                                              .quantity >
+                                                                          availableQuantities[index]!
+                                                                  ? 'Exceeds available quantity'
+                                                                  : null,
+                                                        ),
                                                         onChanged: (value) {
                                                           setState(() {
                                                             salesItems[index]
@@ -587,6 +886,27 @@ class _SalesScreenState extends State<SalesScreen> {
                                                             );
                                                             _updateTotals();
                                                           });
+                                                        },
+                                                        validator: (value) {
+                                                          if (value == null ||
+                                                              value.isEmpty) {
+                                                            return 'Please enter quantity';
+                                                          }
+                                                          final qty =
+                                                              int.tryParse(
+                                                                value,
+                                                              ) ??
+                                                              0;
+                                                          if (qty <= 0) {
+                                                            return 'Quantity must be greater than 0';
+                                                          }
+                                                          if (availableQuantities[index] !=
+                                                                  null &&
+                                                              qty >
+                                                                  availableQuantities[index]!) {
+                                                            return 'Quantity exceeds available stock (${availableQuantities[index]!.toStringAsFixed(2)})';
+                                                          }
+                                                          return null;
                                                         },
                                                       ),
                                                     ),
@@ -877,7 +1197,6 @@ class _SalesScreenState extends State<SalesScreen> {
     );
   }
 
-  // Save purchase function
   Future<void> _saveSales(SalesController controller) async {
     // Prepare product details JSON
     List<Map<String, dynamic>> productDetails =
@@ -885,10 +1204,10 @@ class _SalesScreenState extends State<SalesScreen> {
           return {
             'product_id': item.productId,
             'unit_id': item.unitId,
-            'from_inv_id': item.fromInvId, // Add from inventory ID
+            'from_invoice': item.fromInv,
             'qty': item.quantity,
             'cost': item.price,
-            'total_before_tax': subtotal.toString(),
+            'subtotal_before_tax': subtotal.toString(),
             'tax_per': item.taxRate,
             'tax_amount': item.taxAmount,
             'total_amount': item.totalWithTax,
@@ -910,14 +1229,13 @@ class _SalesScreenState extends State<SalesScreen> {
     if (success) {
       if (mounted) {
         showSuccessSnack(
-          'Purchase saved successfully! ID: ${controller.savedSalesId}',
+          'Sales saved successfully! ID: ${controller.savedSalesId}',
         );
-
         Navigator.pop(context);
       }
     } else {
       if (mounted) {
-        showErrorSnack(controller.errorMessage ?? 'Failed to save purchase');
+        showErrorSnack(controller.errorMessage ?? 'Failed to save sales');
       }
     }
   }
