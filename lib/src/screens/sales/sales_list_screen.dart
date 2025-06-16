@@ -5,6 +5,7 @@ import 'package:sample/src/providers/sales_controller.dart';
 import 'package:sample/src/screens/sales/sales_detail_bottom_sheet.dart';
 import 'package:sample/src/util/app_navigation.dart';
 import 'package:sample/src/util/app_routes.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class SalesListScreen extends StatefulWidget {
   const SalesListScreen({Key? key}) : super(key: key);
@@ -18,6 +19,8 @@ class _SalesListScreenState extends State<SalesListScreen> {
   final TextEditingController _searchController = TextEditingController();
   late SalesController _controller;
   final TextEditingController _deleteReasonController = TextEditingController();
+  bool _showPdfViewer = false;
+  String? _pdfUrl;
 
   @override
   void initState() {
@@ -97,42 +100,129 @@ class _SalesListScreenState extends State<SalesListScreen> {
     }
   }
 
+  void _viewSalesPdf(String salesId) async {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const AlertDialog(
+            content: Row(
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 20),
+                Text('Loading PDF...'),
+              ],
+            ),
+          );
+        },
+      );
+
+      // Call the API to get PDF with sales ID
+      await _controller.getSalesPdf(salesId);
+
+      // Close loading dialog
+      Navigator.of(context).pop();
+
+      if (_controller.salesPdfUrl != null &&
+          _controller.salesPdfUrl!.isNotEmpty) {
+        setState(() {
+          _pdfUrl = _controller.salesPdfUrl;
+          _showPdfViewer = true;
+        });
+      } else {
+        _showErrorSnackBar('PDF URL not available');
+      }
+    } catch (e) {
+      // Close loading dialog if still open
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+      _showErrorSnackBar('Failed to load PDF: ${e.toString()}');
+    }
+  }
+
+  void _hidePdfViewer() {
+    setState(() {
+      _showPdfViewer = false;
+    });
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text(
-          'Sales',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
+        title:
+            _showPdfViewer
+                ? const Text('Sales PDF', style: TextStyle(color: Colors.white))
+                : const Text(
+                  'Sales',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
         backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 0,
         centerTitle: true,
+        leading:
+            _showPdfViewer
+                ? IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: _hidePdfViewer,
+                )
+                : null,
       ),
-      body: Consumer<SalesController>(
-        builder: (context, controller, child) {
-          return RefreshIndicator(
-            onRefresh: controller.refresh,
-            color: Colors.indigo[600],
-            child: CustomScrollView(
-              slivers: [
-                // Search Bar
-                SliverToBoxAdapter(child: _buildSearchBar(controller)),
+      body:
+          _showPdfViewer
+              ? _buildPdfViewer()
+              : Consumer<SalesController>(
+                builder: (context, controller, child) {
+                  return RefreshIndicator(
+                    onRefresh: controller.refresh,
+                    color: Colors.indigo[600],
+                    child: CustomScrollView(
+                      slivers: [
+                        // Search Bar
+                        SliverToBoxAdapter(child: _buildSearchBar(controller)),
 
-                // Main Content
-                SliverFillRemaining(child: _buildContent(controller)),
-              ],
-            ),
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          NavigationService().pushNavigation(Screenroutes.salesRegistration);
-        },
-        child: const Icon(Icons.add),
-      ),
+                        // Main Content
+                        SliverFillRemaining(child: _buildContent(controller)),
+                      ],
+                    ),
+                  );
+                },
+              ),
+      floatingActionButton:
+          _showPdfViewer
+              ? null
+              : FloatingActionButton(
+                onPressed: () {
+                  NavigationService().pushNavigation(
+                    Screenroutes.salesRegistration,
+                  );
+                },
+                child: const Icon(Icons.add),
+              ),
+    );
+  }
+
+  Widget _buildPdfViewer() {
+    return SfPdfViewer.network(
+      _pdfUrl!,
+      canShowPaginationDialog: true,
+      onDocumentLoadFailed: (details) {
+        _showErrorSnackBar('Failed to load PDF: ${details.description}');
+        _hidePdfViewer();
+      },
     );
   }
 
@@ -396,7 +486,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
 
               const SizedBox(height: 8),
 
-              // Amount Row
+              // Amount Row with Action Buttons
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -414,27 +504,45 @@ class _SalesListScreenState extends State<SalesListScreen> {
                       ),
                     ],
                   ),
-                  Text(
-                    '${sale.totalAmount} ${sale.currency.name}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green[600],
+                  Expanded(
+                    child: Text(
+                      '${sale.totalAmount} ${sale.currency.name}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green[600],
+                      ),
+                      textAlign: TextAlign.center,
                     ),
                   ),
-
-                  IconButton(
-                    onPressed: () {
-                      _showDeleteConfirmation(sale);
-                    },
-                    icon: const Icon(Icons.delete_outline),
-                    color: Colors.red[400],
-                    tooltip: 'Delete Expense data',
-                    padding: const EdgeInsets.all(8),
-                    constraints: const BoxConstraints(
-                      minWidth: 32,
-                      minHeight: 32,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        onPressed: () => _viewSalesPdf(sale.id.toString()),
+                        icon: const Icon(Icons.visibility),
+                        color: Colors.blue[600],
+                        tooltip: 'View PDF',
+                        padding: const EdgeInsets.all(8),
+                        constraints: const BoxConstraints(
+                          minWidth: 32,
+                          minHeight: 32,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          _showDeleteConfirmation(sale);
+                        },
+                        icon: const Icon(Icons.delete_outline),
+                        color: Colors.red[400],
+                        tooltip: 'Delete Sale data',
+                        padding: const EdgeInsets.all(8),
+                        constraints: const BoxConstraints(
+                          minWidth: 32,
+                          minHeight: 32,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

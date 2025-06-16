@@ -1664,7 +1664,7 @@ class _RestClient implements RestClient {
   }
 
   @override
-  Future<dynamic> getSalesPDF({int? id, String? token}) async {
+  Future<dynamic> getSalesPDF({String? id, String? token}) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     queryParameters.removeWhere((k, v) => v == null);

@@ -443,7 +443,7 @@ abstract class RestClient {
 
   @GET('/api/getSalesPDF/{id}')
   Future<dynamic> getSalesPDF({
-    @Path("id") int? id,
+    @Path("id") String? id,
     @Header("Authorization") String? token,
   });
 }

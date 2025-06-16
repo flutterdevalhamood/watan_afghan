@@ -51,8 +51,8 @@ class SalesController with ChangeNotifier {
   String? savedSalesId;
   List<Map<String, dynamic>>? invoicesOfProductData;
 
-  Map<String, double> _availableQuantities = {};
-  bool _isLoadingAvailableQty = false;
+  final Map<String, double> _availableQuantities = {};
+  final bool _isLoadingAvailableQty = false;
 
   Map<String, double> get availableQuantities => _availableQuantities;
   bool get isLoadingAvailableQty => _isLoadingAvailableQty;
@@ -65,6 +65,8 @@ class SalesController with ChangeNotifier {
 
   String? _invoiceCheckMessage;
   String? get invoiceCheckMessage => _invoiceCheckMessage;
+
+  String? salesPdfUrl;
 
   // Search functionality
   void searchExpenses(String query) {
@@ -114,6 +116,7 @@ class SalesController with ChangeNotifier {
     selectedUnitTypeId = null;
     selectedCustomerId = null;
     invoicesOfProductData = null;
+
     notifyListeners();
   }
 
@@ -328,11 +331,7 @@ class SalesController with ChangeNotifier {
   Future<void> getInvoicesOfProduct(int selectedProductTypeId) async {
     if (!await _checkToken()) return;
 
-    // Use separate loading state for invoices to avoid affecting main screen
     _isLoadingInvoices = true;
-    // Don't set main errorMessage to null here to avoid clearing other errors
-
-    // Clear previous invoices data
     invoicesOfProductData = null;
     notifyListeners();
 
@@ -344,19 +343,16 @@ class SalesController with ChangeNotifier {
           );
 
       if (invoicesOfProductResponse['IsSuccess'] == true) {
-        // Handle the API response which returns array of strings (invoice numbers)
         final invoiceNumbers = List<String>.from(
           invoicesOfProductResponse['Data'] ?? [],
         );
 
-        // Convert string array to Map format for dropdown compatibility
         invoicesOfProductData =
             invoiceNumbers.asMap().entries.map((entry) {
               return {
-                'id': entry.key.toString(), // Use index as ID
-                'invoice_number': entry.value, // The actual invoice number
-                'display_name':
-                    entry.value, // Display name same as invoice number
+                'id': entry.key.toString(),
+                'invoice_number': entry.value,
+                'display_name': entry.value,
               };
             }).toList();
 
@@ -449,8 +445,11 @@ class SalesController with ChangeNotifier {
         fromInvoice: invoiceNumber,
       );
 
-      if (response['IsSuccess'] == true && response['Data'] != null) {
-        return double.tryParse(response['Data']?.toString() ?? '0');
+      // Fix: Access the nested Debit field inside Data
+      if (response['IsSuccess'] == true &&
+          response['Data'] != null &&
+          response['Data']['Debit'] != null) {
+        return double.tryParse(response['Data']['Debit'].toString());
       }
       return null;
     } catch (e) {
@@ -488,8 +487,6 @@ class SalesController with ChangeNotifier {
       _isCheckingInvoice = false;
 
       if (response['IsSuccess'] == true) {
-        // Check if the response data indicates invoice exists
-        // Based on your API response, it returns "false" as string when invoice doesn't exist
         final data = response['Data'];
 
         if (data == "false" || data == false) {
@@ -561,6 +558,31 @@ class SalesController with ChangeNotifier {
       }
     } catch (e) {
       debugPrint("Delete API Exception: $e");
+      _handleApiError(e);
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> getSalesPdf(String salesId) async {
+    if (!await _checkToken()) return;
+
+    try {
+      final salesPdf = await restApi.getSalesPDF(
+        token: _getAuthHeader(),
+        id: salesId,
+      );
+
+      if (salesPdf['IsSuccess'] == true) {
+        salesPdfUrl = salesPdf['Data']?['url'];
+        notifyListeners();
+        debugPrint('Base data fetched successfully');
+      } else {
+        debugPrint('API call failed: ${salesPdf['Message']}');
+        errorMessage = salesPdf['Message'] ?? 'Failed to fetch data';
+      }
+    } catch (e) {
       _handleApiError(e);
     } finally {
       isLoading = false;

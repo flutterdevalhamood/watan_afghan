@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import 'package:sample/src/providers/sales_controller.dart';
 import 'package:sample/src/util/snack.dart';
 
+import '../../models/sales_item_model.dart';
+
 class SalesScreen extends StatefulWidget {
   const SalesScreen({super.key});
 
@@ -20,7 +22,7 @@ class _SalesScreenState extends State<SalesScreen> {
   // Form values
   String? selectedCustomer;
   String? selectedCurrency;
-  String invoiceNumber = "ECFT-0087";
+  String invoiceNumber = "";
   DateTime saleDate = DateTime.now();
 
   List<SalesItem> salesItems = [SalesItem()];
@@ -45,6 +47,7 @@ class _SalesScreenState extends State<SalesScreen> {
   void initState() {
     super.initState();
     invoiceNumberController.text = invoiceNumber;
+    _clearFormData();
     _updateTotals();
 
     // Load base data when screen initializes
@@ -59,6 +62,9 @@ class _SalesScreenState extends State<SalesScreen> {
   void dispose() {
     _invoiceDebounceTimer?.cancel();
     _invoiceNumberFocusNode.dispose();
+    invoiceNumberController.dispose();
+    termsController.dispose();
+    notesController.dispose();
     super.dispose();
   }
 
@@ -71,10 +77,35 @@ class _SalesScreenState extends State<SalesScreen> {
   );
   final TextEditingController invoiceNumberController = TextEditingController();
 
+  void _clearFormData() {
+    setState(() {
+      selectedCustomer = null;
+      selectedCurrency = null;
+      invoiceNumber = "";
+      saleDate = DateTime.now();
+      salesItems = [SalesItem()];
+      subtotal = 0.0;
+      vatAmount = 0.0;
+      grandTotal = 0.0;
+      availableQuantities.clear();
+      isLoadingQuantity.clear();
+    });
+
+    // Clear text controllers
+    invoiceNumberController.clear();
+    termsController.text = 'Terms and Conditions';
+    notesController.text = 'Customer Notes';
+
+    // Clear controller states
+    final controller = Provider.of<SalesController>(context, listen: false);
+    controller.clearSelections();
+    controller.clearInvoiceCheck();
+  }
+
   // Method to get available quantity for selected invoice
   Future<void> _getAvailableQuantity(
     int itemIndex,
-    String invoiceNumber,
+    String invoiceNumber, // This should be the actual invoice number string
   ) async {
     setState(() {
       isLoadingQuantity[itemIndex] = true;
@@ -82,7 +113,7 @@ class _SalesScreenState extends State<SalesScreen> {
 
     final controller = Provider.of<SalesController>(context, listen: false);
     final availableQty = await controller.postAvailableQtyForInvoice(
-      invoiceNumber,
+      invoiceNumber, // Pass the invoice number directly
     );
 
     setState(() {
@@ -687,44 +718,40 @@ class _SalesScreenState extends State<SalesScreen> {
                                                           ? null
                                                           : (value) async {
                                                             if (value != null) {
+                                                              // Find the invoice number from the data first
+                                                              String?
+                                                              invoiceNumber;
+                                                              if (controller
+                                                                      .invoicesOfProductData !=
+                                                                  null) {
+                                                                for (var item
+                                                                    in controller
+                                                                        .invoicesOfProductData!) {
+                                                                  if (item['id']
+                                                                          .toString() ==
+                                                                      value) {
+                                                                    invoiceNumber =
+                                                                        item['invoice_number'];
+                                                                    break;
+                                                                  }
+                                                                }
+                                                              }
+
                                                               setState(() {
                                                                 salesItems[index]
                                                                         .fromInvId =
                                                                     value;
-
-                                                                // Safer approach: Find the invoice without using firstWhere
-                                                                String
-                                                                invoiceNumber =
-                                                                    'Unknown';
-                                                                if (controller
-                                                                        .invoicesOfProductData !=
-                                                                    null) {
-                                                                  for (var item
-                                                                      in controller
-                                                                          .invoicesOfProductData!) {
-                                                                    if (item['id']
-                                                                            .toString() ==
-                                                                        value) {
-                                                                      invoiceNumber =
-                                                                          item['invoice_number'] ??
-                                                                          'Unknown';
-                                                                      break;
-                                                                    }
-                                                                  }
-                                                                }
                                                                 salesItems[index]
                                                                         .fromInv =
-                                                                    invoiceNumber;
+                                                                    invoiceNumber ??
+                                                                    'Unknown';
                                                               });
 
-                                                              // Get available quantity for selected invoice
-                                                              final invoiceNumber =
-                                                                  salesItems[index]
-                                                                      .fromInv;
+                                                              // Get available quantity using the actual invoice number
                                                               if (invoiceNumber !=
                                                                       null &&
-                                                                  invoiceNumber !=
-                                                                      'Unknown') {
+                                                                  invoiceNumber
+                                                                      .isNotEmpty) {
                                                                 await _getAvailableQuantity(
                                                                   index,
                                                                   invoiceNumber,
@@ -1198,6 +1225,29 @@ class _SalesScreenState extends State<SalesScreen> {
   }
 
   Future<void> _saveSales(SalesController controller) async {
+    final invoiceExists = await controller.checkInvoiceExists(invoiceNumber);
+
+    if (invoiceExists) {
+      // Invoice already exists, show error and don't proceed
+      if (mounted) {
+        showErrorSnack(
+          controller.invoiceCheckMessage ??
+              'Invoice number already exists. Please use a different number.',
+        );
+      }
+      return; // Exit without saving
+    }
+
+    if (controller.invoiceExists == null &&
+        controller.invoiceCheckMessage != null) {
+      if (mounted) {
+        showErrorSnack(
+          controller.invoiceCheckMessage ??
+              'Failed to verify invoice number. Please try again.',
+        );
+      }
+      return; // Exit without saving
+    }
     // Prepare product details JSON
     List<Map<String, dynamic>> productDetails =
         salesItems.map((item) {
@@ -1360,43 +1410,4 @@ class _SalesScreenState extends State<SalesScreen> {
       ),
     );
   }
-}
-
-// Updated Model class for Sales Item
-class SalesItem {
-  int? productId;
-  int? unitId;
-  String? fromInvId; // Add this property
-  String? product = 'Product';
-  String? unit = 'UNIT';
-  String? fromInv = 'From Inventory'; // Add this property
-  String description = '';
-  int quantity = 0;
-  double price = 0.0;
-  double total = 0.0;
-  double taxRate = 0.0; // Tax percentage (0.0 or 0.5)
-  double taxAmount = 0.0; // Calculated tax amount
-  double totalWithTax = 0.0; // Total including tax
-  double discount = 0.0;
-  double vatAmount = 0.0;
-  double subtotal = 0.0;
-
-  SalesItem({
-    this.productId,
-    this.unitId,
-    this.fromInvId, // Add this parameter
-    this.product,
-    this.unit,
-    this.fromInv, // Add this parameter
-    this.description = '',
-    this.quantity = 0,
-    this.price = 0.0,
-    this.total = 0.0,
-    this.taxRate = 0.0,
-    this.taxAmount = 0.0,
-    this.totalWithTax = 0.0,
-    this.discount = 0.0,
-    this.vatAmount = 0.0,
-    this.subtotal = 0.0,
-  });
 }
