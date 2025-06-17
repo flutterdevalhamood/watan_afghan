@@ -446,4 +446,49 @@ abstract class RestClient {
     @Path("id") String? id,
     @Header("Authorization") String? token,
   });
+
+  @POST('/api/SalesReport')
+  Future<dynamic> postSalesReportsData({
+    @Header("Authorization") String? token,
+    @Field("fromDate") String? fromDate,
+    @Field("toDate") String? toDate,
+    @Field("currency_id") int? currencyId,
+  });
+
+  @POST('/api/PurchaseReport')
+  Future<dynamic> postPurchaseReportsData({
+    @Header("Authorization") String? token,
+    @Field("fromDate") String? fromDate,
+    @Field("toDate") String? toDate,
+    @Field("currency_id") String? currencyId,
+    @Field("supplier_id") String? supplierId,
+  });
+
+  @POST('/api/ExpenseReport')
+  Future<dynamic> postExpenseReportsData({
+    @Header("Authorization") String? token,
+    @Field("fromDate") String? fromDate,
+    @Field("toDate") String? toDate,
+    @Field("category") String? category,
+    @Field("filter") String? filter,
+    @Field("currency_id") String? currencyId,
+  });
+
+  @POST('/api/LandscapeExpenseReport')
+  Future<dynamic> postLandscapeExpenseReportsData({
+    @Header("Authorization") String? token,
+    @Field("fromDate") String? fromDate,
+    @Field("toDate") String? toDate,
+    @Field("category") String? category,
+    @Field("filter") String? filter,
+    @Field("currency_id") String? currencyId,
+  });
+
+  @POST('/api/CashReport')
+  Future<dynamic> postCashReportsData({
+    @Header("Authorization") String? token,
+    @Field("fromDate") String? fromDate,
+    @Field("toDate") String? toDate,
+    @Field("currency_id") String? currencyId,
+  });
 }

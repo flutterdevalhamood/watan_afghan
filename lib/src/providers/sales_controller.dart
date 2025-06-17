@@ -68,6 +68,8 @@ class SalesController with ChangeNotifier {
 
   String? salesPdfUrl;
 
+  String? salesReportUrl;
+
   // Search functionality
   void searchExpenses(String query) {
     _searchQuery = query.toLowerCase();
@@ -317,7 +319,7 @@ class SalesController with ChangeNotifier {
 
         debugPrint('Base data fetched successfully');
       } else {
-        debugPrint('API call failed: ${salesBaseData['Message']}');
+        print('API call failed: ${salesBaseData['Message']}');
         errorMessage = salesBaseData['Message'] ?? 'Failed to fetch base data';
       }
     } catch (e) {
@@ -587,6 +589,36 @@ class SalesController with ChangeNotifier {
     } finally {
       isLoading = false;
       notifyListeners();
+    }
+  }
+
+  Future<bool> postSalesReport(
+    String? fromDate,
+    String? toDate,
+    int? currencyId,
+  ) async {
+    if (!await _checkToken()) return false;
+
+    try {
+      final salesReportsData = await restApi.postSalesReportsData(
+        token: _getAuthHeader(),
+        fromDate: fromDate,
+        toDate: toDate,
+        currencyId: currencyId,
+      );
+      if (salesReportsData['IsSuccess'] == true) {
+        salesReportUrl = salesReportsData['Data']?['url'];
+        notifyListeners();
+        debugPrint('Report URL: $salesReportUrl');
+        return true;
+      } else {
+        debugPrint('Fetch reports data failed: ${salesReportsData['Message']}');
+        errorMessage =
+            salesReportsData['Message'] ?? 'Failed to generate report';
+        return false;
+      }
+    } catch (e) {
+      return _handleApiError(e);
     }
   }
 

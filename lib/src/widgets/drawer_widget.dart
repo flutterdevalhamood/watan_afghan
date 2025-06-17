@@ -347,6 +347,16 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                     );
                   },
                 ),
+                _buildMenuItem(
+                  context: context,
+                  icon: Icons.dataset,
+                  title: 'reports',
+                  onTap: () {
+                    NavigationService().pushNavigation(
+                      Screenroutes.reportsHomeScreen,
+                    );
+                  },
+                ),
 
                 _buildMenuItem(
                   context: context,

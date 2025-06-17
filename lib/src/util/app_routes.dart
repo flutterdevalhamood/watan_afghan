@@ -20,8 +20,9 @@ import 'package:sample/src/screens/products/product_registration_screen.dart';
 import 'package:sample/src/screens/profile_update_screen.dart';
 import 'package:sample/src/screens/purchases/purchase_list_screen.dart';
 import 'package:sample/src/screens/purchases/purchase_screen.dart';
+import 'package:sample/src/screens/reports/reports_home_screen.dart';
+import 'package:sample/src/screens/reports/sales_report_screen.dart';
 import 'package:sample/src/screens/sales/sales_list_screen.dart';
-import 'package:sample/src/screens/sales/sales_screen.dart';
 import 'package:sample/src/screens/supplier/supplier_data_screen.dart';
 import 'package:sample/src/screens/supplier/supplier_list_screen.dart';
 import 'package:sample/src/screens/units/unit_list_screen.dart';
@@ -96,6 +97,12 @@ class Screenroutes {
   //sales
   static const String salesListScreen = "salesListScreen";
   static const String salesRegistration = "salesRegistration";
+
+  //reports
+  static const String reportsHomeScreen = "reportsHomeScreen";
+  static const String salesReportScreen = "salesReportScreen";
+  static const String purchaseReportScreen = "purchaseReportScreen";
+  static const String expenseReportScreen = "expenseReportScreen";
 
   static Route<dynamic>? routes(RouteSettings settings) {
     StringConstants.currentRoute = settings.name ?? "";
@@ -378,11 +385,33 @@ class Screenroutes {
           },
         );
 
-      case Screenroutes.salesRegistration:
+      case Screenroutes.reportsHomeScreen:
         return MaterialPageRoute(
-          settings: const RouteSettings(name: Screenroutes.salesRegistration),
+          settings: const RouteSettings(name: Screenroutes.reportsHomeScreen),
           builder: (BuildContext context) {
-            return SalesScreen();
+            return ReportsHomeScreen();
+          },
+        );
+
+      case Screenroutes.salesReportScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(name: Screenroutes.salesReportScreen),
+          builder: (BuildContext context) {
+            return SalesReportScreen();
+          },
+        );
+      case Screenroutes.reportsHomeScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(name: Screenroutes.reportsHomeScreen),
+          builder: (BuildContext context) {
+            return ReportsHomeScreen();
+          },
+        );
+      case Screenroutes.reportsHomeScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(name: Screenroutes.reportsHomeScreen),
+          builder: (BuildContext context) {
+            return ReportsHomeScreen();
           },
         );
     }
