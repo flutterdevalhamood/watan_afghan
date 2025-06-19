@@ -10,6 +10,7 @@ class ReportsController with ChangeNotifier {
   String? salesReportUrl;
   String? purchaseReportUrl;
   String? expenseReportUrl;
+  String? cashReportUrl;
   String? errorMessage;
 
   Future<bool> postSalesReports(
@@ -20,7 +21,7 @@ class ReportsController with ChangeNotifier {
     if (!await _checkToken()) return false;
 
     try {
-      final salesReportsData = await restApi.postSalesReportsData(
+      final salesReportsData = await restApi.postSalesTransactionReport(
         token: _getAuthHeader(),
         fromDate: fromDate,
         toDate: toDate,
@@ -112,7 +113,7 @@ class ReportsController with ChangeNotifier {
     String? toDate,
     String? category,
     String? filter,
-    String? currencyId,
+    int? currencyId,
   ) async {
     try {
       if (token == null) {
@@ -144,6 +145,73 @@ class ReportsController with ChangeNotifier {
         print('Dio error: ${e.message}');
       }
       return false;
+    }
+  }
+
+  Future<bool> postCashReports(
+    String? fromDate,
+    String? toDate,
+    int? currencyId,
+  ) async {
+    if (!await _checkToken()) return false;
+
+    try {
+      final cashReportsData = await restApi.postCashReportsData(
+        token: _getAuthHeader(),
+        fromDate: fromDate,
+        toDate: toDate,
+        currencyId: currencyId,
+      );
+
+      print('Full cashReportsData: $cashReportsData');
+
+      if (cashReportsData['IsSuccess'] == true) {
+        final data = cashReportsData['Data'];
+
+        // Clear any previous error messages
+        errorMessage = null;
+
+        // Handle the response structure properly
+        if (data is Map<String, dynamic> && data.containsKey('url')) {
+          // This is the expected structure: {"Data": {"url": "..."}}
+          cashReportUrl = data['url']?.toString();
+        } else if (data is String && data.isNotEmpty) {
+          // Fallback: if Data is directly a URL string
+          cashReportUrl = data;
+        } else {
+          debugPrint('Unexpected data structure. Data: $data');
+          debugPrint('Data type: ${data.runtimeType}');
+          errorMessage = 'Invalid response format from server';
+          return false;
+        }
+
+        // Validate the URL
+        if (cashReportUrl == null || cashReportUrl!.isEmpty) {
+          debugPrint('Empty or null URL received');
+          errorMessage = 'Invalid report URL received';
+          return false;
+        }
+
+        // Additional URL validation
+        if (!cashReportUrl!.startsWith('http')) {
+          debugPrint('Invalid URL format: $cashReportUrl');
+          errorMessage = 'Invalid URL format received';
+          return false;
+        }
+
+        print('cashReportUrl: $cashReportUrl');
+        notifyListeners();
+        return true;
+      } else {
+        debugPrint('Report generation failed: ${cashReportsData['Message']}');
+        errorMessage =
+            cashReportsData['Message'] ?? 'Failed to generate report';
+        return false;
+      }
+    } catch (e) {
+      debugPrint('Exception in postCashReports: $e');
+      errorMessage = 'An error occurred while generating the report';
+      return _handleApiError(e);
     }
   }
 

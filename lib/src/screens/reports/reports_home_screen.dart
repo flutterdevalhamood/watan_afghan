@@ -58,13 +58,21 @@ class ReportsHomeScreen extends StatelessWidget {
                     title: 'Purchase Report',
                     icon: Icons.shopping_cart,
                     color: Colors.blue,
-                    onTap: () => _navigateToReport(context, 'Purchase Report'),
+                    onTap: () {
+                      NavigationService().pushNavigation(
+                        Screenroutes.purchaseReportScreen,
+                      );
+                    },
                   ),
                   ReportTile(
                     title: 'Expense Report',
                     icon: Icons.receipt_long,
                     color: Colors.orange,
-                    onTap: () => _navigateToReport(context, 'Expense Report'),
+                    onTap: () {
+                      NavigationService().pushNavigation(
+                        Screenroutes.expenseReportScreen,
+                      );
+                    },
                   ),
                   ReportTile(
                     title: 'Landscape Expense Report',
@@ -80,7 +88,11 @@ class ReportsHomeScreen extends StatelessWidget {
                     title: 'Cash Report',
                     icon: Icons.account_balance_wallet,
                     color: Colors.teal,
-                    onTap: () => _navigateToReport(context, 'Cash Report'),
+                    onTap: () {
+                      NavigationService().pushNavigation(
+                        Screenroutes.cashReportScreen,
+                      );
+                    },
                   ),
                 ],
               ),

@@ -394,6 +394,7 @@ abstract class RestClient {
   );
 
   @POST('/api/Sales')
+  @FormUrlEncoded()
   Future<dynamic> registerSales({
     @Header("Authorization") String? token,
     @Field("customer_id") int? customerId,
@@ -448,7 +449,7 @@ abstract class RestClient {
   });
 
   @POST('/api/SalesReport')
-  Future<dynamic> postSalesReportsData({
+  Future<dynamic> postSalesTransactionReport({
     @Header("Authorization") String? token,
     @Field("fromDate") String? fromDate,
     @Field("toDate") String? toDate,
@@ -471,7 +472,7 @@ abstract class RestClient {
     @Field("toDate") String? toDate,
     @Field("category") String? category,
     @Field("filter") String? filter,
-    @Field("currency_id") String? currencyId,
+    @Field("currency_id") int? currencyId,
   });
 
   @POST('/api/LandscapeExpenseReport')
@@ -489,6 +490,6 @@ abstract class RestClient {
     @Header("Authorization") String? token,
     @Field("fromDate") String? fromDate,
     @Field("toDate") String? toDate,
-    @Field("currency_id") String? currencyId,
+    @Field("currency_id") int? currencyId,
   });
 }

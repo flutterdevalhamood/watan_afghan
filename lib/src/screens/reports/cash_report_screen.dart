@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
@@ -7,15 +9,16 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:sample/src/providers/reports_controller.dart';
 import 'package:sample/src/providers/sales_controller.dart';
+import 'package:sample/src/repo/auth_repo.dart';
 
-class SalesReportScreen extends StatefulWidget {
-  const SalesReportScreen({super.key});
+class CashReportScreen extends StatefulWidget {
+  const CashReportScreen({super.key});
 
   @override
-  State<SalesReportScreen> createState() => _SalesReportScreenState();
+  State<CashReportScreen> createState() => _CashReportScreenState();
 }
 
-class _SalesReportScreenState extends State<SalesReportScreen> {
+class _CashReportScreenState extends State<CashReportScreen> {
   DateTime? _fromDate;
   DateTime? _toDate;
   int? _selectedCurrencyId;
@@ -122,14 +125,14 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
       ).format(_fromDate!);
       final String toDateFormatted = DateFormat('yyyy-MM-dd').format(_toDate!);
 
-      final isSuccess = await _controller.postSalesReports(
+      final isSuccess = await _controller.postCashReports(
         fromDateFormatted,
         toDateFormatted,
         _selectedCurrencyId,
       );
 
-      if (isSuccess && _controller.salesReportUrl != null) {
-        await _downloadAndOpenPdf(_controller.salesReportUrl!);
+      if (isSuccess && _controller.cashReportUrl != null) {
+        await _downloadAndOpenPdf(_controller.cashReportUrl!);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -154,35 +157,87 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
     }
   }
 
+  String _getAuthHeader() {
+    return 'Bearer ${AuthRepo.token}';
+  }
+
   Future<void> _downloadAndOpenPdf(String url) async {
     try {
-      // Request storage permission
-      final status = await Permission.storage.request();
-      if (!status.isGranted) {
-        throw Exception('Storage permission denied');
+      print('Attempting to download PDF from: $url');
+
+      // For newer Android versions, storage permission might not be needed
+      // for app-specific directories
+      if (Platform.isAndroid) {
+        final status = await Permission.storage.request();
+        if (!status.isGranted) {
+          // Try to continue anyway for newer Android versions
+          print('Storage permission not granted, but continuing...');
+        }
       }
 
       // Get app directory for saving PDF
       final dir = await getApplicationDocumentsDirectory();
-      final filePath =
-          '${dir.path}/sales_report_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      final fileName =
+          'report_files${DateTime.now().millisecondsSinceEpoch}.pdf';
+      final filePath = '${dir.path}/$fileName';
 
-      // Download the PDF using Dio
+      print('Saving PDF to: $filePath');
+
+      // Download the PDF using Dio with proper headers
       final dio = Dio();
-      await dio.download(url, filePath);
 
-      if (mounted) {
-        setState(() {
-          _pdfPath = filePath;
-        });
+      // Add authentication header if needed
+      final options = Options(
+        headers: {
+          'Authorization': _getAuthHeader(),
+          'Accept': 'application/pdf',
+        },
+        responseType: ResponseType.bytes,
+      );
+
+      final response = await dio.get(url, options: options);
+
+      // Write the file
+      final file = File(filePath);
+      await file.writeAsBytes(response.data);
+
+      print(
+        'PDF downloaded successfully. File size: ${response.data.length} bytes',
+      );
+
+      // Verify file exists and has content
+      if (await file.exists()) {
+        final fileSize = await file.length();
+        print('File exists with size: $fileSize bytes');
+
+        if (fileSize > 0) {
+          if (mounted) {
+            setState(() {
+              _pdfPath = filePath;
+            });
+          }
+        } else {
+          throw Exception('Downloaded file is empty');
+        }
+      } else {
+        throw Exception('Failed to save PDF file');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error downloading PDF: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      print('Error downloading PDF: $e');
+      if (e is DioException) {
+        print(
+          'Dio error details: ${e.response?.statusCode} - ${e.response?.data}',
+        );
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error downloading PDF: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -191,7 +246,7 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Sales Reports',
+          'Cash Reports',
           style: TextStyle(
             color: Color(0xFF222B45),
             fontWeight: FontWeight.w600,

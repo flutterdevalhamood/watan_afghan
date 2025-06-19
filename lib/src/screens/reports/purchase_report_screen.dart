@@ -8,17 +8,18 @@ import 'package:provider/provider.dart';
 import 'package:sample/src/providers/reports_controller.dart';
 import 'package:sample/src/providers/sales_controller.dart';
 
-class SalesReportScreen extends StatefulWidget {
-  const SalesReportScreen({super.key});
+class PurchaseReportScreen extends StatefulWidget {
+  const PurchaseReportScreen({super.key});
 
   @override
-  State<SalesReportScreen> createState() => _SalesReportScreenState();
+  State<PurchaseReportScreen> createState() => _PurchaseReportScreenState();
 }
 
-class _SalesReportScreenState extends State<SalesReportScreen> {
+class _PurchaseReportScreenState extends State<PurchaseReportScreen> {
   DateTime? _fromDate;
   DateTime? _toDate;
   int? _selectedCurrencyId;
+  int? _selectedSupplierId;
   bool _isLoading = false;
   String? _pdfPath;
   bool _isGeneratingReport = false;
@@ -165,7 +166,7 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
       // Get app directory for saving PDF
       final dir = await getApplicationDocumentsDirectory();
       final filePath =
-          '${dir.path}/sales_report_${DateTime.now().millisecondsSinceEpoch}.pdf';
+          '${dir.path}/purchase_report_${DateTime.now().millisecondsSinceEpoch}.pdf';
 
       // Download the PDF using Dio
       final dio = Dio();
@@ -191,7 +192,7 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Sales Reports',
+          'Purchase Reports',
           style: TextStyle(
             color: Color(0xFF222B45),
             fontWeight: FontWeight.w600,
@@ -324,6 +325,39 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
                       });
                     },
                   ),
+
+                  const SizedBox(height: 24),
+
+                  DropdownButtonFormField<int>(
+                    decoration: InputDecoration(
+                      labelText: 'Supplier',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                    ),
+                    value: _selectedSupplierId,
+                    hint: const Text('Select Supplier'),
+                    isExpanded: true,
+                    items: [
+                      ..._salesController.currencyType?.map((investor) {
+                            return DropdownMenuItem<int>(
+                              value: investor['id'],
+                              child: Text(investor['Name']),
+                            );
+                          }).toList() ??
+                          [],
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedSupplierId = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),

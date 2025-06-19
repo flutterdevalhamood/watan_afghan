@@ -20,9 +20,13 @@ import 'package:sample/src/screens/products/product_registration_screen.dart';
 import 'package:sample/src/screens/profile_update_screen.dart';
 import 'package:sample/src/screens/purchases/purchase_list_screen.dart';
 import 'package:sample/src/screens/purchases/purchase_screen.dart';
+import 'package:sample/src/screens/reports/cash_report_screen.dart';
+import 'package:sample/src/screens/reports/expense_report_screen.dart';
+import 'package:sample/src/screens/reports/purchase_report_screen.dart';
 import 'package:sample/src/screens/reports/reports_home_screen.dart';
 import 'package:sample/src/screens/reports/sales_report_screen.dart';
 import 'package:sample/src/screens/sales/sales_list_screen.dart';
+import 'package:sample/src/screens/sales/sales_screen.dart';
 import 'package:sample/src/screens/supplier/supplier_data_screen.dart';
 import 'package:sample/src/screens/supplier/supplier_list_screen.dart';
 import 'package:sample/src/screens/units/unit_list_screen.dart';
@@ -103,6 +107,7 @@ class Screenroutes {
   static const String salesReportScreen = "salesReportScreen";
   static const String purchaseReportScreen = "purchaseReportScreen";
   static const String expenseReportScreen = "expenseReportScreen";
+  static const String cashReportScreen = "cashReportScreen";
 
   static Route<dynamic>? routes(RouteSettings settings) {
     StringConstants.currentRoute = settings.name ?? "";
@@ -112,7 +117,7 @@ class Screenroutes {
         return MaterialPageRoute(
           settings: const RouteSettings(name: Screenroutes.login),
           builder: (BuildContext context) {
-            return const LoginScreen();
+            return LoginScreen();
           },
         );
       case Screenroutes.dashboard:
@@ -385,6 +390,14 @@ class Screenroutes {
           },
         );
 
+      case Screenroutes.salesRegistration:
+        return MaterialPageRoute(
+          settings: const RouteSettings(name: Screenroutes.salesRegistration),
+          builder: (BuildContext context) {
+            return SalesScreen();
+          },
+        );
+
       case Screenroutes.reportsHomeScreen:
         return MaterialPageRoute(
           settings: const RouteSettings(name: Screenroutes.reportsHomeScreen),
@@ -400,18 +413,29 @@ class Screenroutes {
             return SalesReportScreen();
           },
         );
-      case Screenroutes.reportsHomeScreen:
+      case Screenroutes.purchaseReportScreen:
         return MaterialPageRoute(
-          settings: const RouteSettings(name: Screenroutes.reportsHomeScreen),
+          settings: const RouteSettings(
+            name: Screenroutes.purchaseReportScreen,
+          ),
           builder: (BuildContext context) {
-            return ReportsHomeScreen();
+            return PurchaseReportScreen();
           },
         );
-      case Screenroutes.reportsHomeScreen:
+
+      case Screenroutes.expenseReportScreen:
         return MaterialPageRoute(
-          settings: const RouteSettings(name: Screenroutes.reportsHomeScreen),
+          settings: const RouteSettings(name: Screenroutes.expenseReportScreen),
           builder: (BuildContext context) {
-            return ReportsHomeScreen();
+            return ExpenseReportScreen();
+          },
+        );
+
+      case Screenroutes.cashReportScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(name: Screenroutes.cashReportScreen),
+          builder: (BuildContext context) {
+            return CashReportScreen();
           },
         );
     }

@@ -592,36 +592,6 @@ class SalesController with ChangeNotifier {
     }
   }
 
-  Future<bool> postSalesReport(
-    String? fromDate,
-    String? toDate,
-    int? currencyId,
-  ) async {
-    if (!await _checkToken()) return false;
-
-    try {
-      final salesReportsData = await restApi.postSalesReportsData(
-        token: _getAuthHeader(),
-        fromDate: fromDate,
-        toDate: toDate,
-        currencyId: currencyId,
-      );
-      if (salesReportsData['IsSuccess'] == true) {
-        salesReportUrl = salesReportsData['Data']?['url'];
-        notifyListeners();
-        debugPrint('Report URL: $salesReportUrl');
-        return true;
-      } else {
-        debugPrint('Fetch reports data failed: ${salesReportsData['Message']}');
-        errorMessage =
-            salesReportsData['Message'] ?? 'Failed to generate report';
-        return false;
-      }
-    } catch (e) {
-      return _handleApiError(e);
-    }
-  }
-
   // Get user-friendly error message
   String _getErrorMessage(dynamic e) {
     if (e is DioException) {

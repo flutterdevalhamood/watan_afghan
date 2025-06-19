@@ -1495,7 +1495,12 @@ class _RestClient implements RestClient {
     };
     _data.removeWhere((k, v) => v == null);
     final _options = _setStreamType<dynamic>(
-      Options(method: 'POST', headers: _headers, extra: _extra)
+      Options(
+            method: 'POST',
+            headers: _headers,
+            extra: _extra,
+            contentType: 'application/x-www-form-urlencoded',
+          )
           .compose(
             _dio.options,
             '/api/Sales',
@@ -1687,7 +1692,7 @@ class _RestClient implements RestClient {
   }
 
   @override
-  Future<dynamic> postSalesReportsData({
+  Future<dynamic> postSalesTransactionReport({
     String? token,
     String? fromDate,
     String? toDate,
@@ -1761,7 +1766,7 @@ class _RestClient implements RestClient {
     String? toDate,
     String? category,
     String? filter,
-    String? currencyId,
+    int? currencyId,
   }) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
@@ -1833,7 +1838,7 @@ class _RestClient implements RestClient {
     String? token,
     String? fromDate,
     String? toDate,
-    String? currencyId,
+    int? currencyId,
   }) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};

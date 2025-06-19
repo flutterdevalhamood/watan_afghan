@@ -8,17 +8,19 @@ import 'package:provider/provider.dart';
 import 'package:sample/src/providers/reports_controller.dart';
 import 'package:sample/src/providers/sales_controller.dart';
 
-class SalesReportScreen extends StatefulWidget {
-  const SalesReportScreen({super.key});
+class ExpenseReportScreen extends StatefulWidget {
+  const ExpenseReportScreen({super.key});
 
   @override
-  State<SalesReportScreen> createState() => _SalesReportScreenState();
+  State<ExpenseReportScreen> createState() => _ExpenseReportScreenState();
 }
 
-class _SalesReportScreenState extends State<SalesReportScreen> {
+class _ExpenseReportScreenState extends State<ExpenseReportScreen> {
   DateTime? _fromDate;
   DateTime? _toDate;
+  int? _selectedCategoryId;
   int? _selectedCurrencyId;
+  String? _selectedFilter;
   bool _isLoading = false;
   String? _pdfPath;
   bool _isGeneratingReport = false;
@@ -122,14 +124,16 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
       ).format(_fromDate!);
       final String toDateFormatted = DateFormat('yyyy-MM-dd').format(_toDate!);
 
-      final isSuccess = await _controller.postSalesReports(
+      final isSuccess = await _controller.postExpenseReportsData(
         fromDateFormatted,
         toDateFormatted,
+        'all',
+        'all',
         _selectedCurrencyId,
       );
 
-      if (isSuccess && _controller.salesReportUrl != null) {
-        await _downloadAndOpenPdf(_controller.salesReportUrl!);
+      if (isSuccess && _controller.expenseReportUrl != null) {
+        await _downloadAndOpenPdf(_controller.expenseReportUrl!);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -165,7 +169,7 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
       // Get app directory for saving PDF
       final dir = await getApplicationDocumentsDirectory();
       final filePath =
-          '${dir.path}/sales_report_${DateTime.now().millisecondsSinceEpoch}.pdf';
+          '${dir.path}/expense_report_${DateTime.now().millisecondsSinceEpoch}.pdf';
 
       // Download the PDF using Dio
       final dio = Dio();
@@ -191,7 +195,7 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Sales Reports',
+          'Expense Reports',
           style: TextStyle(
             color: Color(0xFF222B45),
             fontWeight: FontWeight.w600,
@@ -293,6 +297,70 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 16),
+
+                  DropdownButtonFormField<int>(
+                    decoration: InputDecoration(
+                      labelText: 'Category',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                    ),
+                    value: _selectedCategoryId,
+                    hint: const Text('Select Category'),
+                    isExpanded: true,
+                    items: [
+                      ..._salesController.currencyType?.map((currency) {
+                            return DropdownMenuItem<int>(
+                              value: currency['id'],
+                              child: Text(currency['Name']),
+                            );
+                          }).toList() ??
+                          [],
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedCategoryId = value;
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  DropdownButtonFormField<int>(
+                    decoration: InputDecoration(
+                      labelText: 'Filter',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                    ),
+                    value: _selectedCategoryId,
+                    hint: const Text('Select Filter'),
+                    isExpanded: true,
+                    items: [
+                      ..._salesController.currencyType?.map((currency) {
+                            return DropdownMenuItem<int>(
+                              value: currency['id'],
+                              child: Text(currency['Name']),
+                            );
+                          }).toList() ??
+                          [],
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedFilter = value.toString();
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 24),
 
                   // Currency Dropdown
                   DropdownButtonFormField<int>(
