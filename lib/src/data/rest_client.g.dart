@@ -1866,6 +1866,315 @@ class _RestClient implements RestClient {
     return _value;
   }
 
+  @override
+  Future<dynamic> getSupplierAdvance(int page, int limit, String? token) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{r'Authorization': token};
+    _headers.removeWhere((k, v) => v == null);
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'GET', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/api/SupplierAdvance/paginate/${page}/${limit}',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> postSupplierAdvance({
+    String? token,
+    int? supplierId,
+    String? receiptNumber,
+    String? paymentType,
+    int? bankId,
+    String? accountNumber,
+    String? chequeNumber,
+    String? transferDate,
+    String? amount,
+    int? currencyId,
+    String? sumOf,
+    String? receiverName,
+    String? description,
+    List<MultipartFile>? files,
+  }) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{r'Authorization': token};
+    _headers.removeWhere((k, v) => v == null);
+    final _data = FormData();
+    if (supplierId != null) {
+      _data.fields.add(MapEntry('supplier_id', supplierId.toString()));
+    }
+    if (receiptNumber != null) {
+      _data.fields.add(MapEntry('receiptNumber', receiptNumber));
+    }
+    if (paymentType != null) {
+      _data.fields.add(MapEntry('paymentType', paymentType));
+    }
+    if (bankId != null) {
+      _data.fields.add(MapEntry('bank_id', bankId.toString()));
+    }
+    if (accountNumber != null) {
+      _data.fields.add(MapEntry('accountNumber', accountNumber));
+    }
+    if (chequeNumber != null) {
+      _data.fields.add(MapEntry('ChequeNumber', chequeNumber));
+    }
+    if (transferDate != null) {
+      _data.fields.add(MapEntry('TransferDate', transferDate));
+    }
+    if (amount != null) {
+      _data.fields.add(MapEntry('Amount', amount));
+    }
+    if (currencyId != null) {
+      _data.fields.add(MapEntry('currency_id', currencyId.toString()));
+    }
+    if (sumOf != null) {
+      _data.fields.add(MapEntry('sumOf', sumOf));
+    }
+    if (receiverName != null) {
+      _data.fields.add(MapEntry('receiverName', receiverName));
+    }
+    if (description != null) {
+      _data.fields.add(MapEntry('Description', description));
+    }
+    if (files != null) {
+      _data.files.addAll(
+        files.map((i) => MapEntry('supplier_advance_image', i)),
+      );
+    }
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/api/SupplierAdvance',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> postSupplierAdvanceUpdate({
+    String? token,
+    int? supplierId,
+    String? receiptNumber,
+    String? paymentType,
+    int? bankId,
+    String? accountNumber,
+    String? chequeNumber,
+    String? transferDate,
+    String? amount,
+    int? currencyId,
+    String? sumOf,
+    String? receiverName,
+    String? description,
+    int? id,
+    List<MultipartFile>? files,
+  }) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{r'Authorization': token};
+    _headers.removeWhere((k, v) => v == null);
+    final _data = FormData();
+    if (supplierId != null) {
+      _data.fields.add(MapEntry('supplier_id', supplierId.toString()));
+    }
+    if (receiptNumber != null) {
+      _data.fields.add(MapEntry('receiptNumber', receiptNumber));
+    }
+    if (paymentType != null) {
+      _data.fields.add(MapEntry('paymentType', paymentType));
+    }
+    if (bankId != null) {
+      _data.fields.add(MapEntry('bank_id', bankId.toString()));
+    }
+    if (accountNumber != null) {
+      _data.fields.add(MapEntry('accountNumber', accountNumber));
+    }
+    if (chequeNumber != null) {
+      _data.fields.add(MapEntry('ChequeNumber', chequeNumber));
+    }
+    if (transferDate != null) {
+      _data.fields.add(MapEntry('TransferDate', transferDate));
+    }
+    if (amount != null) {
+      _data.fields.add(MapEntry('Amount', amount));
+    }
+    if (currencyId != null) {
+      _data.fields.add(MapEntry('currency_id', currencyId.toString()));
+    }
+    if (sumOf != null) {
+      _data.fields.add(MapEntry('sumOf', sumOf));
+    }
+    if (receiverName != null) {
+      _data.fields.add(MapEntry('receiverName', receiverName));
+    }
+    if (description != null) {
+      _data.fields.add(MapEntry('Description', description));
+    }
+    if (id != null) {
+      _data.fields.add(MapEntry('id', id.toString()));
+    }
+    if (files != null) {
+      _data.files.addAll(
+        files.map((i) => MapEntry('supplier_advance_image', i)),
+      );
+    }
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/api/SupplierAdvanceUpdate',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> getSupplierAdvanceBaseList({String? token}) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{r'Authorization': token};
+    _headers.removeWhere((k, v) => v == null);
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'GET', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/api/getSupplierAdvanceBaseList',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> getSupplierAdvanceDetail({int? id, String? token}) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{r'Authorization': token};
+    _headers.removeWhere((k, v) => v == null);
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'GET', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/api/SupplierAdvanceDetail/${id}',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> getSupplierAdvancePush({int? id, String? token}) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{r'Authorization': token};
+    _headers.removeWhere((k, v) => v == null);
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'GET', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/api/SupplierAdvancePush/${id}',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> deleteSupplierAdvance({
+    String? token,
+    int? id,
+    String? deleteDescription,
+  }) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{r'Authorization': token};
+    _headers.removeWhere((k, v) => v == null);
+    final _data = {'id': id, 'deleteDescription': deleteDescription};
+    _data.removeWhere((k, v) => v == null);
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/api/SupplierAdvanceDelete',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> postCheckSupplierAdvanceReferenceExist({
+    String? token,
+    String? receiptNumber,
+  }) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{r'Authorization': token};
+    _headers.removeWhere((k, v) => v == null);
+    final _data = {'receiptNumber': receiptNumber};
+    _data.removeWhere((k, v) => v == null);
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/api/CheckSupplierAdvanceReferenceExist',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
   RequestOptions _setStreamType<T>(RequestOptions requestOptions) {
     if (T != dynamic &&
         !(requestOptions.responseType == ResponseType.bytes ||

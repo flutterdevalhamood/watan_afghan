@@ -74,13 +74,17 @@ class FinancialTransactionsScreen extends StatelessWidget {
                   //   Colors.green,
                   //   () {},
                   // ),
-                  // _buildTransactionCard(
-                  //   context,
-                  //   'Supplier Advance',
-                  //   Icons.shopping_bag,
-                  //   Colors.orange,
-                  //   () {},
-                  // ),
+                  _buildTransactionCard(
+                    context,
+                    'Supplier Advance',
+                    Icons.shopping_bag,
+                    Colors.orange,
+                    () {
+                      NavigationService().pushNavigation(
+                        Screenroutes.supplierAdvanceListScreen,
+                      );
+                    },
+                  ),
                   // _buildTransactionCard(
                   //   context,
                   //   'Supplier Payment',

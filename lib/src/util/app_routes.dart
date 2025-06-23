@@ -29,6 +29,9 @@ import 'package:sample/src/screens/sales/sales_list_screen.dart';
 import 'package:sample/src/screens/sales/sales_screen.dart';
 import 'package:sample/src/screens/supplier/supplier_data_screen.dart';
 import 'package:sample/src/screens/supplier/supplier_list_screen.dart';
+import 'package:sample/src/screens/supplierAdvance/supplier_advance_data_screen.dart';
+import 'package:sample/src/screens/supplierAdvance/supplier_advance_list_screen.dart';
+import 'package:sample/src/screens/supplierAdvance/supplier_advance_update_screen.dart';
 import 'package:sample/src/screens/units/unit_list_screen.dart';
 import 'package:sample/src/screens/units/unit_registration_screen.dart';
 import 'package:sample/src/screens/units/unit_update_screen.dart';
@@ -108,6 +111,12 @@ class Screenroutes {
   static const String purchaseReportScreen = "purchaseReportScreen";
   static const String expenseReportScreen = "expenseReportScreen";
   static const String cashReportScreen = "cashReportScreen";
+
+  //supplieradvance
+  static const String supplierAdvanceListScreen = "supplierAdvanceListScreen";
+  static const String supplierAdvanceDataScreen = "supplierAdvanceDataScreen";
+  static const String supplierAdvanceUpdateScreen =
+      "supplierAdvanceUpdateScreen";
 
   static Route<dynamic>? routes(RouteSettings settings) {
     StringConstants.currentRoute = settings.name ?? "";
@@ -436,6 +445,36 @@ class Screenroutes {
           settings: const RouteSettings(name: Screenroutes.cashReportScreen),
           builder: (BuildContext context) {
             return CashReportScreen();
+          },
+        );
+
+      case Screenroutes.supplierAdvanceListScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(
+            name: Screenroutes.supplierAdvanceListScreen,
+          ),
+          builder: (BuildContext context) {
+            return SupplierAdvanceListScreen();
+          },
+        );
+
+      case Screenroutes.supplierAdvanceDataScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(
+            name: Screenroutes.supplierAdvanceDataScreen,
+          ),
+          builder: (BuildContext context) {
+            return SupplierAdvanceDataScreen();
+          },
+        );
+
+      case Screenroutes.supplierAdvanceUpdateScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(
+            name: Screenroutes.supplierAdvanceUpdateScreen,
+          ),
+          builder: (BuildContext context) {
+            return SupplierAdvanceUpdateScreen();
           },
         );
     }

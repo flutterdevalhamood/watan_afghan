@@ -492,4 +492,79 @@ abstract class RestClient {
     @Field("toDate") String? toDate,
     @Field("currency_id") int? currencyId,
   });
+
+  //supplieradvance
+  @GET('/api/SupplierAdvance/paginate/{page}/{limit}')
+  Future<dynamic> getSupplierAdvance(
+    @Path("page") int page,
+    @Path("limit") int limit,
+    @Header("Authorization") String? token,
+  );
+
+  @POST('/api/SupplierAdvance')
+  Future<dynamic> postSupplierAdvance({
+    @Header("Authorization") String? token,
+    @Part(name: "supplier_id") int? supplierId,
+    @Part(name: "receiptNumber") String? receiptNumber,
+    @Part(name: "paymentType") String? paymentType,
+    @Part(name: "bank_id") int? bankId,
+    @Part(name: "accountNumber") String? accountNumber,
+    @Part(name: "ChequeNumber") String? chequeNumber,
+    @Part(name: "TransferDate") String? transferDate,
+    @Part(name: "Amount") String? amount,
+    @Part(name: "currency_id") int? currencyId,
+    @Part(name: "sumOf") String? sumOf,
+    @Part(name: "receiverName") String? receiverName,
+    @Part(name: "Description") String? description,
+    @Part(name: 'supplier_advance_image') List<MultipartFile>? files,
+  });
+
+  @POST('/api/SupplierAdvanceUpdate')
+  Future<dynamic> postSupplierAdvanceUpdate({
+    @Header("Authorization") String? token,
+    @Part(name: "supplier_id") int? supplierId,
+    @Part(name: "receiptNumber") String? receiptNumber,
+    @Part(name: "paymentType") String? paymentType,
+    @Part(name: "bank_id") int? bankId,
+    @Part(name: "accountNumber") String? accountNumber,
+    @Part(name: "ChequeNumber") String? chequeNumber,
+    @Part(name: "TransferDate") String? transferDate,
+    @Part(name: "Amount") String? amount,
+    @Part(name: "currency_id") int? currencyId,
+    @Part(name: "sumOf") String? sumOf,
+    @Part(name: "receiverName") String? receiverName,
+    @Part(name: "Description") String? description,
+    @Part(name: "id") int? id,
+    @Part(name: 'supplier_advance_image') List<MultipartFile>? files,
+  });
+
+  @GET('/api/getSupplierAdvanceBaseList')
+  Future<dynamic> getSupplierAdvanceBaseList({
+    @Header("Authorization") String? token,
+  });
+
+  @GET('/api/SupplierAdvanceDetail/{id}')
+  Future<dynamic> getSupplierAdvanceDetail({
+    @Path("id") int? id,
+    @Header("Authorization") String? token,
+  });
+
+  @GET('/api/SupplierAdvancePush/{id}')
+  Future<dynamic> getSupplierAdvancePush({
+    @Path("id") int? id,
+    @Header("Authorization") String? token,
+  });
+
+  @POST('/api/SupplierAdvanceDelete')
+  Future<dynamic> deleteSupplierAdvance({
+    @Header("Authorization") String? token,
+    @Field("id") int? id,
+    @Field("deleteDescription") String? deleteDescription,
+  });
+
+  @POST('/api/CheckSupplierAdvanceReferenceExist')
+  Future<dynamic> postCheckSupplierAdvanceReferenceExist({
+    @Header("Authorization") String? token,
+    @Field("receiptNumber") String? receiptNumber,
+  });
 }

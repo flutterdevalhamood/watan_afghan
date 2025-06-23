@@ -1,0 +1,637 @@
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:sample/src/models/Sales_detail_model.dart';
+import 'package:sample/src/models/supplier_advance_model.dart';
+
+import '../data/rest_client.dart';
+import '../repo/auth_repo.dart';
+
+class SupplierAdvanceController with ChangeNotifier {
+  bool isLoading = false;
+  int currentPage = 1;
+  final int totalPages = 10;
+  bool hasMore = true;
+  String? errorMessage;
+  int? id;
+
+  List<SupplierAdvance> _allSupplierAdvances = [];
+  List<SupplierAdvance> _filteredSupplierAdvances = [];
+  String _searchQuery = '';
+
+  // Detail properties
+  SalesData? _salesDetail;
+  bool _isDetailLoading = false;
+  String? _detailErrorMessage;
+
+  // Getters
+  List<SupplierAdvance> get filteredSupplierAdvances =>
+      _filteredSupplierAdvances;
+  List<SupplierAdvance> get allSupplierAdvances => _allSupplierAdvances;
+  String get searchQuery => _searchQuery;
+  bool get hasExpenses => _filteredSupplierAdvances.isNotEmpty;
+
+  // // Detail getters
+  // SalesData? get salesDetail => _salesDetail;
+  // bool get isDetailLoading => _isDetailLoading;
+  // String? get detailErrorMessage => _detailErrorMessage;
+
+  // bool _isLoadingInvoices = false;
+  // bool get isLoadingInvoices => _isLoadingInvoices;
+
+  // List<Map<String, dynamic>>? expenseDetail;
+  List<Map<String, dynamic>>? supplierName;
+  List<Map<String, dynamic>>? bankName;
+  List<Map<String, dynamic>>? currencyName;
+  String? nextPaymentVoucher;
+
+  int? selectedSupplierId;
+  int? selectedBankId;
+  int? selectedCurrencyId;
+  int? selectedPaymentVoucherId;
+
+  String? savedSupplierAdvanceId;
+  List<Map<String, dynamic>>? invoicesOfProductData;
+
+  final Map<String, double> _availableQuantities = {};
+  final bool _isLoadingAvailableQty = false;
+
+  Map<String, double> get availableQuantities => _availableQuantities;
+  bool get isLoadingAvailableQty => _isLoadingAvailableQty;
+
+  bool _isCheckingInvoice = false;
+  bool get isCheckingInvoice => _isCheckingInvoice;
+
+  bool? _invoiceExists;
+  bool? get invoiceExists => _invoiceExists;
+
+  String? _invoiceCheckMessage;
+  String? get invoiceCheckMessage => _invoiceCheckMessage;
+
+  // Search functionality
+  void searchExpenses(String query) {
+    _searchQuery = query.toLowerCase();
+
+    if (_searchQuery.isEmpty) {
+      _filteredSupplierAdvances = List.from(_allSupplierAdvances);
+    } else {
+      _filteredSupplierAdvances =
+          _allSupplierAdvances.where((supplierAdvances) {
+            return supplierAdvances.receiptNumber.toLowerCase().contains(
+              _searchQuery,
+            );
+          }).toList();
+    }
+
+    notifyListeners();
+  }
+
+  void clearSearch() {
+    _searchQuery = '';
+    _filteredSupplierAdvances = List.from(_allSupplierAdvances);
+    notifyListeners();
+  }
+
+  void setSupplierName(int? supplierId) {
+    selectedSupplierId = supplierId;
+    notifyListeners();
+  }
+
+  void setBankName(int? bankNameId) {
+    selectedBankId = bankNameId;
+    notifyListeners();
+  }
+
+  void setCurrencyName(int? currencyId) {
+    selectedCurrencyId = currencyId;
+    notifyListeners();
+  }
+
+  void setPaymentVoucher(int? paymentVoucherId) {
+    selectedPaymentVoucherId = paymentVoucherId;
+    notifyListeners();
+  }
+
+  void clearSelections() {
+    selectedSupplierId = null;
+    selectedBankId = null;
+    selectedCurrencyId = null;
+    selectedPaymentVoucherId = null;
+
+    notifyListeners();
+  }
+
+  Future<bool> _checkToken() async {
+    final token = AuthRepo.token;
+
+    // Check if token is valid
+    if (token == null || token.isEmpty) {
+      debugPrint("No token available - auth failed");
+      // Handle missing token
+      AuthRepo.handleAuthError();
+      return false;
+    }
+
+    // Check if token is expired (if implementation supports it)
+    if (AuthRepo.isTokenExpired()) {
+      debugPrint("Token expired - auth failed");
+      // Handle expired token
+      AuthRepo.handleAuthError();
+      return false;
+    }
+
+    return true;
+  }
+
+  // Format the token with Bearer prefix
+  String _getAuthHeader() {
+    return 'Bearer ${AuthRepo.token}';
+  }
+
+  Future<void> getSupplierAdvance({bool loadMore = false}) async {
+    if (!await _checkToken()) return;
+
+    isLoading = true;
+    errorMessage = null; // Clear previous errors
+    notifyListeners();
+
+    try {
+      // Add retry mechanism with exponential backoff
+      int retryCount = 0;
+      const maxRetries = 3;
+
+      while (retryCount < maxRetries) {
+        try {
+          final supplierAdvance = await restApi.getSupplierAdvance(
+            currentPage,
+            totalPages,
+            _getAuthHeader(),
+          );
+
+          if (supplierAdvance is Map<String, dynamic>) {
+            if (supplierAdvance['IsSuccess'] == true) {
+              final data = supplierAdvance['Data'] as List<dynamic>?;
+              if (data != null) {
+                final newSupplierAdvanceData =
+                    data.map((json) => SupplierAdvance.fromJson(json)).toList();
+                if (loadMore) {
+                  _allSupplierAdvances.addAll(newSupplierAdvanceData);
+                } else {
+                  _allSupplierAdvances =
+                      newSupplierAdvanceData; // Replace list on initial load
+                }
+                searchExpenses(_searchQuery);
+                hasMore = data.length == totalPages;
+
+                // Success - break out of retry loop
+                break;
+              } else {
+                errorMessage = supplierAdvance['Message'] as String?;
+              }
+            } else {
+              debugPrint('API call failed: ${supplierAdvance['Message']}');
+              errorMessage =
+                  supplierAdvance['Message'] as String? ?? 'API call failed';
+            }
+          } else {
+            debugPrint('Unexpected API response format');
+            errorMessage = 'Unexpected API response format';
+          }
+
+          // If we get here without success, break to avoid infinite retry
+          break;
+        } catch (e) {
+          retryCount++;
+
+          if (e is DioException && _shouldRetry(e) && retryCount < maxRetries) {
+            debugPrint('Retry attempt $retryCount for error: ${e.message}');
+            await Future.delayed(
+              Duration(seconds: retryCount * 2),
+            ); // Exponential backoff
+            continue;
+          } else {
+            // Final attempt failed or non-retryable error
+            throw e;
+          }
+        }
+      }
+    } catch (e) {
+      _handleApiError(e);
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Determine if error should trigger a retry
+  bool _shouldRetry(DioException e) {
+    // Retry on network errors, timeouts, and DNS issues
+    return e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.receiveTimeout ||
+        e.type == DioExceptionType.sendTimeout ||
+        e.type == DioExceptionType.connectionError ||
+        (e.message?.contains('Failed host lookup') ?? false) ||
+        (e.message?.contains('SocketException') ?? false) ||
+        (e.response?.statusCode == 502) ||
+        (e.response?.statusCode == 503) ||
+        (e.response?.statusCode == 504);
+  }
+
+  void loadMore() {
+    if (hasMore && !isLoading) {
+      currentPage++;
+      getSupplierAdvance(loadMore: true);
+    }
+  }
+
+  Future<void> refresh() async {
+    currentPage = 1;
+    hasMore = true;
+    errorMessage = null; // Clear errors on refresh
+    _allSupplierAdvances.clear();
+    _filteredSupplierAdvances.clear();
+    await getSupplierAdvance(loadMore: false);
+  }
+
+  // Future<void> getSalesDetail(int salesId) async {
+  //   if (!await _checkToken()) return;
+  //
+  //   _isDetailLoading = true;
+  //   _detailErrorMessage = null;
+  //   notifyListeners();
+  //
+  //   try {
+  //     final salesDetailData = await restApi.getSalesDetail(
+  //       id: salesId,
+  //       token: _getAuthHeader(),
+  //     );
+  //
+  //     if (salesDetailData['IsSuccess'] == true) {
+  //       final data = salesDetailData['Data'] as Map<String, dynamic>;
+  //       final salesId = salesDetailData['Data']['id'];
+  //       _salesDetail = SalesData.fromJson(data);
+  //       debugPrint('Supplier detail fetched: ${salesDetail?.sale?.id}');
+  //     } else {
+  //       _detailErrorMessage =
+  //           salesDetailData['Message'] ?? 'Failed to fetch supplier detail';
+  //       debugPrint('API call failed: $_detailErrorMessage');
+  //     }
+  //   } catch (e) {
+  //     _detailErrorMessage = _getErrorMessage(e);
+  //     debugPrint('Supplier detail error: $_detailErrorMessage');
+  //   } finally {
+  //     _isDetailLoading = false;
+  //     notifyListeners();
+  //   }
+  // }
+
+  void clearSalesDetail() {
+    _salesDetail = null;
+    _detailErrorMessage = null;
+    notifyListeners();
+  }
+
+  Future<void> getSupplierAdvanceBaseData() async {
+    if (!await _checkToken()) return;
+
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+
+    try {
+      final supplierAdvanceBaseData = await restApi.getSupplierAdvanceBaseList(
+        token: _getAuthHeader(),
+      );
+
+      if (supplierAdvanceBaseData['IsSuccess'] == true) {
+        supplierName = List<Map<String, dynamic>>.from(
+          supplierAdvanceBaseData['Data']['suppliers'] ?? [],
+        );
+
+        bankName = List<Map<String, dynamic>>.from(
+          supplierAdvanceBaseData['Data']['banks'] ?? [],
+        );
+        currencyName = List<Map<String, dynamic>>.from(
+          supplierAdvanceBaseData['Data']['currencies'],
+        );
+        nextPaymentVoucher =
+            supplierAdvanceBaseData['Data']['next_payment_voucher'];
+
+        debugPrint('Base data fetched successfully');
+      } else {
+        print('API call failed: ${supplierAdvanceBaseData['Message']}');
+        errorMessage =
+            supplierAdvanceBaseData['Message'] ?? 'Failed to fetch base data';
+      }
+    } catch (e) {
+      _handleApiError(e);
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Future<void> getInvoicesOfProduct(int selectedProductTypeId) async {
+  //   if (!await _checkToken()) return;
+  //
+  //   _isLoadingInvoices = true;
+  //   invoicesOfProductData = null;
+  //   notifyListeners();
+  //
+  //   try {
+  //     final invoicesOfProductResponse = await restApi
+  //         .getAllInvoicesOfProductFromInventory(
+  //           id: selectedProductTypeId,
+  //           token: _getAuthHeader(),
+  //         );
+  //
+  //     if (invoicesOfProductResponse['IsSuccess'] == true) {
+  //       final invoiceNumbers = List<String>.from(
+  //         invoicesOfProductResponse['Data'] ?? [],
+  //       );
+  //
+  //       invoicesOfProductData =
+  //           invoiceNumbers.asMap().entries.map((entry) {
+  //             return {
+  //               'id': entry.key.toString(),
+  //               'invoice_number': entry.value,
+  //               'display_name': entry.value,
+  //             };
+  //           }).toList();
+  //
+  //       debugPrint(
+  //         'Invoices data fetched successfully: ${invoicesOfProductData?.length} invoices',
+  //       );
+  //       debugPrint('Invoice numbers: ${invoiceNumbers.join(', ')}');
+  //     } else {
+  //       debugPrint('API call failed: ${invoicesOfProductResponse['Message']}');
+  //       // Don't set main errorMessage here to avoid affecting main screen
+  //       invoicesOfProductData = []; // Set empty list on failure
+  //     }
+  //   } catch (e) {
+  //     debugPrint('Error fetching invoices: $e');
+  //     invoicesOfProductData = []; // Set empty list on error
+  //     // Don't call _handleApiError here as it might affect main loading state
+  //   } finally {
+  //     _isLoadingInvoices = false;
+  //     notifyListeners();
+  //   }
+  // }
+
+  void clearInvoicesOfProduct() {
+    invoicesOfProductData = null;
+    notifyListeners();
+  }
+
+  Future<bool> postSupplierAdvanceRegistration({
+    int? supplierId,
+    String? receiptNumber,
+    String? paymentType,
+    int? bankId,
+    String? accountNumber,
+    String? chequeNumber,
+    String? transferDate,
+    String? amount,
+    int? currencyId,
+    String? sumOf,
+    String? receiverName,
+    String? description,
+    List<MultipartFile>? supplierAdvanceImage,
+  }) async {
+    if (!await _checkToken()) return false;
+
+    try {
+      final response = await restApi.postSupplierAdvance(
+        token: _getAuthHeader(),
+        supplierId: supplierId,
+        receiptNumber: receiptNumber,
+        paymentType: paymentType,
+        bankId: bankId,
+        accountNumber: accountNumber,
+        chequeNumber: chequeNumber,
+        transferDate: transferDate,
+        amount: amount,
+        currencyId: currencyId,
+        sumOf: sumOf,
+        receiverName: receiverName,
+        description: description,
+        files: supplierAdvanceImage,
+      );
+
+      if (response is Map<String, dynamic>) {
+        if (response['IsSuccess'] == true) {
+          getSupplierAdvance();
+
+          notifyListeners();
+        }
+        return true;
+      } else if (response is int) {
+        savedSupplierAdvanceId = response.toString();
+        return true;
+      } else {
+        errorMessage = 'Unexpected response format';
+        return false;
+      }
+    } catch (e) {
+      errorMessage = 'Error saving supplier advance: ${e.toString()}';
+      return false;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // In your SalesController class
+  Future<double?> postAvailableQtyForInvoice(String? invoiceNumber) async {
+    if (invoiceNumber == null || invoiceNumber.isEmpty) return null;
+    if (!await _checkToken()) return null;
+
+    try {
+      final response = await restApi.postAvailableQtyForInvoiceInventory(
+        token: _getAuthHeader(),
+        fromInvoice: invoiceNumber,
+      );
+
+      // Fix: Access the nested Debit field inside Data
+      if (response['IsSuccess'] == true &&
+          response['Data'] != null &&
+          response['Data']['Debit'] != null) {
+        return double.tryParse(response['Data']['Debit'].toString());
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error getting available quantity: $e');
+      return null;
+    }
+  }
+
+  Future<bool> checkInvoiceExists(String? invoiceNumber) async {
+    if (invoiceNumber == null || invoiceNumber.isEmpty) {
+      _invoiceExists = null;
+      _invoiceCheckMessage = null;
+      notifyListeners();
+      return false;
+    }
+
+    _isCheckingInvoice = true;
+    _invoiceExists = null;
+    _invoiceCheckMessage = null;
+    notifyListeners();
+
+    if (!await _checkToken()) {
+      _isCheckingInvoice = false;
+      _invoiceCheckMessage = 'Authentication failed';
+      notifyListeners();
+      return false;
+    }
+
+    try {
+      final response = await restApi.postCheckSalesInvoiceExist(
+        token: _getAuthHeader(),
+        invoiceNumber: invoiceNumber,
+      );
+
+      _isCheckingInvoice = false;
+
+      if (response['IsSuccess'] == true) {
+        final data = response['Data'];
+
+        if (data == "false" || data == false) {
+          _invoiceExists = false;
+          _invoiceCheckMessage = 'Invoice number is available';
+        } else {
+          _invoiceExists = true;
+          _invoiceCheckMessage =
+              'Invoice number already exists. Please use a different number.';
+        }
+      } else {
+        _invoiceExists = null;
+        _invoiceCheckMessage =
+            response['Message'] ?? 'Failed to check invoice number';
+      }
+
+      notifyListeners();
+      return _invoiceExists == true;
+    } catch (e) {
+      _isCheckingInvoice = false;
+      _invoiceExists = null;
+      _invoiceCheckMessage = 'Error checking invoice number: $e';
+      notifyListeners();
+      debugPrint('Error checking invoice existence: $e');
+      return false;
+    }
+  }
+
+  // Clear invoice check state
+  void clearInvoiceCheck() {
+    _invoiceExists = null;
+    _invoiceCheckMessage = null;
+    _isCheckingInvoice = false;
+    notifyListeners();
+  }
+
+  // Future<void> deleteSales(int? id, String? descriptionText) async {
+  //   if (!await _checkToken()) {
+  //     debugPrint("Token check failed");
+  //     return;
+  //   }
+  //
+  //   // Show loading state
+  //   isLoading = true;
+  //   errorMessage = null;
+  //   notifyListeners();
+  //
+  //   try {
+  //     debugPrint("Calling restApi.deleteSupplier...");
+  //
+  //     final response = await restApi.deleteSales(
+  //       token: _getAuthHeader(),
+  //       id: id,
+  //       deleteDescription: descriptionText,
+  //     );
+  //
+  //     if (response is Map<String, dynamic>) {
+  //       if (response['IsSuccess'] == true) {
+  //         debugPrint("Delete successful, refreshing purchase list...");
+  //         await getSalesData();
+  //       } else {
+  //         errorMessage =
+  //             response['Message'] ?? 'Failed to delete purchase data';
+  //         debugPrint("Delete failed: $errorMessage");
+  //       }
+  //     } else {
+  //       debugPrint("Delete completed, refreshing purchase list...");
+  //       await getSalesData();
+  //     }
+  //   } catch (e) {
+  //     debugPrint("Delete API Exception: $e");
+  //     _handleApiError(e);
+  //   } finally {
+  //     isLoading = false;
+  //     notifyListeners();
+  //   }
+  // }
+
+  // Get user-friendly error message
+  String _getErrorMessage(dynamic e) {
+    if (e is DioException) {
+      switch (e.type) {
+        case DioExceptionType.connectionTimeout:
+          return 'Connection timeout. Please check your internet connection.';
+        case DioExceptionType.receiveTimeout:
+          return 'Server response timeout. Please try again.';
+        case DioExceptionType.sendTimeout:
+          return 'Request timeout. Please try again.';
+        case DioExceptionType.connectionError:
+          if (e.message?.contains('Failed host lookup') ?? false) {
+            return 'Cannot connect to server. Please check your internet connection or try again later.';
+          }
+          return 'Connection error. Please check your internet connection.';
+        case DioExceptionType.badResponse:
+          if (e.response?.statusCode == 404) {
+            return 'Service not found. Please contact support.';
+          } else if (e.response?.statusCode == 500) {
+            return 'Server error. Please try again later.';
+          }
+          return 'Server error (${e.response?.statusCode}). Please try again.';
+        case DioExceptionType.cancel:
+          return 'Request was cancelled.';
+        default:
+          return 'Network error. Please check your connection and try again.';
+      }
+    }
+    return 'An unexpected error occurred. Please try again.';
+  }
+
+  // Standardized error handling
+  dynamic _handleApiError(dynamic e) {
+    if (e is DioException) {
+      debugPrint("Dio Exception: ${e.message}");
+      debugPrint("Dio Exception Type: ${e.type}");
+
+      // Handle redirect to login (authentication failure)
+      if (e.response?.statusCode == 302 ||
+          e.response?.statusCode == 401 ||
+          (e.response?.data is String &&
+              (e.response?.data as String).contains('login'))) {
+        debugPrint("Authentication failed - redirected to login page");
+        errorMessage = 'Authentication failed. Please log in again.';
+        AuthRepo.handleAuthError();
+        return false;
+      }
+
+      // Log detailed response information for debugging
+      if (e.response != null) {
+        debugPrint('Response status: ${e.response?.statusCode}');
+        debugPrint('Response headers: ${e.response?.headers}');
+        debugPrint('Response data: ${e.response?.data}');
+      }
+
+      // Set user-friendly error message
+      errorMessage = _getErrorMessage(e);
+    } else {
+      debugPrint("Error: $e");
+      errorMessage = 'An unexpected error occurred. Please try again.';
+    }
+    return false;
+  }
+}

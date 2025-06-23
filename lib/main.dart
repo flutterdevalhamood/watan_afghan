@@ -11,6 +11,7 @@ import 'package:sample/src/providers/product_controller.dart';
 import 'package:sample/src/providers/purchase_controller.dart';
 import 'package:sample/src/providers/reports_controller.dart';
 import 'package:sample/src/providers/sales_controller.dart';
+import 'package:sample/src/providers/supplier_advance_controller.dart';
 import 'package:sample/src/providers/supplier_controller.dart';
 import 'package:sample/src/providers/unit_controller.dart';
 import 'package:sample/src/util/shared_pref.dart';
@@ -43,6 +44,9 @@ void main() async {
         ChangeNotifierProvider(create: (context) => UnitController()),
         ChangeNotifierProvider(create: (context) => PurchaseController()),
         ChangeNotifierProvider(create: (context) => SalesController()),
+        ChangeNotifierProvider(
+          create: (context) => SupplierAdvanceController(),
+        ),
         ChangeNotifierProvider(create: (context) => ReportsController()),
       ],
       child: const BaseScreen(),
