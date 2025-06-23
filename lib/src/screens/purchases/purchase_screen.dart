@@ -264,7 +264,34 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const SizedBox(height: 8),
+                                  // Products Section Header with Add Button
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text(
+                                        'Products',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      ElevatedButton.icon(
+                                        onPressed: _addNewProduct,
+                                        icon: const Icon(Icons.add, size: 18),
+                                        label: const Text('Add Product'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.teal,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 8,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
 
                                   // Products Table Header
                                   Container(
@@ -298,6 +325,8 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                                             'Amount',
                                           ),
                                         ),
+                                        const SizedBox(width: 40),
+                                        // Space for delete button
                                       ],
                                     ),
                                   ),
@@ -320,6 +349,36 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: [
+                                              // Product row header with delete button
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Text(
+                                                    'Product ${index + 1}',
+                                                    style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 16,
+                                                    ),
+                                                  ),
+                                                  if (salesItems.length > 1)
+                                                    IconButton(
+                                                      onPressed:
+                                                          () => _removeProduct(
+                                                            index,
+                                                          ),
+                                                      icon: const Icon(
+                                                        Icons.delete,
+                                                        color: Colors.red,
+                                                      ),
+                                                      tooltip: 'Remove Product',
+                                                    ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 8),
+
                                               // Product Dropdown
                                               _buildLabeledField(
                                                 'Product:',
@@ -370,6 +429,13 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                                                             'Unknown';
                                                       });
                                                     }
+                                                  },
+                                                  validator: (value) {
+                                                    if (value == null ||
+                                                        value.isEmpty) {
+                                                      return 'Please select a product';
+                                                    }
+                                                    return null;
                                                   },
                                                 ),
                                               ),
@@ -425,6 +491,13 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                                                       });
                                                     }
                                                   },
+                                                  validator: (value) {
+                                                    if (value == null ||
+                                                        value.isEmpty) {
+                                                      return 'Please select a unit';
+                                                    }
+                                                    return null;
+                                                  },
                                                 ),
                                               ),
 
@@ -445,6 +518,23 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                                                         keyboardType:
                                                             TextInputType
                                                                 .number,
+                                                        validator: (value) {
+                                                          if (value == null ||
+                                                              value.isEmpty) {
+                                                            return 'Required';
+                                                          }
+                                                          if (int.tryParse(
+                                                                    value,
+                                                                  ) ==
+                                                                  null ||
+                                                              int.parse(
+                                                                    value,
+                                                                  ) <=
+                                                                  0) {
+                                                            return 'Invalid quantity';
+                                                          }
+                                                          return null;
+                                                        },
                                                         onChanged: (value) {
                                                           setState(() {
                                                             salesItems[index]
@@ -478,6 +568,23 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                                                         keyboardType:
                                                             TextInputType
                                                                 .number,
+                                                        validator: (value) {
+                                                          if (value == null ||
+                                                              value.isEmpty) {
+                                                            return 'Required';
+                                                          }
+                                                          if (double.tryParse(
+                                                                    value,
+                                                                  ) ==
+                                                                  null ||
+                                                              double.parse(
+                                                                    value,
+                                                                  ) <
+                                                                  0) {
+                                                            return 'Invalid price';
+                                                          }
+                                                          return null;
+                                                        },
                                                         onChanged: (value) {
                                                           setState(() {
                                                             salesItems[index]
@@ -748,8 +855,37 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     );
   }
 
+  // Add new product function
+  void _addNewProduct() {
+    setState(() {
+      salesItems.add(SalesItem());
+      _updateTotals();
+    });
+  }
+
+  // Remove product function
+  void _removeProduct(int index) {
+    if (salesItems.length > 1) {
+      setState(() {
+        salesItems.removeAt(index);
+        _updateTotals();
+      });
+    }
+  }
+
   // Save purchase function
   Future<void> _savePurchase(PurchaseController controller) async {
+    // Validate that all products have required fields
+    for (int i = 0; i < salesItems.length; i++) {
+      if (salesItems[i].productId == null ||
+          salesItems[i].unitId == null ||
+          salesItems[i].quantity <= 0 ||
+          salesItems[i].price <= 0) {
+        showErrorSnack('Please fill all required fields for Product ${i + 1}');
+        return;
+      }
+    }
+
     // Prepare product details JSON
     List<Map<String, dynamic>> productDetails =
         salesItems.map((item) {
@@ -758,7 +894,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
             'unit_id': item.unitId,
             'qty': item.quantity,
             'cost': item.price,
-            'total_before_tax': subtotal.toString(),
+            'total_before_tax': item.total.toString(),
             'tax_per': item.taxRate,
             'tax_amount': item.taxAmount,
             'total_amount': item.totalWithTax,

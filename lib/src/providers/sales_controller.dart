@@ -414,6 +414,7 @@ class SalesController with ChangeNotifier {
           if (response['Data'] != null) {
             if (response['Data'] is Map) {
               savedSalesId = response['Data']['id'];
+              getSalesData();
             } else if (response['Data'] is int) {
               savedSalesId = response['Data'];
             }
