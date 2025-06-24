@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sample/src/models/supplier_advance_model.dart';
 import 'package:sample/src/providers/supplier_advance_controller.dart';
+import 'package:sample/src/screens/supplierAdvance/supplier_advance_bottom_sheet.dart';
 import 'package:sample/src/util/app_navigation.dart';
 import 'package:sample/src/util/app_routes.dart';
 
@@ -16,6 +17,8 @@ class SupplierAdvanceListScreen extends StatefulWidget {
 class _SupplierAdvanceListScreenState extends State<SupplierAdvanceListScreen> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _deleteReasonController = TextEditingController();
+  late SupplierAdvanceController _controller;
 
   @override
   void initState() {
@@ -30,23 +33,23 @@ class _SupplierAdvanceListScreenState extends State<SupplierAdvanceListScreen> {
     _scrollController.addListener(() {
       if (_scrollController.position.pixels ==
           _scrollController.position.maxScrollExtent) {
-        final provider = Provider.of<SupplierAdvanceController>(
+        _controller = Provider.of<SupplierAdvanceController>(
           context,
           listen: false,
         );
-        if (provider.hasMore && !provider.isLoading) {
-          provider.getSupplierAdvance(loadMore: true);
+        if (_controller.hasMore && !_controller.isLoading) {
+          _controller.getSupplierAdvance(loadMore: true);
         }
       }
     });
   }
 
   void _loadInitialData() {
-    final provider = Provider.of<SupplierAdvanceController>(
+    _controller = Provider.of<SupplierAdvanceController>(
       context,
       listen: false,
     );
-    provider.getSupplierAdvance();
+    _controller.getSupplierAdvance();
   }
 
   Future<void> _handleRefresh() async {
@@ -289,7 +292,7 @@ class _SupplierAdvanceListScreenState extends State<SupplierAdvanceListScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          advance.supplier.name,
+                          advance.supplier?.name ?? '',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -358,10 +361,18 @@ class _SupplierAdvanceListScreenState extends State<SupplierAdvanceListScreen> {
                     style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                   ),
                   const Spacer(),
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    size: 16,
-                    color: Colors.grey[400],
+                  IconButton(
+                    onPressed: () {
+                      _showDeleteConfirmation(advance);
+                    },
+                    icon: const Icon(Icons.delete_outline),
+                    color: Colors.red[400],
+                    tooltip: 'Delete Expense data',
+                    padding: const EdgeInsets.all(8),
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
                   ),
                 ],
               ),
@@ -370,6 +381,61 @@ class _SupplierAdvanceListScreenState extends State<SupplierAdvanceListScreen> {
         ),
       ),
     );
+  }
+
+  void _showDeleteConfirmation(SupplierAdvance advance) async {
+    _deleteReasonController.clear();
+    final bool? result = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Supplier Advance Data'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Are you sure you want to delete this supplier advance data?',
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _deleteReasonController,
+                decoration: const InputDecoration(
+                  labelText: 'Reason for deletion',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed:
+                  () => NavigationService().popNavigation(arguments: false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed:
+                  () => NavigationService().popNavigation(arguments: true),
+              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == true) {
+      _controller.deleteSupplierAdvance(
+        advance.id,
+        _deleteReasonController.text,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Supplier Advance Data deleted successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
   }
 
   Widget _buildLoadMoreIndicator(SupplierAdvanceController provider) {
@@ -390,79 +456,12 @@ class _SupplierAdvanceListScreenState extends State<SupplierAdvanceListScreen> {
       backgroundColor: Colors.transparent,
       builder:
           (context) => DraggableScrollableSheet(
-            initialChildSize: 0.6,
-            maxChildSize: 0.9,
-            minChildSize: 0.4,
+            initialChildSize: 0.7,
+            minChildSize: 0.5,
+            maxChildSize: 0.95,
             builder:
-                (context, scrollController) => Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(20),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 4,
-                        margin: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          controller: scrollController,
-                          padding: const EdgeInsets.all(24),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Advance Details',
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey[800],
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-                              _buildDetailRow(
-                                'Supplier',
-                                advance.supplier.name,
-                              ),
-                              _buildDetailRow(
-                                'Receipt Number',
-                                advance.receiptNumber,
-                              ),
-                              _buildDetailRow(
-                                'Amount',
-                                advance.formattedAmount,
-                              ),
-                              _buildDetailRow(
-                                'Transfer Date',
-                                advance.formattedDate,
-                              ),
-                              _buildDetailRow(
-                                'Currency',
-                                advance.currency.name,
-                              ),
-                              _buildDetailRow(
-                                'Status',
-                                advance.isPushedBool ? 'Synced' : 'Pending',
-                              ),
-                              _buildDetailRow(
-                                'Advance ID',
-                                advance.id.toString(),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                (context, scrollController) =>
+                    SupplierAdvanceBottomSheet(id: advance.id),
           ),
     );
   }

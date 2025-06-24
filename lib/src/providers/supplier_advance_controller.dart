@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:sample/src/models/Sales_detail_model.dart';
 import 'package:sample/src/models/supplier_advance_model.dart';
 
 import '../data/rest_client.dart';
@@ -19,7 +18,7 @@ class SupplierAdvanceController with ChangeNotifier {
   String _searchQuery = '';
 
   // Detail properties
-  SalesData? _salesDetail;
+  SupplierAdvanceWithDetails? _supplierAdvanceDetail;
   bool _isDetailLoading = false;
   String? _detailErrorMessage;
 
@@ -30,10 +29,11 @@ class SupplierAdvanceController with ChangeNotifier {
   String get searchQuery => _searchQuery;
   bool get hasExpenses => _filteredSupplierAdvances.isNotEmpty;
 
-  // // Detail getters
-  // SalesData? get salesDetail => _salesDetail;
-  // bool get isDetailLoading => _isDetailLoading;
-  // String? get detailErrorMessage => _detailErrorMessage;
+  // Detail getters
+  SupplierAdvanceWithDetails? get supplierAdvanceDetail =>
+      _supplierAdvanceDetail;
+  bool get isDetailLoading => _isDetailLoading;
+  String? get detailErrorMessage => _detailErrorMessage;
 
   // bool _isLoadingInvoices = false;
   // bool get isLoadingInvoices => _isLoadingInvoices;
@@ -252,40 +252,39 @@ class SupplierAdvanceController with ChangeNotifier {
     await getSupplierAdvance(loadMore: false);
   }
 
-  // Future<void> getSalesDetail(int salesId) async {
-  //   if (!await _checkToken()) return;
-  //
-  //   _isDetailLoading = true;
-  //   _detailErrorMessage = null;
-  //   notifyListeners();
-  //
-  //   try {
-  //     final salesDetailData = await restApi.getSalesDetail(
-  //       id: salesId,
-  //       token: _getAuthHeader(),
-  //     );
-  //
-  //     if (salesDetailData['IsSuccess'] == true) {
-  //       final data = salesDetailData['Data'] as Map<String, dynamic>;
-  //       final salesId = salesDetailData['Data']['id'];
-  //       _salesDetail = SalesData.fromJson(data);
-  //       debugPrint('Supplier detail fetched: ${salesDetail?.sale?.id}');
-  //     } else {
-  //       _detailErrorMessage =
-  //           salesDetailData['Message'] ?? 'Failed to fetch supplier detail';
-  //       debugPrint('API call failed: $_detailErrorMessage');
-  //     }
-  //   } catch (e) {
-  //     _detailErrorMessage = _getErrorMessage(e);
-  //     debugPrint('Supplier detail error: $_detailErrorMessage');
-  //   } finally {
-  //     _isDetailLoading = false;
-  //     notifyListeners();
-  //   }
-  // }
+  Future<void> getSupplierAdvanceDetail(int id) async {
+    if (!await _checkToken()) return;
 
-  void clearSalesDetail() {
-    _salesDetail = null;
+    _isDetailLoading = true;
+    _detailErrorMessage = null;
+    notifyListeners();
+
+    try {
+      final supplierDetailData = await restApi.getSupplierAdvanceDetail(
+        id: id,
+        token: _getAuthHeader(),
+      );
+
+      if (supplierDetailData['IsSuccess'] == true) {
+        final data = supplierDetailData['Data'] as Map<String, dynamic>;
+        final supplierId = supplierDetailData['Data']['id'];
+        _supplierAdvanceDetail = SupplierAdvanceWithDetails.fromJson(data);
+      } else {
+        _detailErrorMessage =
+            supplierDetailData['Message'] ?? 'Failed to fetch supplier detail';
+        debugPrint('API call failed: $_detailErrorMessage');
+      }
+    } catch (e) {
+      _detailErrorMessage = _getErrorMessage(e);
+      debugPrint('Supplier detail error: $_detailErrorMessage');
+    } finally {
+      _isDetailLoading = false;
+      notifyListeners();
+    }
+  }
+
+  void clearSupplierAdvanceDetail() {
+    _supplierAdvanceDetail = null;
     _detailErrorMessage = null;
     notifyListeners();
   }
@@ -529,47 +528,47 @@ class SupplierAdvanceController with ChangeNotifier {
     notifyListeners();
   }
 
-  // Future<void> deleteSales(int? id, String? descriptionText) async {
-  //   if (!await _checkToken()) {
-  //     debugPrint("Token check failed");
-  //     return;
-  //   }
-  //
-  //   // Show loading state
-  //   isLoading = true;
-  //   errorMessage = null;
-  //   notifyListeners();
-  //
-  //   try {
-  //     debugPrint("Calling restApi.deleteSupplier...");
-  //
-  //     final response = await restApi.deleteSales(
-  //       token: _getAuthHeader(),
-  //       id: id,
-  //       deleteDescription: descriptionText,
-  //     );
-  //
-  //     if (response is Map<String, dynamic>) {
-  //       if (response['IsSuccess'] == true) {
-  //         debugPrint("Delete successful, refreshing purchase list...");
-  //         await getSalesData();
-  //       } else {
-  //         errorMessage =
-  //             response['Message'] ?? 'Failed to delete purchase data';
-  //         debugPrint("Delete failed: $errorMessage");
-  //       }
-  //     } else {
-  //       debugPrint("Delete completed, refreshing purchase list...");
-  //       await getSalesData();
-  //     }
-  //   } catch (e) {
-  //     debugPrint("Delete API Exception: $e");
-  //     _handleApiError(e);
-  //   } finally {
-  //     isLoading = false;
-  //     notifyListeners();
-  //   }
-  // }
+  Future<void> deleteSupplierAdvance(int? id, String? descriptionText) async {
+    if (!await _checkToken()) {
+      debugPrint("Token check failed");
+      return;
+    }
+
+    // Show loading state
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+
+    try {
+      debugPrint("Calling restApi.deleteSupplier...");
+
+      final response = await restApi.deleteSupplierAdvance(
+        token: _getAuthHeader(),
+        id: id,
+        deleteDescription: descriptionText,
+      );
+
+      if (response is Map<String, dynamic>) {
+        if (response['IsSuccess'] == true) {
+          debugPrint("Delete successful, refreshing purchase list...");
+          await getSupplierAdvance();
+        } else {
+          errorMessage =
+              response['Message'] ?? 'Failed to delete purchase data';
+          debugPrint("Delete failed: $errorMessage");
+        }
+      } else {
+        debugPrint("Delete completed, refreshing purchase list...");
+        await getSupplierAdvance();
+      }
+    } catch (e) {
+      debugPrint("Delete API Exception: $e");
+      _handleApiError(e);
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
 
   // Get user-friendly error message
   String _getErrorMessage(dynamic e) {
