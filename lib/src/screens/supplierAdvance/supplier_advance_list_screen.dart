@@ -14,19 +14,34 @@ class SupplierAdvanceListScreen extends StatefulWidget {
       _SupplierAdvanceListScreenState();
 }
 
-class _SupplierAdvanceListScreenState extends State<SupplierAdvanceListScreen> {
+class _SupplierAdvanceListScreenState extends State<SupplierAdvanceListScreen>
+    with TickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _deleteReasonController = TextEditingController();
   late SupplierAdvanceController _controller;
+  late AnimationController _blinkController;
+  late Animation<double> _blinkAnimation;
 
   @override
   void initState() {
     super.initState();
     _setupScrollListener();
+    _setupBlinkAnimation();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadInitialData();
     });
+  }
+
+  void _setupBlinkAnimation() {
+    _blinkController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+    _blinkAnimation = Tween<double>(begin: 0.3, end: 1.0).animate(
+      CurvedAnimation(parent: _blinkController, curve: Curves.easeInOut),
+    );
+    _blinkController.repeat(reverse: true);
   }
 
   void _setupScrollListener() {
@@ -61,10 +76,55 @@ class _SupplierAdvanceListScreenState extends State<SupplierAdvanceListScreen> {
     await provider.getSupplierAdvance();
   }
 
+  Future<void> _handlePushAdvance(SupplierAdvance advance) async {
+    final provider = Provider.of<SupplierAdvanceController>(
+      context,
+      listen: false,
+    );
+
+    try {
+      await provider.getSupplierAdvancePush(advance.id);
+
+      if (provider.pushErrorMessage == null) {
+        // Success - refresh the list to update the status
+        await provider.getSupplierAdvance();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Supplier advance pushed successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        // Error occurred
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(provider.pushErrorMessage!),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to push advance: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
     _scrollController.dispose();
     _searchController.dispose();
+    _blinkController.dispose();
     super.dispose();
   }
 
@@ -257,7 +317,7 @@ class _SupplierAdvanceListScreenState extends State<SupplierAdvanceListScreen> {
                       return _buildLoadMoreIndicator(provider);
                     }
                     final advance = provider.filteredSupplierAdvances[index];
-                    return _buildAdvanceCard(advance);
+                    return _buildAdvanceCard(advance, provider);
                   },
                   childCount:
                       provider.filteredSupplierAdvances.length +
@@ -270,7 +330,10 @@ class _SupplierAdvanceListScreenState extends State<SupplierAdvanceListScreen> {
     );
   }
 
-  Widget _buildAdvanceCard(SupplierAdvance advance) {
+  Widget _buildAdvanceCard(
+    SupplierAdvance advance,
+    SupplierAdvanceController provider,
+  ) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
@@ -361,6 +424,85 @@ class _SupplierAdvanceListScreenState extends State<SupplierAdvanceListScreen> {
                     style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                   ),
                   const Spacer(),
+                  // Push Button - Only show if not already pushed
+                  if (!advance.isPushedBool) ...[
+                    AnimatedBuilder(
+                      animation: _blinkAnimation,
+                      builder: (context, child) {
+                        return Opacity(
+                          opacity: _blinkAnimation.value,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Colors.blue[600]!, Colors.blue[800]!],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.blue.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(20),
+                                onTap:
+                                    provider.isPushLoading
+                                        ? null
+                                        : () => _handlePushAdvance(advance),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (provider.isPushLoading)
+                                        const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  Colors.white,
+                                                ),
+                                          ),
+                                        )
+                                      else
+                                        const Icon(
+                                          Icons.cloud_upload,
+                                          color: Colors.white,
+                                          size: 16,
+                                        ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        provider.isPushLoading
+                                            ? 'Pushing...'
+                                            : 'Push',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                  ],
                   IconButton(
                     onPressed: () {
                       _showDeleteConfirmation(advance);

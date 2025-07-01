@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -43,12 +44,20 @@ class _SupplierAdvanceDataScreenState extends State<SupplierAdvanceDataScreen> {
   // Payment types
   final List<String> paymentTypes = ['Cash', 'Bank Transfer', 'Cheque'];
 
+  // Receipt validation
+  Timer? _debounceTimer;
+  final Duration _debounceDuration = const Duration(milliseconds: 800);
+  bool _isPvNumberUserModified = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadBaseData();
     });
+
+    // Add listener to PV number field for real-time validation
+    _pvNumberController.addListener(_onPvNumberChanged);
   }
 
   void _loadBaseData() {
@@ -57,7 +66,7 @@ class _SupplierAdvanceDataScreenState extends State<SupplierAdvanceDataScreen> {
       listen: false,
     );
     controller.getSupplierAdvanceBaseData().then((_) {
-      _prefillPvNumber();
+      // _prefillPvNumber();
     });
   }
 
@@ -68,9 +77,100 @@ class _SupplierAdvanceDataScreenState extends State<SupplierAdvanceDataScreen> {
     );
     if (controller.nextPaymentVoucher != null) {
       final pvData = controller.nextPaymentVoucher;
+      _isPvNumberUserModified = false; // Mark as system-generated
       _pvNumberController.text = pvData.toString() ?? '';
       print('pvdata $pvData');
     }
+  }
+
+  void _onPvNumberChanged() {
+    // Only perform validation if user has modified the PV number
+    if (_isPvNumberUserModified) {
+      _debounceTimer?.cancel();
+      _debounceTimer = Timer(_debounceDuration, () {
+        _validateReceiptNumber();
+      });
+    }
+  }
+
+  void _onPvNumberManualChange() {
+    // Mark that user has manually changed the PV number
+    _isPvNumberUserModified = true;
+    _onPvNumberChanged();
+  }
+
+  Future<void> _validateReceiptNumber() async {
+    final receiptNumber = _pvNumberController.text.trim();
+    if (receiptNumber.isNotEmpty) {
+      final controller = Provider.of<SupplierAdvanceController>(
+        context,
+        listen: false,
+      );
+      await controller.checkSupplierAdvanceReferenceExist(receiptNumber);
+    }
+  }
+
+  Widget _buildReceiptValidationWidget() {
+    return Consumer<SupplierAdvanceController>(
+      builder: (context, controller, child) {
+        if (!_isPvNumberUserModified) {
+          return const SizedBox.shrink();
+        }
+
+        if (controller.isCheckingReceipt) {
+          return Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).primaryColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Checking receipt number...',
+                  style: TextStyle(fontSize: 12, color: Colors.blue),
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (controller.receiptCheckMessage != null) {
+          final isError = controller.receiptExists == true;
+          return Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Row(
+              children: [
+                Icon(
+                  isError ? Icons.error : Icons.check_circle,
+                  size: 16,
+                  color: isError ? Colors.red : Colors.green,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    controller.receiptCheckMessage!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isError ? Colors.red : Colors.green,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return const SizedBox.shrink();
+      },
+    );
   }
 
   Future<void> _pickFiles() async {
@@ -119,6 +219,20 @@ class _SupplierAdvanceDataScreenState extends State<SupplierAdvanceDataScreen> {
       listen: false,
     );
 
+    // Additional validation for receipt number if user modified it
+    if (_isPvNumberUserModified && controller.receiptExists == true) {
+      showErrorSnack(
+        'Please use a different receipt number. The current number already exists.',
+      );
+      return;
+    }
+
+    // Show confirmation dialog if receipt validation is still in progress
+    if (controller.isCheckingReceipt) {
+      final shouldContinue = await _showReceiptCheckInProgressDialog();
+      if (!shouldContinue) return;
+    }
+
     // Convert files to MultipartFile
     List<MultipartFile>? multipartFiles;
     if (selectedFiles.isNotEmpty) {
@@ -156,6 +270,31 @@ class _SupplierAdvanceDataScreenState extends State<SupplierAdvanceDataScreen> {
     }
   }
 
+  Future<bool> _showReceiptCheckInProgressDialog() async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Receipt Validation in Progress'),
+              content: const Text(
+                'Receipt number validation is still in progress. Do you want to continue saving?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Wait'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Continue'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+  }
+
   void _clearForm() {
     _formKey.currentState?.reset();
     setState(() {
@@ -165,6 +304,7 @@ class _SupplierAdvanceDataScreenState extends State<SupplierAdvanceDataScreen> {
       selectedBankId = null;
       selectedFiles.clear();
       fileNames.clear();
+      _isPvNumberUserModified = false;
     });
 
     _transferDateController.clear();
@@ -176,11 +316,21 @@ class _SupplierAdvanceDataScreenState extends State<SupplierAdvanceDataScreen> {
     _accountNumberController.clear();
     _chequeNumberController.clear();
 
+    // Clear receipt validation state
+    final controller = Provider.of<SupplierAdvanceController>(
+      context,
+      listen: false,
+    );
+    controller
+        .clearReceiptCheck(); // You'll need to add this method to the controller
+
     _prefillPvNumber();
   }
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
+    _pvNumberController.removeListener(_onPvNumberChanged);
     _transferDateController.dispose();
     _amountController.dispose();
     _sumOfController.dispose();
@@ -276,13 +426,48 @@ class _SupplierAdvanceDataScreenState extends State<SupplierAdvanceDataScreen> {
                           ),
                           const SizedBox(height: 16),
 
-                          // PV Number (Pre-filled)
-                          TextFormField(
-                            controller: _pvNumberController,
-                            decoration: const InputDecoration(
-                              labelText: 'PV Number',
-                              border: OutlineInputBorder(),
-                            ),
+                          // PV Number with validation
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              TextFormField(
+                                controller: _pvNumberController,
+                                decoration: InputDecoration(
+                                  labelText: 'PV Number *',
+                                  border: const OutlineInputBorder(),
+                                  errorBorder:
+                                      controller.receiptExists == true
+                                          ? const OutlineInputBorder(
+                                            borderSide: BorderSide(
+                                              color: Colors.red,
+                                              width: 2,
+                                            ),
+                                          )
+                                          : null,
+                                  focusedErrorBorder:
+                                      controller.receiptExists == true
+                                          ? const OutlineInputBorder(
+                                            borderSide: BorderSide(
+                                              color: Colors.red,
+                                              width: 2,
+                                            ),
+                                          )
+                                          : null,
+                                ),
+                                onChanged: (value) => _onPvNumberManualChange(),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter PV number';
+                                  }
+                                  if (_isPvNumberUserModified &&
+                                      controller.receiptExists == true) {
+                                    return 'This receipt number already exists';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              _buildReceiptValidationWidget(),
+                            ],
                           ),
 
                           const SizedBox(height: 16),

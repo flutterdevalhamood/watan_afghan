@@ -22,6 +22,9 @@ class SupplierAdvanceController with ChangeNotifier {
   bool _isDetailLoading = false;
   String? _detailErrorMessage;
 
+  bool _isPushLoading = false;
+  String? _pushErrorMessage;
+
   // Getters
   List<SupplierAdvance> get filteredSupplierAdvances =>
       _filteredSupplierAdvances;
@@ -35,8 +38,8 @@ class SupplierAdvanceController with ChangeNotifier {
   bool get isDetailLoading => _isDetailLoading;
   String? get detailErrorMessage => _detailErrorMessage;
 
-  // bool _isLoadingInvoices = false;
-  // bool get isLoadingInvoices => _isLoadingInvoices;
+  bool get isPushLoading => _isPushLoading;
+  String? get pushErrorMessage => _pushErrorMessage;
 
   // List<Map<String, dynamic>>? expenseDetail;
   List<Map<String, dynamic>>? supplierName;
@@ -58,14 +61,14 @@ class SupplierAdvanceController with ChangeNotifier {
   Map<String, double> get availableQuantities => _availableQuantities;
   bool get isLoadingAvailableQty => _isLoadingAvailableQty;
 
-  bool _isCheckingInvoice = false;
-  bool get isCheckingInvoice => _isCheckingInvoice;
+  bool _isCheckingReceipt = false;
+  bool get isCheckingReceipt => _isCheckingReceipt;
 
-  bool? _invoiceExists;
-  bool? get invoiceExists => _invoiceExists;
+  bool? _receiptExists;
+  bool? get receiptExists => _receiptExists;
 
-  String? _invoiceCheckMessage;
-  String? get invoiceCheckMessage => _invoiceCheckMessage;
+  String? _receiptCheckMessage;
+  String? get receiptCheckMessage => _receiptCheckMessage;
 
   // Search functionality
   void searchExpenses(String query) {
@@ -463,57 +466,57 @@ class SupplierAdvanceController with ChangeNotifier {
     }
   }
 
-  Future<bool> checkInvoiceExists(String? invoiceNumber) async {
-    if (invoiceNumber == null || invoiceNumber.isEmpty) {
-      _invoiceExists = null;
-      _invoiceCheckMessage = null;
+  Future<bool> checkSupplierAdvanceReferenceExist(String? receiptNumber) async {
+    if (receiptNumber == null || receiptNumber.isEmpty) {
+      _receiptExists = null;
+      _receiptCheckMessage = null;
       notifyListeners();
       return false;
     }
 
-    _isCheckingInvoice = true;
-    _invoiceExists = null;
-    _invoiceCheckMessage = null;
+    _isCheckingReceipt = true;
+    _receiptExists = null;
+    _receiptCheckMessage = null;
     notifyListeners();
 
     if (!await _checkToken()) {
-      _isCheckingInvoice = false;
-      _invoiceCheckMessage = 'Authentication failed';
+      _isCheckingReceipt = false;
+      _receiptCheckMessage = 'Authentication failed';
       notifyListeners();
       return false;
     }
 
     try {
-      final response = await restApi.postCheckSalesInvoiceExist(
+      final response = await restApi.postCheckSupplierAdvanceReferenceExist(
         token: _getAuthHeader(),
-        invoiceNumber: invoiceNumber,
+        receiptNumber: receiptNumber,
       );
 
-      _isCheckingInvoice = false;
+      _isCheckingReceipt = false;
 
       if (response['IsSuccess'] == true) {
         final data = response['Data'];
 
         if (data == "false" || data == false) {
-          _invoiceExists = false;
-          _invoiceCheckMessage = 'Invoice number is available';
+          _receiptExists = false;
+          _receiptCheckMessage = 'Receipt number is available';
         } else {
-          _invoiceExists = true;
-          _invoiceCheckMessage =
-              'Invoice number already exists. Please use a different number.';
+          _receiptExists = true;
+          _receiptCheckMessage =
+              'Receipt number already exists. Please use a different number.';
         }
       } else {
-        _invoiceExists = null;
-        _invoiceCheckMessage =
-            response['Message'] ?? 'Failed to check invoice number';
+        _receiptExists = null;
+        _receiptCheckMessage =
+            response['Message'] ?? 'Failed to check receipt number';
       }
 
       notifyListeners();
-      return _invoiceExists == true;
+      return _receiptExists == true;
     } catch (e) {
-      _isCheckingInvoice = false;
-      _invoiceExists = null;
-      _invoiceCheckMessage = 'Error checking invoice number: $e';
+      _isCheckingReceipt = false;
+      _receiptExists = null;
+      _receiptCheckMessage = 'Error checking invoice number: $e';
       notifyListeners();
       debugPrint('Error checking invoice existence: $e');
       return false;
@@ -521,10 +524,10 @@ class SupplierAdvanceController with ChangeNotifier {
   }
 
   // Clear invoice check state
-  void clearInvoiceCheck() {
-    _invoiceExists = null;
-    _invoiceCheckMessage = null;
-    _isCheckingInvoice = false;
+  void clearReceiptCheck() {
+    _receiptExists = null;
+    _receiptCheckMessage = null;
+    _isCheckingReceipt = false;
     notifyListeners();
   }
 
@@ -566,6 +569,35 @@ class SupplierAdvanceController with ChangeNotifier {
       _handleApiError(e);
     } finally {
       isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> getSupplierAdvancePush(int id) async {
+    if (!await _checkToken()) return;
+
+    _isPushLoading = true;
+    _pushErrorMessage = null;
+    notifyListeners();
+
+    try {
+      final pushSupplierAdvance = await restApi.getSupplierAdvancePush(
+        id: id,
+        token: _getAuthHeader(),
+      );
+
+      if (pushSupplierAdvance['IsSuccess'] == true) {
+        final data = pushSupplierAdvance['Data'];
+      } else {
+        _pushErrorMessage =
+            pushSupplierAdvance['Message'] ?? 'Failed to fetch supplier detail';
+        debugPrint('API call failed: $_pushErrorMessage');
+      }
+    } catch (e) {
+      _pushErrorMessage = _getErrorMessage(e);
+      debugPrint('Supplier detail error: $_pushErrorMessage');
+    } finally {
+      _isPushLoading = false;
       notifyListeners();
     }
   }
