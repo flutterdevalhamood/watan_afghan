@@ -5,8 +5,8 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
+import 'package:sample/src/providers/purchase_controller.dart';
 import 'package:sample/src/providers/reports_controller.dart';
-import 'package:sample/src/providers/sales_controller.dart';
 
 class PurchaseReportScreen extends StatefulWidget {
   const PurchaseReportScreen({super.key});
@@ -19,19 +19,22 @@ class _PurchaseReportScreenState extends State<PurchaseReportScreen> {
   DateTime? _fromDate;
   DateTime? _toDate;
   int? _selectedCurrencyId;
-  int? _selectedSupplierId;
+  dynamic _selectedSupplierId;
   bool _isLoading = false;
   String? _pdfPath;
   bool _isGeneratingReport = false;
 
   late ReportsController _controller;
-  late SalesController _salesController;
+  late PurchaseController _purchaseController;
 
   @override
   void initState() {
     super.initState();
     _controller = Provider.of<ReportsController>(context, listen: false);
-    _salesController = Provider.of<SalesController>(context, listen: false);
+    _purchaseController = Provider.of<PurchaseController>(
+      context,
+      listen: false,
+    );
 
     // Set default date range to last 30 days
     _toDate = DateTime.now();
@@ -48,7 +51,7 @@ class _PurchaseReportScreenState extends State<PurchaseReportScreen> {
 
     try {
       // Get investors and currencies data
-      await _salesController.getSalesBaseData();
+      await _purchaseController.getPurchaseBaseData();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -123,14 +126,15 @@ class _PurchaseReportScreenState extends State<PurchaseReportScreen> {
       ).format(_fromDate!);
       final String toDateFormatted = DateFormat('yyyy-MM-dd').format(_toDate!);
 
-      final isSuccess = await _controller.postSalesReports(
+      final isSuccess = await _controller.postPurchaseReportsData(
         fromDateFormatted,
         toDateFormatted,
         _selectedCurrencyId,
+        _selectedSupplierId,
       );
 
-      if (isSuccess && _controller.salesReportUrl != null) {
-        await _downloadAndOpenPdf(_controller.salesReportUrl!);
+      if (isSuccess && _controller.purchaseReportUrl != null) {
+        await _downloadAndOpenPdf(_controller.purchaseReportUrl!);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -311,7 +315,7 @@ class _PurchaseReportScreenState extends State<PurchaseReportScreen> {
                     hint: const Text('Select Currency'),
                     isExpanded: true,
                     items: [
-                      ..._salesController.currencyType?.map((currency) {
+                      ..._purchaseController.currencyType?.map((currency) {
                             return DropdownMenuItem<int>(
                               value: currency['id'],
                               child: Text(currency['Name']),
@@ -328,7 +332,7 @@ class _PurchaseReportScreenState extends State<PurchaseReportScreen> {
 
                   const SizedBox(height: 24),
 
-                  DropdownButtonFormField<int>(
+                  DropdownButtonFormField<dynamic>(
                     decoration: InputDecoration(
                       labelText: 'Supplier',
                       border: OutlineInputBorder(
@@ -340,13 +344,17 @@ class _PurchaseReportScreenState extends State<PurchaseReportScreen> {
                       ),
                     ),
                     value: _selectedSupplierId,
-                    hint: const Text('Select Supplier'),
+                    hint: const Text('Select Category'),
                     isExpanded: true,
                     items: [
-                      ..._salesController.currencyType?.map((investor) {
-                            return DropdownMenuItem<int>(
-                              value: investor['id'],
-                              child: Text(investor['Name']),
+                      const DropdownMenuItem<dynamic>(
+                        value: 'all',
+                        child: Text('All'),
+                      ),
+                      ..._purchaseController.supplier?.map((expense) {
+                            return DropdownMenuItem<dynamic>(
+                              value: expense['id'],
+                              child: Text(expense['Name']),
                             );
                           }).toList() ??
                           [],
