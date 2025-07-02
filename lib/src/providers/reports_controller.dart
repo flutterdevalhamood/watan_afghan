@@ -12,6 +12,8 @@ class ReportsController with ChangeNotifier {
   String? expenseReportUrl;
   String? landscapeExpenseReportUrl;
   String? cashReportUrl;
+  String? customerStatementUrl;
+  String? supplierStatementUrl;
   String? errorMessage;
 
   Future<bool> postSalesReports(
@@ -74,7 +76,7 @@ class ReportsController with ChangeNotifier {
   Future<bool> postPurchaseReportsData(
     String? fromDate,
     String? toDate,
-    String? currencyId,
+    int? currencyId,
     String? supplierId,
   ) async {
     try {
@@ -254,6 +256,83 @@ class ReportsController with ChangeNotifier {
       debugPrint('Exception in postCashReports: $e');
       errorMessage = 'An error occurred while generating the report';
       return _handleApiError(e);
+    }
+  }
+
+  //statements
+  Future<bool> postCustomerStatement(
+    String? fromDate,
+    String? toDate,
+    int? currencyId,
+    int? customerId,
+  ) async {
+    try {
+      if (token == null) {
+        throw Exception("No Token Found");
+      }
+      final customerStatementData = await restApi.postPrintCustomerStatement(
+        token: 'Bearer $token',
+        fromDate: fromDate,
+        toDate: toDate,
+        currencyId: currencyId,
+        customerId: customerId,
+      );
+      if (customerStatementData['IsSuccess'] == true) {
+        customerStatementUrl = customerStatementData['Data']?['url'];
+        notifyListeners();
+        print('customerStatementUrl $customerStatementUrl');
+        return true;
+      } else {
+        print(
+          'Fetch customer statement data failed: ${customerStatementData['Message']}',
+        );
+        return false;
+      }
+    } catch (e) {
+      print('Exception: $e');
+      if (e is DioException) {
+        // Handle Dio-specific errors
+        print('Dio error: ${e.message}');
+      }
+      return false;
+    }
+  }
+
+  Future<bool> postSupplierStatement(
+    String? fromDate,
+    String? toDate,
+    int? currencyId,
+    int? supplierId,
+  ) async {
+    try {
+      if (token == null) {
+        throw Exception("No Token Found");
+      }
+      final supplierStatementData = await restApi.postPrintSupplierStatement(
+        token: 'Bearer $token',
+        fromDate: fromDate,
+        toDate: toDate,
+        currencyId: currencyId,
+        supplierId: supplierId,
+      );
+      if (supplierStatementData['IsSuccess'] == true) {
+        supplierStatementUrl = supplierStatementData['Data']?['url'];
+        notifyListeners();
+        print('supplierStatementUrl $supplierStatementUrl');
+        return true;
+      } else {
+        print(
+          'Fetch Supplier statement data failed: ${supplierStatementData['Message']}',
+        );
+        return false;
+      }
+    } catch (e) {
+      print('Exception: $e');
+      if (e is DioException) {
+        // Handle Dio-specific errors
+        print('Dio error: ${e.message}');
+      }
+      return false;
     }
   }
 

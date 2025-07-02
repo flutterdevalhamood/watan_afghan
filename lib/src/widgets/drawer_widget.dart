@@ -350,7 +350,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                 _buildMenuItem(
                   context: context,
                   icon: Icons.dataset,
-                  title: 'reports',
+                  title: 'Reports',
                   onTap: () {
                     NavigationService().pushNavigation(
                       Screenroutes.reportsHomeScreen,

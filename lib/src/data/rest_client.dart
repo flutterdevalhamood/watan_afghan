@@ -461,7 +461,7 @@ abstract class RestClient {
     @Header("Authorization") String? token,
     @Field("fromDate") String? fromDate,
     @Field("toDate") String? toDate,
-    @Field("currency_id") String? currencyId,
+    @Field("currency_id") int? currencyId,
     @Field("supplier_id") String? supplierId,
   });
 
@@ -491,6 +491,25 @@ abstract class RestClient {
     @Field("fromDate") String? fromDate,
     @Field("toDate") String? toDate,
     @Field("currency_id") int? currencyId,
+  });
+
+  //statements
+  @POST('/api/PrintCustomerStatement')
+  Future<dynamic> postPrintCustomerStatement({
+    @Header("Authorization") String? token,
+    @Field("fromDate") String? fromDate,
+    @Field("toDate") String? toDate,
+    @Field("currency_id") int? currencyId,
+    @Field("customer_id") int? customerId,
+  });
+
+  @POST('/api/PrintSupplierStatement')
+  Future<dynamic> postPrintSupplierStatement({
+    @Header("Authorization") String? token,
+    @Field("fromDate") String? fromDate,
+    @Field("toDate") String? toDate,
+    @Field("currency_id") int? currencyId,
+    @Field("supplier_id") int? supplierId,
   });
 
   //supplieradvance

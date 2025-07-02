@@ -21,11 +21,13 @@ import 'package:sample/src/screens/profile_update_screen.dart';
 import 'package:sample/src/screens/purchases/purchase_list_screen.dart';
 import 'package:sample/src/screens/purchases/purchase_screen.dart';
 import 'package:sample/src/screens/reports/cash_report_screen.dart';
+import 'package:sample/src/screens/reports/customer_statement_screen.dart';
 import 'package:sample/src/screens/reports/expense_report_screen.dart';
 import 'package:sample/src/screens/reports/landscape_report_screen.dart';
 import 'package:sample/src/screens/reports/purchase_report_screen.dart';
 import 'package:sample/src/screens/reports/reports_home_screen.dart';
 import 'package:sample/src/screens/reports/sales_report_screen.dart';
+import 'package:sample/src/screens/reports/supplier_statement_screen.dart';
 import 'package:sample/src/screens/sales/sales_list_screen.dart';
 import 'package:sample/src/screens/sales/sales_screen.dart';
 import 'package:sample/src/screens/supplier/supplier_data_screen.dart';
@@ -114,6 +116,10 @@ class Screenroutes {
   static const String landscapeExpenseReportScreen =
       "landscapeExpenseReportScreen";
   static const String cashReportScreen = "cashReportScreen";
+
+  //statements
+  static const String customerStatementScreen = "customerStatementScreen";
+  static const String supplierStatementScreen = "supplierStatementScreen";
 
   //supplieradvance
   static const String supplierAdvanceListScreen = "supplierAdvanceListScreen";
@@ -450,6 +456,26 @@ class Screenroutes {
           ),
           builder: (BuildContext context) {
             return LandscapeReportScreen();
+          },
+        );
+
+      case Screenroutes.customerStatementScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(
+            name: Screenroutes.customerStatementScreen,
+          ),
+          builder: (BuildContext context) {
+            return CustomerStatementScreen();
+          },
+        );
+
+      case Screenroutes.supplierStatementScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(
+            name: Screenroutes.supplierStatementScreen,
+          ),
+          builder: (BuildContext context) {
+            return SupplierStatementScreen();
           },
         );
 

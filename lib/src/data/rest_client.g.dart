@@ -1729,7 +1729,7 @@ class _RestClient implements RestClient {
     String? token,
     String? fromDate,
     String? toDate,
-    String? currencyId,
+    int? currencyId,
     String? supplierId,
   }) async {
     final _extra = <String, dynamic>{};
@@ -1856,6 +1856,76 @@ class _RestClient implements RestClient {
           .compose(
             _dio.options,
             '/api/CashReport',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> postPrintCustomerStatement({
+    String? token,
+    String? fromDate,
+    String? toDate,
+    int? currencyId,
+    int? customerId,
+  }) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{r'Authorization': token};
+    _headers.removeWhere((k, v) => v == null);
+    final _data = {
+      'fromDate': fromDate,
+      'toDate': toDate,
+      'currency_id': currencyId,
+      'customer_id': customerId,
+    };
+    _data.removeWhere((k, v) => v == null);
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/api/PrintCustomerStatement',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> postPrintSupplierStatement({
+    String? token,
+    String? fromDate,
+    String? toDate,
+    int? currencyId,
+    int? supplierId,
+  }) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{r'Authorization': token};
+    _headers.removeWhere((k, v) => v == null);
+    final _data = {
+      'fromDate': fromDate,
+      'toDate': toDate,
+      'currency_id': currencyId,
+      'supplier_id': supplierId,
+    };
+    _data.removeWhere((k, v) => v == null);
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/api/PrintSupplierStatement',
             queryParameters: queryParameters,
             data: _data,
           )

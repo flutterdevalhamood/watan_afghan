@@ -3,7 +3,7 @@ import 'package:sample/src/util/app_navigation.dart';
 import 'package:sample/src/util/app_routes.dart';
 
 class ReportsHomeScreen extends StatelessWidget {
-  const ReportsHomeScreen({Key? key}) : super(key: key);
+  const ReportsHomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -18,13 +18,14 @@ class ReportsHomeScreen extends StatelessWidget {
         elevation: 2,
         centerTitle: true,
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Reports Section
             const Text(
-              'Select Report Type',
+              'Reports',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -37,82 +38,118 @@ class ReportsHomeScreen extends StatelessWidget {
               style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             ),
             const SizedBox(height: 24),
-            Expanded(
-              child: GridView.count(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 1.2,
-                children: [
-                  ReportTile(
-                    title: 'Sales Report',
-                    icon: Icons.trending_up,
-                    color: Colors.green,
-                    onTap: () {
-                      NavigationService().pushNavigation(
-                        Screenroutes.salesReportScreen,
-                      );
-                    },
-                  ),
-                  ReportTile(
-                    title: 'Purchase Report',
-                    icon: Icons.shopping_cart,
-                    color: Colors.blue,
-                    onTap: () {
-                      NavigationService().pushNavigation(
-                        Screenroutes.purchaseReportScreen,
-                      );
-                    },
-                  ),
-                  ReportTile(
-                    title: 'Expense Report',
-                    icon: Icons.receipt_long,
-                    color: Colors.orange,
-                    onTap: () {
-                      NavigationService().pushNavigation(
-                        Screenroutes.expenseReportScreen,
-                      );
-                    },
-                  ),
-                  ReportTile(
-                    title: 'Landscape Expense Report',
-                    icon: Icons.landscape,
-                    color: Colors.purple,
-                    onTap: () {
-                      NavigationService().pushNavigation(
-                        Screenroutes.landscapeExpenseReportScreen,
-                      );
-                    },
-                  ),
-                  ReportTile(
-                    title: 'Cash Report',
-                    icon: Icons.account_balance_wallet,
-                    color: Colors.teal,
-                    onTap: () {
-                      NavigationService().pushNavigation(
-                        Screenroutes.cashReportScreen,
-                      );
-                    },
-                  ),
-                ],
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 1.2,
+              children: [
+                ReportTile(
+                  title: 'Sales Report',
+                  icon: Icons.trending_up,
+                  color: Colors.green,
+                  onTap: () {
+                    NavigationService().pushNavigation(
+                      Screenroutes.salesReportScreen,
+                    );
+                  },
+                ),
+                ReportTile(
+                  title: 'Purchase Report',
+                  icon: Icons.shopping_cart,
+                  color: Colors.blue,
+                  onTap: () {
+                    NavigationService().pushNavigation(
+                      Screenroutes.purchaseReportScreen,
+                    );
+                  },
+                ),
+                ReportTile(
+                  title: 'Expense Report',
+                  icon: Icons.receipt_long,
+                  color: Colors.orange,
+                  onTap: () {
+                    NavigationService().pushNavigation(
+                      Screenroutes.expenseReportScreen,
+                    );
+                  },
+                ),
+                ReportTile(
+                  title: 'Landscape Expense Report',
+                  icon: Icons.landscape,
+                  color: Colors.purple,
+                  onTap: () {
+                    NavigationService().pushNavigation(
+                      Screenroutes.landscapeExpenseReportScreen,
+                    );
+                  },
+                ),
+                ReportTile(
+                  title: 'Cash Report',
+                  icon: Icons.account_balance_wallet,
+                  color: Colors.teal,
+                  onTap: () {
+                    NavigationService().pushNavigation(
+                      Screenroutes.cashReportScreen,
+                    );
+                  },
+                ),
+              ],
+            ),
+
+            // Statements Section
+            const SizedBox(height: 40),
+            const Text(
+              'Statements',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
               ),
             ),
+            const SizedBox(height: 8),
+            Text(
+              'Generate customer and supplier statements',
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 24),
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 1.2,
+              children: [
+                ReportTile(
+                  title: 'Customer Statement',
+                  icon: Icons.person_outline,
+                  color: Colors.indigo,
+                  onTap: () {
+                    NavigationService().pushNavigation(
+                      Screenroutes.customerStatementScreen,
+                    );
+                  },
+                ),
+                ReportTile(
+                  title: 'Supplier Statement',
+                  icon: Icons.business_outlined,
+                  color: Colors.red,
+                  onTap: () {
+                    NavigationService().pushNavigation(
+                      Screenroutes.supplierStatementScreen,
+                    );
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
     );
-  }
-
-  void _navigateToReport(BuildContext context, String reportType) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Opening $reportType...'),
-        backgroundColor: Colors.indigo[600],
-        duration: const Duration(seconds: 2),
-      ),
-    );
-    // Add your navigation logic here
-    // Navigator.push(context, MaterialPageRoute(builder: (context) => ReportDetailScreen(reportType: reportType)));
   }
 }
 
