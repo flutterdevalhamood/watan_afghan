@@ -128,9 +128,9 @@ class ReportsController with ChangeNotifier {
         currencyId: currencyId,
       );
       if (expenseReportsData['IsSuccess'] == true) {
-        purchaseReportUrl = expenseReportsData['Data']?['url'];
+        expenseReportUrl = expenseReportsData['Data']?['url'];
         notifyListeners();
-        print('purchaseReportUrl $purchaseReportUrl');
+        print('expenseReportUrl $expenseReportUrl');
         return true;
       } else {
         print(

@@ -5,8 +5,8 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
+import 'package:sample/src/providers/expense_controller.dart';
 import 'package:sample/src/providers/reports_controller.dart';
-import 'package:sample/src/providers/sales_controller.dart';
 
 class ExpenseReportScreen extends StatefulWidget {
   const ExpenseReportScreen({super.key});
@@ -18,7 +18,7 @@ class ExpenseReportScreen extends StatefulWidget {
 class _ExpenseReportScreenState extends State<ExpenseReportScreen> {
   DateTime? _fromDate;
   DateTime? _toDate;
-  int? _selectedCategoryId;
+  dynamic _selectedCategoryId;
   int? _selectedCurrencyId;
   String? _selectedFilter;
   bool _isLoading = false;
@@ -26,13 +26,19 @@ class _ExpenseReportScreenState extends State<ExpenseReportScreen> {
   bool _isGeneratingReport = false;
 
   late ReportsController _controller;
-  late SalesController _salesController;
+  late ExpenseController _expenseController;
+
+  static const expenseFilter = [
+    {'id': 'all', 'Name': 'All'},
+    {'id': 'with', 'Name': 'With'},
+    {'id': 'without', 'Name': 'Without'},
+  ];
 
   @override
   void initState() {
     super.initState();
     _controller = Provider.of<ReportsController>(context, listen: false);
-    _salesController = Provider.of<SalesController>(context, listen: false);
+    _expenseController = Provider.of<ExpenseController>(context, listen: false);
 
     // Set default date range to last 30 days
     _toDate = DateTime.now();
@@ -49,7 +55,7 @@ class _ExpenseReportScreenState extends State<ExpenseReportScreen> {
 
     try {
       // Get investors and currencies data
-      await _salesController.getSalesBaseData();
+      await _expenseController.getExpenseBaseData();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -127,8 +133,8 @@ class _ExpenseReportScreenState extends State<ExpenseReportScreen> {
       final isSuccess = await _controller.postExpenseReportsData(
         fromDateFormatted,
         toDateFormatted,
-        'all',
-        'all',
+        _selectedCategoryId.toString(),
+        _selectedFilter,
         _selectedCurrencyId,
       );
 
@@ -298,7 +304,7 @@ class _ExpenseReportScreenState extends State<ExpenseReportScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  DropdownButtonFormField<int>(
+                  DropdownButtonFormField<dynamic>(
                     decoration: InputDecoration(
                       labelText: 'Category',
                       border: OutlineInputBorder(
@@ -313,10 +319,14 @@ class _ExpenseReportScreenState extends State<ExpenseReportScreen> {
                     hint: const Text('Select Category'),
                     isExpanded: true,
                     items: [
-                      ..._salesController.currencyType?.map((currency) {
-                            return DropdownMenuItem<int>(
-                              value: currency['id'],
-                              child: Text(currency['Name']),
+                      const DropdownMenuItem<dynamic>(
+                        value: 'all',
+                        child: Text('All'),
+                      ),
+                      ..._expenseController.expenseCategory?.map((expense) {
+                            return DropdownMenuItem<dynamic>(
+                              value: expense['id'],
+                              child: Text(expense['Name']),
                             );
                           }).toList() ??
                           [],
@@ -330,7 +340,8 @@ class _ExpenseReportScreenState extends State<ExpenseReportScreen> {
 
                   const SizedBox(height: 24),
 
-                  DropdownButtonFormField<int>(
+                  DropdownButtonFormField<String>(
+                    // Changed from int to String
                     decoration: InputDecoration(
                       labelText: 'Filter',
                       border: OutlineInputBorder(
@@ -341,21 +352,24 @@ class _ExpenseReportScreenState extends State<ExpenseReportScreen> {
                         vertical: 8,
                       ),
                     ),
-                    value: _selectedCategoryId,
+                    value:
+                        _selectedFilter, // Changed from _selectedCategoryId to _selectedFilter
                     hint: const Text('Select Filter'),
                     isExpanded: true,
-                    items: [
-                      ..._salesController.currencyType?.map((currency) {
-                            return DropdownMenuItem<int>(
-                              value: currency['id'],
-                              child: Text(currency['Name']),
-                            );
-                          }).toList() ??
-                          [],
-                    ],
+                    items:
+                        expenseFilter.map((filter) {
+                          // Removed null check since it's a const
+                          return DropdownMenuItem<String>(
+                            // Changed from int to String
+                            value: filter['id'] as String, // Cast to String
+                            child: Text(
+                              filter['Name'] as String,
+                            ), // Cast to String
+                          );
+                        }).toList(),
                     onChanged: (value) {
                       setState(() {
-                        _selectedFilter = value.toString();
+                        _selectedFilter = value; // This was already correct
                       });
                     },
                   ),
@@ -378,7 +392,7 @@ class _ExpenseReportScreenState extends State<ExpenseReportScreen> {
                     hint: const Text('Select Currency'),
                     isExpanded: true,
                     items: [
-                      ..._salesController.currencyType?.map((currency) {
+                      ..._expenseController.currency?.map((currency) {
                             return DropdownMenuItem<int>(
                               value: currency['id'],
                               child: Text(currency['Name']),
