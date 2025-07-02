@@ -1803,7 +1803,7 @@ class _RestClient implements RestClient {
     String? toDate,
     String? category,
     String? filter,
-    String? currencyId,
+    int? currencyId,
   }) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};

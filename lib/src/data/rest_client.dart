@@ -482,7 +482,7 @@ abstract class RestClient {
     @Field("toDate") String? toDate,
     @Field("category") String? category,
     @Field("filter") String? filter,
-    @Field("currency_id") String? currencyId,
+    @Field("currency_id") int? currencyId,
   });
 
   @POST('/api/CashReport')

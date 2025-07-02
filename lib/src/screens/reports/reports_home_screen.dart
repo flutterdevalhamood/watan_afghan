@@ -78,11 +78,11 @@ class ReportsHomeScreen extends StatelessWidget {
                     title: 'Landscape Expense Report',
                     icon: Icons.landscape,
                     color: Colors.purple,
-                    onTap:
-                        () => _navigateToReport(
-                          context,
-                          'Landscape Expense Report',
-                        ),
+                    onTap: () {
+                      NavigationService().pushNavigation(
+                        Screenroutes.landscapeExpenseReportScreen,
+                      );
+                    },
                   ),
                   ReportTile(
                     title: 'Cash Report',

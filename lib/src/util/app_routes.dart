@@ -22,6 +22,7 @@ import 'package:sample/src/screens/purchases/purchase_list_screen.dart';
 import 'package:sample/src/screens/purchases/purchase_screen.dart';
 import 'package:sample/src/screens/reports/cash_report_screen.dart';
 import 'package:sample/src/screens/reports/expense_report_screen.dart';
+import 'package:sample/src/screens/reports/landscape_report_screen.dart';
 import 'package:sample/src/screens/reports/purchase_report_screen.dart';
 import 'package:sample/src/screens/reports/reports_home_screen.dart';
 import 'package:sample/src/screens/reports/sales_report_screen.dart';
@@ -110,6 +111,8 @@ class Screenroutes {
   static const String salesReportScreen = "salesReportScreen";
   static const String purchaseReportScreen = "purchaseReportScreen";
   static const String expenseReportScreen = "expenseReportScreen";
+  static const String landscapeExpenseReportScreen =
+      "landscapeExpenseReportScreen";
   static const String cashReportScreen = "cashReportScreen";
 
   //supplieradvance
@@ -437,6 +440,16 @@ class Screenroutes {
           settings: const RouteSettings(name: Screenroutes.expenseReportScreen),
           builder: (BuildContext context) {
             return ExpenseReportScreen();
+          },
+        );
+
+      case Screenroutes.landscapeExpenseReportScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(
+            name: Screenroutes.landscapeExpenseReportScreen,
+          ),
+          builder: (BuildContext context) {
+            return LandscapeReportScreen();
           },
         );
 

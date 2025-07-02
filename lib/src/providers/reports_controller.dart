@@ -10,6 +10,7 @@ class ReportsController with ChangeNotifier {
   String? salesReportUrl;
   String? purchaseReportUrl;
   String? expenseReportUrl;
+  String? landscapeExpenseReportUrl;
   String? cashReportUrl;
   String? errorMessage;
 
@@ -135,6 +136,47 @@ class ReportsController with ChangeNotifier {
       } else {
         print(
           'Fetch expense reports data failed: ${expenseReportsData['Message']}',
+        );
+        return false;
+      }
+    } catch (e) {
+      print('Exception: $e');
+      if (e is DioException) {
+        // Handle Dio-specific errors
+        print('Dio error: ${e.message}');
+      }
+      return false;
+    }
+  }
+
+  Future<bool> postLandscapeExpenseReportsData(
+    String? fromDate,
+    String? toDate,
+    String? category,
+    String? filter,
+    int? currencyId,
+  ) async {
+    try {
+      if (token == null) {
+        throw Exception("No Token Found");
+      }
+      final landscapeExpenseReportsData = await restApi
+          .postLandscapeExpenseReportsData(
+            token: 'Bearer $token',
+            fromDate: fromDate,
+            toDate: toDate,
+            category: category,
+            filter: filter,
+            currencyId: currencyId,
+          );
+      if (landscapeExpenseReportsData['IsSuccess'] == true) {
+        landscapeExpenseReportUrl = landscapeExpenseReportsData['Data']?['url'];
+        notifyListeners();
+        print('landscapeExpenseReportUrl $landscapeExpenseReportUrl');
+        return true;
+      } else {
+        print(
+          'Fetch landscape expense reports data failed: ${landscapeExpenseReportsData['Message']}',
         );
         return false;
       }
