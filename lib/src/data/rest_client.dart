@@ -512,6 +512,23 @@ abstract class RestClient {
     @Field("supplier_id") int? supplierId,
   });
 
+  //summary
+  @GET('/api/PrintCustomerReceivableSummary')
+  Future<dynamic> getCustomerReceivableSummary({
+    @Header("Authorization") String? token,
+  });
+
+  //Available stock report
+  @GET('/api/PrintCurrentStockReportWithValues')
+  Future<dynamic> getCurrentStockReportWithValues({
+    @Header("Authorization") String? token,
+  });
+
+  @GET('/api/PrintCurrentStockReportWithoutValues')
+  Future<dynamic> getCurrentStockReportWithoutValues({
+    @Header("Authorization") String? token,
+  });
+
   //supplieradvance
   @GET('/api/SupplierAdvance/paginate/{page}/{limit}')
   Future<dynamic> getSupplierAdvance(

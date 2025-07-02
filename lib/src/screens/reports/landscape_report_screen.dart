@@ -7,6 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:sample/src/providers/expense_controller.dart';
 import 'package:sample/src/providers/reports_controller.dart';
+import 'package:sample/src/widgets/pdf_download_widget.dart';
 
 class LandscapeReportScreen extends StatefulWidget {
   const LandscapeReportScreen({super.key});
@@ -139,7 +140,17 @@ class _LandscapeReportScreenState extends State<LandscapeReportScreen> {
       );
 
       if (isSuccess && _controller.landscapeExpenseReportUrl != null) {
-        await _downloadAndOpenPdf(_controller.landscapeExpenseReportUrl!);
+        final pdfPath = await PdfDownloadHelper.downloadAndOpenPdf(
+          url: _controller.landscapeExpenseReportUrl!,
+          reportType: 'landscape expense',
+          context: context,
+        );
+
+        if (pdfPath != null && mounted) {
+          setState(() {
+            _pdfPath = pdfPath;
+          });
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

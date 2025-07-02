@@ -14,6 +14,8 @@ class ReportsController with ChangeNotifier {
   String? cashReportUrl;
   String? customerStatementUrl;
   String? supplierStatementUrl;
+  String? currentStockReportWithValuesUrl;
+  String? currentStockReportWithoutValuesUrl;
   String? errorMessage;
 
   Future<bool> postSalesReports(
@@ -332,6 +334,57 @@ class ReportsController with ChangeNotifier {
         // Handle Dio-specific errors
         print('Dio error: ${e.message}');
       }
+      return false;
+    }
+  }
+
+  Future<bool> getCurrentStockReportWithValues() async {
+    try {
+      if (token == null) {
+        throw Exception("No Token Found");
+      }
+      final stockReportWithValues = await restApi
+          .getCurrentStockReportWithValues(token: _getAuthHeader());
+
+      if (stockReportWithValues['IsSuccess'] == true) {
+        currentStockReportWithValuesUrl = stockReportWithValues['Data']?['url'];
+        notifyListeners();
+        debugPrint('Base data fetched successfully');
+        return true;
+      } else {
+        debugPrint('API call failed: ${stockReportWithValues['Message']}');
+        errorMessage =
+            stockReportWithValues['Message'] ?? 'Failed to fetch data';
+        return false;
+      }
+    } catch (e) {
+      _handleApiError(e);
+      return false;
+    }
+  }
+
+  Future<bool> getCurrentStockReportWithoutValues() async {
+    try {
+      if (token == null) {
+        throw Exception("No Token Found");
+      }
+      final stockReportWithoutValues = await restApi
+          .getCurrentStockReportWithoutValues(token: _getAuthHeader());
+
+      if (stockReportWithoutValues['IsSuccess'] == true) {
+        currentStockReportWithoutValuesUrl =
+            stockReportWithoutValues['Data']?['url'];
+        notifyListeners();
+        debugPrint('Stock report without values fetched successfully');
+        return true;
+      } else {
+        debugPrint('API call failed: ${stockReportWithoutValues['Message']}');
+        errorMessage =
+            stockReportWithoutValues['Message'] ?? 'Failed to fetch data';
+        return false;
+      }
+    } catch (e) {
+      _handleApiError(e);
       return false;
     }
   }

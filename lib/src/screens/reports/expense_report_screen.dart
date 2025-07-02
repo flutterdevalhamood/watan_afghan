@@ -1,12 +1,10 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:sample/src/providers/expense_controller.dart';
 import 'package:sample/src/providers/reports_controller.dart';
+import 'package:sample/src/widgets/pdf_download_widget.dart';
 
 class ExpenseReportScreen extends StatefulWidget {
   const ExpenseReportScreen({super.key});
@@ -139,7 +137,17 @@ class _ExpenseReportScreenState extends State<ExpenseReportScreen> {
       );
 
       if (isSuccess && _controller.expenseReportUrl != null) {
-        await _downloadAndOpenPdf(_controller.expenseReportUrl!);
+        final pdfPath = await PdfDownloadHelper.downloadAndOpenPdf(
+          url: _controller.expenseReportUrl!,
+          reportType: 'expense',
+          context: context,
+        );
+
+        if (pdfPath != null && mounted) {
+          setState(() {
+            _pdfPath = pdfPath;
+          });
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -161,38 +169,6 @@ class _ExpenseReportScreenState extends State<ExpenseReportScreen> {
           _isGeneratingReport = false;
         });
       }
-    }
-  }
-
-  Future<void> _downloadAndOpenPdf(String url) async {
-    try {
-      // Request storage permission
-      final status = await Permission.storage.request();
-      if (!status.isGranted) {
-        throw Exception('Storage permission denied');
-      }
-
-      // Get app directory for saving PDF
-      final dir = await getApplicationDocumentsDirectory();
-      final filePath =
-          '${dir.path}/expense_report_${DateTime.now().millisecondsSinceEpoch}.pdf';
-
-      // Download the PDF using Dio
-      final dio = Dio();
-      await dio.download(url, filePath);
-
-      if (mounted) {
-        setState(() {
-          _pdfPath = filePath;
-        });
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error downloading PDF: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
   }
 

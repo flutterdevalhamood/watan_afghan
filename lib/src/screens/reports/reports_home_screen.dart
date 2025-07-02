@@ -145,11 +145,97 @@ class ReportsHomeScreen extends StatelessWidget {
                 ),
               ],
             ),
+
+            // Summaries Section
+            const SizedBox(height: 40),
+            const Text(
+              'Summaries',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'View customer receivable summaries',
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 24),
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 1.2,
+              children: [
+                ReportTile(
+                  title: 'Customer Receivable Summary',
+                  icon: Icons.account_balance,
+                  color: Colors.cyan,
+                  onTap: () {
+                    // NavigationService().pushNavigation(
+                    //   Screenroutes.customerReceivableSummaryScreen,
+                    // );
+                  },
+                ),
+              ],
+            ),
+
+            // Available Stocks Section
+            const SizedBox(height: 40),
+            const Text(
+              'Available Stocks',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'View stock availability and current stock reports',
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 24),
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 1.2,
+              children: [
+                ReportTile(
+                  title: 'Current Stock Report',
+                  icon: Icons.inventory_outlined,
+                  color: Colors.deepOrange,
+                  onTap: () {
+                    NavigationService().pushNavigation(
+                      Screenroutes.currentStockReportScreen,
+                    );
+                  },
+                ),
+              ],
+            ),
             const SizedBox(height: 20),
           ],
         ),
       ),
     );
+  }
+
+  void _navigateToReport(BuildContext context, String reportType) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Opening $reportType...'),
+        backgroundColor: Colors.indigo[600],
+        duration: const Duration(seconds: 2),
+      ),
+    );
+    // Add your navigation logic here
+    // Navigator.push(context, MaterialPageRoute(builder: (context) => ReportDetailScreen(reportType: reportType)));
   }
 }
 

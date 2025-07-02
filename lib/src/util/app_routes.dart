@@ -21,6 +21,7 @@ import 'package:sample/src/screens/profile_update_screen.dart';
 import 'package:sample/src/screens/purchases/purchase_list_screen.dart';
 import 'package:sample/src/screens/purchases/purchase_screen.dart';
 import 'package:sample/src/screens/reports/cash_report_screen.dart';
+import 'package:sample/src/screens/reports/current_stock_report_screen.dart';
 import 'package:sample/src/screens/reports/customer_statement_screen.dart';
 import 'package:sample/src/screens/reports/expense_report_screen.dart';
 import 'package:sample/src/screens/reports/landscape_report_screen.dart';
@@ -120,6 +121,8 @@ class Screenroutes {
   //statements
   static const String customerStatementScreen = "customerStatementScreen";
   static const String supplierStatementScreen = "supplierStatementScreen";
+
+  static const String currentStockReportScreen = "currentStockReportScreen";
 
   //supplieradvance
   static const String supplierAdvanceListScreen = "supplierAdvanceListScreen";
@@ -484,6 +487,16 @@ class Screenroutes {
           settings: const RouteSettings(name: Screenroutes.cashReportScreen),
           builder: (BuildContext context) {
             return CashReportScreen();
+          },
+        );
+
+      case Screenroutes.currentStockReportScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(
+            name: Screenroutes.currentStockReportScreen,
+          ),
+          builder: (BuildContext context) {
+            return CurrentStockReportScreen();
           },
         );
 

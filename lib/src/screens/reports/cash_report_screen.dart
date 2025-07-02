@@ -1,15 +1,10 @@
-import 'dart:io';
-
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:sample/src/providers/reports_controller.dart';
 import 'package:sample/src/providers/sales_controller.dart';
-import 'package:sample/src/repo/auth_repo.dart';
+import 'package:sample/src/widgets/pdf_download_widget.dart';
 
 class CashReportScreen extends StatefulWidget {
   const CashReportScreen({super.key});
@@ -132,7 +127,17 @@ class _CashReportScreenState extends State<CashReportScreen> {
       );
 
       if (isSuccess && _controller.cashReportUrl != null) {
-        await _downloadAndOpenPdf(_controller.cashReportUrl!);
+        final pdfPath = await PdfDownloadHelper.downloadAndOpenPdf(
+          url: _controller.cashReportUrl!,
+          reportType: 'cash',
+          context: context,
+        );
+
+        if (pdfPath != null && mounted) {
+          setState(() {
+            _pdfPath = pdfPath;
+          });
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -153,90 +158,6 @@ class _CashReportScreenState extends State<CashReportScreen> {
         setState(() {
           _isGeneratingReport = false;
         });
-      }
-    }
-  }
-
-  String _getAuthHeader() {
-    return 'Bearer ${AuthRepo.token}';
-  }
-
-  Future<void> _downloadAndOpenPdf(String url) async {
-    try {
-      print('Attempting to download PDF from: $url');
-
-      // For newer Android versions, storage permission might not be needed
-      // for app-specific directories
-      if (Platform.isAndroid) {
-        final status = await Permission.storage.request();
-        if (!status.isGranted) {
-          // Try to continue anyway for newer Android versions
-          print('Storage permission not granted, but continuing...');
-        }
-      }
-
-      // Get app directory for saving PDF
-      final dir = await getApplicationDocumentsDirectory();
-      final fileName =
-          'report_files${DateTime.now().millisecondsSinceEpoch}.pdf';
-      final filePath = '${dir.path}/$fileName';
-
-      print('Saving PDF to: $filePath');
-
-      // Download the PDF using Dio with proper headers
-      final dio = Dio();
-
-      // Add authentication header if needed
-      final options = Options(
-        headers: {
-          'Authorization': _getAuthHeader(),
-          'Accept': 'application/pdf',
-        },
-        responseType: ResponseType.bytes,
-      );
-
-      final response = await dio.get(url, options: options);
-
-      // Write the file
-      final file = File(filePath);
-      await file.writeAsBytes(response.data);
-
-      print(
-        'PDF downloaded successfully. File size: ${response.data.length} bytes',
-      );
-
-      // Verify file exists and has content
-      if (await file.exists()) {
-        final fileSize = await file.length();
-        print('File exists with size: $fileSize bytes');
-
-        if (fileSize > 0) {
-          if (mounted) {
-            setState(() {
-              _pdfPath = filePath;
-            });
-          }
-        } else {
-          throw Exception('Downloaded file is empty');
-        }
-      } else {
-        throw Exception('Failed to save PDF file');
-      }
-    } catch (e) {
-      print('Error downloading PDF: $e');
-      if (e is DioException) {
-        print(
-          'Dio error details: ${e.response?.statusCode} - ${e.response?.data}',
-        );
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error downloading PDF: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
       }
     }
   }
