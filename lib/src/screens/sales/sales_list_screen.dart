@@ -29,7 +29,10 @@ class _SalesListScreenState extends State<SalesListScreen> {
     // Initialize data loading
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _controller = context.read<SalesController>();
-      _controller.getSalesData();
+      _searchController.text = _controller.searchQuery;
+      if (!_controller.hasData) {
+        _controller.getSalesData();
+      }
     });
 
     // Setup infinite scroll listener

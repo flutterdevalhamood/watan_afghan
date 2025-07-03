@@ -46,6 +46,8 @@ class PurchaseController with ChangeNotifier {
 
   String? savedPurchaseId;
 
+  bool get hasData => _allPurchases.isNotEmpty;
+
   // Search functionality
   void searchExpenses(String query) {
     _searchQuery = query.toLowerCase();

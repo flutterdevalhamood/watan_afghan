@@ -37,6 +37,8 @@ class SalesController with ChangeNotifier {
   bool _isLoadingInvoices = false;
   bool get isLoadingInvoices => _isLoadingInvoices;
 
+  bool get hasData => _allSales.isNotEmpty;
+
   // List<Map<String, dynamic>>? expenseDetail;
   List<Map<String, dynamic>>? productType;
   List<Map<String, dynamic>>? currencyType;

@@ -33,6 +33,8 @@ class ExpenseController with ChangeNotifier {
   bool get isDetailLoading => _isDetailLoading;
   String? get detailErrorMessage => _detailErrorMessage;
 
+  bool get hasData => _allExpenses.isNotEmpty;
+
   // List<Map<String, dynamic>>? expenseDetail;
   List<Map<String, dynamic>>? expenseCategory;
   List<Map<String, dynamic>>? employeeType;

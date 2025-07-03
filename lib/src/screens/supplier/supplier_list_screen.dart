@@ -23,7 +23,10 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
   void initState() {
     super.initState();
     _controller = context.read<SupplierController>();
-    _controller.getSupplierData();
+    _searchController.text = _controller.searchQuery;
+    if (!_controller.hasData) {
+      _controller.getSupplierData();
+    }
 
     _scrollController.addListener(_onScroll);
   }

@@ -17,6 +17,8 @@ class SupplierAdvanceController with ChangeNotifier {
   List<SupplierAdvance> _filteredSupplierAdvances = [];
   String _searchQuery = '';
 
+  bool get hasData => _allSupplierAdvances.isNotEmpty;
+
   // Detail properties
   SupplierAdvanceWithDetails? _supplierAdvanceDetail;
   bool _isDetailLoading = false;

@@ -27,7 +27,10 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
     // Load initial data
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _controller = context.read<PurchaseController>();
-      _controller.getPurchaseData();
+      _searchController.text = _controller.searchQuery;
+      if (!_controller.hasData) {
+        _controller.getPurchaseData();
+      }
     });
 
     // Setup infinite scroll

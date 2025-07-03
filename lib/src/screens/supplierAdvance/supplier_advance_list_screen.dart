@@ -64,7 +64,10 @@ class _SupplierAdvanceListScreenState extends State<SupplierAdvanceListScreen>
       context,
       listen: false,
     );
-    _controller.getSupplierAdvance();
+    _searchController.text = _controller.searchQuery;
+    if (!_controller.hasData) {
+      _controller.getSupplierAdvance();
+    }
   }
 
   Future<void> _handleRefresh() async {

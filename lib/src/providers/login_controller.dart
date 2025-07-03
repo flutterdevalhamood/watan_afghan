@@ -67,6 +67,8 @@ class AuthController with ChangeNotifier {
         throw Exception("No Token Found");
       }
       await restApi.logout(token: 'Bearer $token', id: AuthRepo.loginId);
+      AuthRepo.logOut();
+      removeCircle();
       return true;
     } catch (e) {
       if (e is DioException) {

@@ -24,7 +24,7 @@ class SupplierController with ChangeNotifier {
   List<Supplier> get suppliers => _filteredSuppliers;
   String get searchQuery => _searchQuery;
   bool get isEmpty => _filteredSuppliers.isEmpty && !isLoading;
-  bool get hasData => _filteredSuppliers.isNotEmpty;
+  bool get hasData => _allSuppliers.isNotEmpty;
 
   List<Map<String, dynamic>>? _supplierDetail;
   bool _isDetailLoading = false;

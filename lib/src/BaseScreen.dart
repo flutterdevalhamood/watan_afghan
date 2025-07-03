@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sample/src/repo/auth_repo.dart';
 import 'package:sample/src/util/app_navigation.dart';
 import 'package:sample/src/util/app_routes.dart';
 import 'package:sample/src/util/app_theme.dart';
@@ -22,7 +23,10 @@ class _BaseScreenState extends State<BaseScreen> {
       debugShowCheckedModeBanner: false,
       theme: appTheme,
       onGenerateRoute: Screenroutes.routes,
-      initialRoute: Screenroutes.login,
+      initialRoute:
+          AuthRepo.isAuthenticated
+              ? Screenroutes.dashboard
+              : Screenroutes.login,
       navigatorObservers: [Screenroutes.routeobserver],
       navigatorKey: NavigationService().navigatorKey,
     );

@@ -110,7 +110,7 @@ class SupplierAdvance {
   String get formattedDate {
     try {
       final date = transferDateParsed;
-      return '${date.year}/${date.month}/${date.day}/';
+      return '${date.year}/${date.month}/${date.day}';
     } catch (e) {
       return transferDate;
     }

@@ -25,7 +25,10 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
     _scrollController.addListener(_scrollListener);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _controller = context.read<ExpenseController>();
-      _controller.getExpenseData();
+      _searchController.text = _controller.searchQuery;
+      if (!_controller.hasData) {
+        _controller.getExpenseData();
+      }
     });
   }
 
@@ -190,7 +193,13 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
       child: ListView.builder(
         controller: _scrollController,
         padding: const EdgeInsets.all(16),
-        itemCount: controller.expenses.length + (controller.hasMore ? 1 : 0),
+        itemCount:
+            controller.expenses.length +
+            (controller.hasMore &&
+                    controller.isLoading &&
+                    controller.searchQuery.isEmpty
+                ? 1
+                : 0),
         itemBuilder: (context, index) {
           if (index == controller.expenses.length) {
             return const Padding(

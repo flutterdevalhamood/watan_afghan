@@ -24,8 +24,11 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
   void initState() {
     super.initState();
     _controller = context.read<CustomerController>();
-    _controller.getCustomerData();
 
+    _searchController.text = _controller.searchQuery;
+    if (!_controller.hasData) {
+      _controller.getCustomerData();
+    }
     _scrollController.addListener(_onScroll);
   }
 

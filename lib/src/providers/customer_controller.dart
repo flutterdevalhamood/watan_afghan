@@ -21,6 +21,8 @@ class CustomerController with ChangeNotifier {
   List<Customer> _filteredCustomers = [];
   String _searchQuery = '';
 
+  bool get hasData => _allCustomers.isNotEmpty;
+
   // Registration form state variables
   int? selectedCompanyTypeId;
   int? selectedPaymentTypeId;
@@ -37,7 +39,6 @@ class CustomerController with ChangeNotifier {
   List<Customer> get customers => _filteredCustomers;
   String get searchQuery => _searchQuery;
   bool get isEmpty => _filteredCustomers.isEmpty && !isLoading;
-  bool get hasData => _filteredCustomers.isNotEmpty;
 
   List<Map<String, dynamic>>? _customerDetail;
   bool _isDetailLoading = false;
