@@ -59,6 +59,32 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
   );
   final TextEditingController invoiceNumberController = TextEditingController();
 
+  // Function to check if all previous products are filled
+  bool _areAllPreviousProductsFilled() {
+    for (int i = 0; i < salesItems.length; i++) {
+      if (salesItems[i].productId == null ||
+          salesItems[i].unitId == null ||
+          salesItems[i].quantity <= 0 ||
+          salesItems[i].price <= 0) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Function to get the first incomplete product index
+  int _getFirstIncompleteProductIndex() {
+    for (int i = 0; i < salesItems.length; i++) {
+      if (salesItems[i].productId == null ||
+          salesItems[i].unitId == null ||
+          salesItems[i].quantity <= 0 ||
+          salesItems[i].price <= 0) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<PurchaseController>(
@@ -276,60 +302,49 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                      ElevatedButton.icon(
-                                        onPressed: _addNewProduct,
-                                        icon: const Icon(Icons.add, size: 18),
-                                        label: const Text('Add Product'),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.teal,
-                                          foregroundColor: Colors.white,
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 8,
+                                      Column(
+                                        children: [
+                                          ElevatedButton.icon(
+                                            onPressed:
+                                                _areAllPreviousProductsFilled()
+                                                    ? _addNewProduct
+                                                    : null,
+                                            icon: const Icon(
+                                              Icons.add,
+                                              size: 18,
+                                            ),
+                                            label: const Text('Add Product'),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor:
+                                                  _areAllPreviousProductsFilled()
+                                                      ? Colors.teal
+                                                      : Colors.grey,
+                                              foregroundColor: Colors.white,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 8,
+                                                  ),
+                                            ),
                                           ),
-                                        ),
+                                          if (!_areAllPreviousProductsFilled())
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                top: 4,
+                                              ),
+                                              child: Text(
+                                                'Complete Product ${_getFirstIncompleteProductIndex() + 1} first',
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  color: Colors.red.shade600,
+                                                ),
+                                              ),
+                                            ),
+                                        ],
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 16),
-
-                                  // Products Table Header
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 8,
-                                    ),
-                                    color: Colors.teal.shade100,
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          flex: 1,
-                                          child: _buildTableHeaderCell(
-                                            'Product',
-                                          ),
-                                        ),
-                                        Expanded(
-                                          flex: 1,
-                                          child: _buildTableHeaderCell('UNIT'),
-                                        ),
-                                        Expanded(
-                                          flex: 1,
-                                          child: _buildTableHeaderCell('Qty'),
-                                        ),
-                                        Expanded(
-                                          flex: 1,
-                                          child: _buildTableHeaderCell('Price'),
-                                        ),
-                                        Expanded(
-                                          flex: 1,
-                                          child: _buildTableHeaderCell(
-                                            'Amount',
-                                          ),
-                                        ),
-                                        const SizedBox(width: 40),
-                                        // Space for delete button
-                                      ],
-                                    ),
-                                  ),
+                                  const SizedBox(height: 8),
 
                                   // Products Table Rows
                                   ListView.builder(
@@ -855,12 +870,25 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     );
   }
 
-  // Add new product function
+  // Modified add new product function with validation
   void _addNewProduct() {
-    setState(() {
-      salesItems.add(SalesItem());
-      _updateTotals();
-    });
+    if (_areAllPreviousProductsFilled()) {
+      setState(() {
+        salesItems.add(SalesItem());
+        _updateTotals();
+      });
+    } else {
+      // Show error message
+      final incompleteIndex = _getFirstIncompleteProductIndex();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Please complete all fields in Product ${incompleteIndex + 1} before adding a new product.',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   // Remove product function

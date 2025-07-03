@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:sample/src/providers/dashboard_controller.dart';
-import 'package:sample/src/util/app_routes.dart';
 import 'package:sample/src/util/currency_utils.dart';
 import 'package:sample/src/widgets/drawer_widget.dart';
 
@@ -14,35 +14,35 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  Future<bool> _onWillPop() async {
-    bool? shouldLogout = await showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Logout'),
-            content: const Text('Are you sure you want to logout?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text(
-                  'Logout',
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-            ],
-          ),
-    );
-
-    if (shouldLogout ?? false) {
-      Navigator.of(context).pushReplacementNamed(Screenroutes.login);
-      return true;
-    }
-    return false;
-  }
+  // Future<bool> _onWillPop() async {
+  //   bool? shouldLogout = await showDialog(
+  //     context: context,
+  //     builder:
+  //         (context) => AlertDialog(
+  //           title: const Text('Logout'),
+  //           content: const Text('Are you sure you want to logout?'),
+  //           actions: [
+  //             TextButton(
+  //               onPressed: () => Navigator.of(context).pop(false),
+  //               child: const Text('Cancel'),
+  //             ),
+  //             TextButton(
+  //               onPressed: () => Navigator.of(context).pop(true),
+  //               child: const Text(
+  //                 'Logout',
+  //                 style: TextStyle(color: Colors.red),
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //   );
+  //
+  //   if (shouldLogout ?? false) {
+  //     Navigator.of(context).pushReplacementNamed(Screenroutes.login);
+  //     return true;
+  //   }
+  //   return false;
+  // }
 
   final String accountName = "Y Account";
   final DateTime currentMonth = DateTime.now();
@@ -68,11 +68,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<DashboardController>(
-      builder: (context, dashboardController, child) {
-        return WillPopScope(
-          onWillPop: _onWillPop,
-          child: Scaffold(
+    return WillPopScope(
+      onWillPop: () async {
+        SystemNavigator.pop();
+        return false;
+      },
+      child: Consumer<DashboardController>(
+        builder: (context, dashboardController, child) {
+          return Scaffold(
             drawer: DrawerWidget(),
             backgroundColor: Colors.grey.shade100,
             appBar: AppBar(
@@ -187,9 +190,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ),
                     ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 

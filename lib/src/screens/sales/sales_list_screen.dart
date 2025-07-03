@@ -8,7 +8,7 @@ import 'package:sample/src/util/app_routes.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class SalesListScreen extends StatefulWidget {
-  const SalesListScreen({Key? key}) : super(key: key);
+  const SalesListScreen({super.key});
 
   @override
   State<SalesListScreen> createState() => _SalesListScreenState();
@@ -144,9 +144,11 @@ class _SalesListScreenState extends State<SalesListScreen> {
   }
 
   void _hidePdfViewer() {
-    setState(() {
-      _showPdfViewer = false;
-    });
+    if (_showPdfViewer) {
+      setState(() {
+        _showPdfViewer = false;
+      });
+    }
   }
 
   void _showErrorSnackBar(String message) {
@@ -216,13 +218,19 @@ class _SalesListScreenState extends State<SalesListScreen> {
   }
 
   Widget _buildPdfViewer() {
-    return SfPdfViewer.network(
-      _pdfUrl!,
-      canShowPaginationDialog: true,
-      onDocumentLoadFailed: (details) {
-        _showErrorSnackBar('Failed to load PDF: ${details.description}');
+    return WillPopScope(
+      onWillPop: () async {
         _hidePdfViewer();
+        return false;
       },
+      child: SfPdfViewer.network(
+        _pdfUrl!,
+        canShowPaginationDialog: true,
+        onDocumentLoadFailed: (details) {
+          _showErrorSnackBar('Failed to load PDF: ${details.description}');
+          _hidePdfViewer();
+        },
+      ),
     );
   }
 
