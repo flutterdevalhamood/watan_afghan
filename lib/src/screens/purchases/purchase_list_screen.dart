@@ -304,10 +304,9 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header Row
+              // First Row - Invoice Number with Icon
               Row(
                 children: [
-                  // Invoice Icon and Number
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
@@ -322,52 +321,45 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Invoice #${purchase.invoiceNumber}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          purchase.supplier?.name ?? 'Unknown Supplier',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      'Invoice #${purchase.invoiceNumber}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
-                  ),
-                  // Amount
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '${purchase.currency?.name ?? 'USD'} ${_formatAmount(purchase.totalAmount)}',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                      ),
-                      Text(
-                        _formatDate(purchase.purchaseDate),
-                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                      ),
-                    ],
                   ),
                 ],
               ),
 
               const SizedBox(height: 12),
 
-              // Footer Row
+              // Second Row - Currency and Amount
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${purchase.currency?.name ?? 'USD'} ${_formatAmount(purchase.totalAmount)}',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    _formatDate(purchase.purchaseDate),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              // Third Row - Supplier Info and Status/Actions
               Row(
                 children: [
                   // Supplier Info
@@ -390,7 +382,7 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
                     ),
                   ),
 
-                  // Status Badge (you can customize this based on your needs)
+                  // Status Badge
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
