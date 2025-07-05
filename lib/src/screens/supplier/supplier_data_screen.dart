@@ -15,6 +15,7 @@ class _SupplierDataScreenState extends State<SupplierDataScreen> {
 
   // Form controllers
   final _companyNameController = TextEditingController();
+  final _trnNumberController = TextEditingController();
   final _representativeController = TextEditingController();
   final _registrationDateController = TextEditingController();
   final _openingBalanceController = TextEditingController();
@@ -256,6 +257,7 @@ class _SupplierDataScreenState extends State<SupplierDataScreen> {
     try {
       final result = await controller.postSupplierRegistration(
         name: _companyNameController.text.trim(),
+        trnNumber: _trnNumberController.text.trim(),
         representative: _representativeController.text.trim(),
         companyTypeId: selectedCompanyTypeId,
         registrationDate: _registrationDateController.text,
@@ -288,8 +290,8 @@ class _SupplierDataScreenState extends State<SupplierDataScreen> {
         // Show specific message for duplicate name
         String errorMessage = result.message ?? 'Registration failed';
         if (result.isDuplicateName) {
-          errorMessage =
-              'A supplier with this name already exists. Please choose a different name.';
+          errorMessage = result.message ?? '';
+          // 'A supplier with this name already exists. Please choose a different name.';
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -381,6 +383,12 @@ class _SupplierDataScreenState extends State<SupplierDataScreen> {
                         _buildTextField(
                           controller: _companyNameController,
                           label: 'Company Name',
+                          isRequired: true,
+                        ),
+                        const SizedBox(height: 20),
+                        _buildTextField(
+                          controller: _trnNumberController,
+                          label: 'TRN Number',
                           isRequired: true,
                         ),
                         const SizedBox(height: 20),

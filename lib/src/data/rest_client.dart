@@ -201,6 +201,7 @@ abstract class RestClient {
   Future<dynamic> postSupplierRegistration({
     @Header("Authorization") String? token,
     @Field("Name") String? name,
+    @Field("TRNNumber") String? trnNumber,
     @Field("Representative") String? representative,
     @Field("company_type_id") int? companyTypeId,
     @Field("registrationDate") String? registrationDate,

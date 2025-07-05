@@ -713,6 +713,7 @@ class _RestClient implements RestClient {
   Future<dynamic> postSupplierRegistration({
     String? token,
     String? name,
+    String? trnNumber,
     String? representative,
     int? companyTypeId,
     String? registrationDate,
@@ -734,6 +735,7 @@ class _RestClient implements RestClient {
     _headers.removeWhere((k, v) => v == null);
     final _data = {
       'Name': name,
+      'TRNNumber': trnNumber,
       'Representative': representative,
       'company_type_id': companyTypeId,
       'registrationDate': registrationDate,

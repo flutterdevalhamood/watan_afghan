@@ -421,7 +421,7 @@ class SupplierAdvanceController with ChangeNotifier {
         files: supplierAdvanceImage,
       );
 
-      if (response is Map<String, dynamic>) {
+      if (response != null && response is Map<String, dynamic>) {
         if (response['IsSuccess'] == true) {
           getSupplierAdvance();
 

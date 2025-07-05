@@ -258,6 +258,7 @@ class SupplierController with ChangeNotifier {
 
   Future<SupplierRegistrationResult> postSupplierRegistration({
     String? name,
+    String? trnNumber,
     String? representative,
     int? companyTypeId,
     String? registrationDate,
@@ -283,6 +284,7 @@ class SupplierController with ChangeNotifier {
       final response = await restApi.postSupplierRegistration(
         token: _getAuthHeader(),
         name: name,
+        trnNumber: trnNumber,
         representative: representative,
         companyTypeId: companyTypeId,
         registrationDate: registrationDate,
@@ -311,9 +313,12 @@ class SupplierController with ChangeNotifier {
         bool isDuplicate =
             errorMessage.toLowerCase().contains('duplicate') ||
             errorMessage.toLowerCase().contains('already exists') ||
-            errorMessage.toLowerCase().contains('name already');
+            errorMessage.toLowerCase().contains('name already') ||
+            errorMessage.toLowerCase().contains('SUPPLIER AVAILABLE') ||
+            errorMessage.toLowerCase().contains(' SAME TRN NUMBER') ||
+            response['StatusCode'] == 401;
 
-        this.errorMessage = errorMessage;
+        // this.errorMessage = errorMessage;
 
         return SupplierRegistrationResult(
           success: false,
@@ -322,16 +327,20 @@ class SupplierController with ChangeNotifier {
         );
       } else {
         debugPrint("Unknown response format");
-        errorMessage = 'Unexpected response format';
+        // errorMessage = 'Unexpected response format';
         return SupplierRegistrationResult(
           success: false,
           message: 'Unexpected response format',
         );
       }
     } catch (e) {
-      final errorMsg = _getErrorMessage(e);
-      errorMessage = errorMsg;
-      return SupplierRegistrationResult(success: false, message: errorMsg);
+      _handleApiError(e);
+      // final errorMsg = _getErrorMessage(e);
+      // errorMessage = errorMsg;
+      return SupplierRegistrationResult(
+        success: false,
+        message: errorMessage ?? 'An error occurred',
+      );
     }
   }
 
