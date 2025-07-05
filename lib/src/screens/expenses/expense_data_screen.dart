@@ -57,6 +57,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
   double grandTotal = 0.0;
   double selectedVatRate = 0.05; // Default 5% VAT
 
+  bool _isSaving = false;
   // Controllers for manual entry
   final TextEditingController subtotalController = TextEditingController(
     text: '0.0',
@@ -631,10 +632,9 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
 
                           const SizedBox(width: 16),
 
-                          // Save Button
                           ElevatedButton.icon(
                             icon:
-                                controller.isLoading
+                                _isSaving
                                     ? const SizedBox(
                                       width: 16,
                                       height: 16,
@@ -647,9 +647,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                                       ),
                                     )
                                     : const Icon(Icons.check),
-                            label: Text(
-                              controller.isLoading ? 'Saving...' : 'Save',
-                            ),
+                            label: Text(_isSaving ? 'Saving...' : 'Save'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.teal,
                               foregroundColor: Colors.white,
@@ -659,7 +657,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                               ),
                             ),
                             onPressed:
-                                controller.isLoading
+                                _isSaving
                                     ? null
                                     : () => _saveExpense(controller),
                           ),
@@ -750,6 +748,11 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
 
   // Save expense method
   Future<void> _saveExpense(ExpenseController controller) async {
+    if (_isSaving) return;
+
+    setState(() {
+      _isSaving = true;
+    });
     if (_formKey.currentState!.validate()) {
       if (selectedSupplierId == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -861,6 +864,13 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
             backgroundColor: Colors.red,
           ),
         );
+      } finally {
+        // Re-enable the button after the operation completes
+        if (mounted) {
+          setState(() {
+            _isSaving = false;
+          });
+        }
       }
     }
   }

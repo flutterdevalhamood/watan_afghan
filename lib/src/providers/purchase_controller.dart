@@ -342,6 +342,7 @@ class PurchaseController with ChangeNotifier {
             // Case 1: ID is in the Data field (as object or direct value)
             if (response['Data'] is Map) {
               savedPurchaseId = response['Data']['id'];
+              getPurchaseData();
             } else if (response['Data'] is int) {
               savedPurchaseId = response['Data'];
             }

@@ -65,56 +65,50 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
       ),
       body: Consumer<PurchaseController>(
         builder: (context, controller, child) {
-          return RefreshIndicator(
-            onRefresh: controller.refresh,
-            child: CustomScrollView(
-              slivers: [
-                // Search Bar
-                SliverToBoxAdapter(
-                  child: Container(
-                    color: Colors.white,
-                    padding: const EdgeInsets.all(16),
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: controller.searchExpenses,
-                      decoration: InputDecoration(
-                        hintText: 'Search by invoice number...',
-                        prefixIcon: const Icon(
-                          Icons.search,
-                          color: Colors.grey,
-                        ),
-                        suffixIcon:
-                            controller.searchQuery.isNotEmpty
-                                ? IconButton(
-                                  icon: const Icon(
-                                    Icons.clear,
-                                    color: Colors.grey,
-                                  ),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    controller.clearSearch();
-                                  },
-                                )
-                                : null,
-                        filled: true,
-                        fillColor: Colors.grey[100],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                      ),
+          return Column(
+            children: [
+              // Search Bar - Fixed at top
+              Container(
+                color: Colors.white,
+                padding: const EdgeInsets.all(16),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: controller.searchExpenses,
+                  decoration: InputDecoration(
+                    hintText: 'Search by invoice number...',
+                    prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                    suffixIcon:
+                        controller.searchQuery.isNotEmpty
+                            ? IconButton(
+                              icon: const Icon(Icons.clear, color: Colors.grey),
+                              onPressed: () {
+                                _searchController.clear();
+                                controller.clearSearch();
+                              },
+                            )
+                            : null,
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
                     ),
                   ),
                 ),
+              ),
 
-                // Content
-                SliverFillRemaining(child: _buildContent(controller)),
-              ],
-            ),
+              // Content - Wrapped in Expanded with RefreshIndicator
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: controller.refresh,
+                  child: _buildContent(controller),
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -148,103 +142,39 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
   }
 
   Widget _buildErrorState(PurchaseController controller) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
-            const SizedBox(height: 16),
-            Text(
-              'Something went wrong',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[800],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              controller.errorMessage ?? 'Unknown error occurred',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () => controller.refresh(),
-              icon: const Icon(Icons.refresh),
-              label: const Text('Try Again'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
+    return ListView(
+      // Changed from Center to ListView for pull-to-refresh
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        SizedBox(
+          height: MediaQuery.of(context).size.height * 0.3,
+        ), // Add some top spacing
+        Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+              const SizedBox(height: 16),
+              Text(
+                'Something went wrong',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[800],
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLoadingState() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(),
-          SizedBox(height: 16),
-          Text(
-            'Loading purchases...',
-            style: TextStyle(fontSize: 16, color: Colors.grey),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(PurchaseController controller) {
-    final isSearching = controller.searchQuery.isNotEmpty;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              isSearching ? Icons.search_off : Icons.receipt_long,
-              size: 64,
-              color: Colors.grey[400],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              isSearching ? 'No matching purchases' : 'No purchases yet',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[700],
+              const SizedBox(height: 8),
+              Text(
+                controller.errorMessage ?? 'Unknown error occurred',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              isSearching
-                  ? 'Try adjusting your search terms'
-                  : 'Create your first purchase to get started',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-            ),
-            if (!isSearching) ...[
               const SizedBox(height: 24),
               ElevatedButton.icon(
-                onPressed: () {
-                  NavigationService().pushNavigation(
-                    Screenroutes.purchaseRegistration,
-                  );
-                },
-                icon: const Icon(Icons.add),
-                label: const Text('Add Purchase'),
+                onPressed: () => controller.refresh(),
+                icon: const Icon(Icons.refresh),
+                label: const Text('Try Again'),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,
@@ -253,9 +183,96 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
                 ),
               ),
             ],
-          ],
+          ),
         ),
-      ),
+      ],
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return ListView(
+      // Changed from Center to ListView for pull-to-refresh
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        SizedBox(
+          height: MediaQuery.of(context).size.height * 0.3,
+        ), // Add some top spacing
+        const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text(
+                'Loading purchases...',
+                style: TextStyle(fontSize: 16, color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState(PurchaseController controller) {
+    final isSearching = controller.searchQuery.isNotEmpty;
+
+    return ListView(
+      // Changed from Center to ListView for pull-to-refresh
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        SizedBox(
+          height: MediaQuery.of(context).size.height * 0.3,
+        ), // Add some top spacing
+        Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                isSearching ? Icons.search_off : Icons.receipt_long,
+                size: 64,
+                color: Colors.grey[400],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                isSearching ? 'No matching purchases' : 'No purchases yet',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[700],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                isSearching
+                    ? 'Try adjusting your search terms'
+                    : 'Create your first purchase to get started',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+              if (!isSearching) ...[
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    NavigationService().pushNavigation(
+                      Screenroutes.purchaseRegistration,
+                    );
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add Purchase'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 
