@@ -485,56 +485,6 @@ class _SalesScreenState extends State<SalesScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const SizedBox(height: 8),
-
-                                  // Products Table Header
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 8,
-                                    ),
-                                    color: Colors.teal.shade100,
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          flex: 1,
-                                          child: _buildTableHeaderCell(
-                                            'Product',
-                                          ),
-                                        ),
-                                        Expanded(
-                                          flex: 1,
-                                          child: _buildTableHeaderCell('UNIT'),
-                                        ),
-                                        Expanded(
-                                          flex: 1,
-                                          child: _buildTableHeaderCell(
-                                            'From Inv',
-                                          ),
-                                        ),
-                                        Expanded(
-                                          flex: 1,
-                                          child: _buildTableHeaderCell(
-                                            'Available',
-                                          ),
-                                        ),
-                                        Expanded(
-                                          flex: 1,
-                                          child: _buildTableHeaderCell('Qty'),
-                                        ),
-                                        Expanded(
-                                          flex: 1,
-                                          child: _buildTableHeaderCell('Price'),
-                                        ),
-                                        Expanded(
-                                          flex: 1,
-                                          child: _buildTableHeaderCell(
-                                            'Amount',
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-
                                   // Products Table Rows
                                   ListView.builder(
                                     shrinkWrap: true,

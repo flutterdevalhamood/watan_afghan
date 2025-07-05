@@ -621,7 +621,7 @@ class _SupplierAdvanceDataScreenState extends State<SupplierAdvanceDataScreen> {
                           TextFormField(
                             controller: _transferDateController,
                             decoration: InputDecoration(
-                              labelText: 'Transfer/Deposit Date *',
+                              labelText: 'Date *',
                               border: const OutlineInputBorder(),
                               suffixIcon: IconButton(
                                 icon: const Icon(Icons.calendar_today),

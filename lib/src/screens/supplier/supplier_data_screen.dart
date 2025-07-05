@@ -254,7 +254,7 @@ class _SupplierDataScreenState extends State<SupplierDataScreen> {
     final controller = Provider.of<SupplierController>(context, listen: false);
 
     try {
-      final success = await controller.postSupplierRegistration(
+      final result = await controller.postSupplierRegistration(
         name: _companyNameController.text.trim(),
         representative: _representativeController.text.trim(),
         companyTypeId: selectedCompanyTypeId,
@@ -272,7 +272,7 @@ class _SupplierDataScreenState extends State<SupplierDataScreen> {
         postCode: _postCodeController.text.trim(),
       );
 
-      if (success) {
+      if (result.success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Supplier registered successfully!'),
@@ -285,16 +285,39 @@ class _SupplierDataScreenState extends State<SupplierDataScreen> {
         );
         Navigator.pop(context);
       } else {
+        // Show specific message for duplicate name
+        String errorMessage = result.message ?? 'Registration failed';
+        if (result.isDuplicateName) {
+          errorMessage =
+              'A supplier with this name already exists. Please choose a different name.';
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(controller.errorMessage ?? 'Registration failed'),
-            backgroundColor: Colors.red.shade600,
+            content: Text(errorMessage),
+            backgroundColor:
+                result.isDuplicateName
+                    ? Colors.orange.shade600
+                    : Colors.red.shade600,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
             ),
+            duration: const Duration(
+              seconds: 4,
+            ), // Longer duration for duplicate name message
           ),
         );
+
+        // If it's a duplicate name, highlight the company name field
+        if (result.isDuplicateName) {
+          _companyNameController.selection = TextSelection(
+            baseOffset: 0,
+            extentOffset: _companyNameController.text.length,
+          );
+          // Focus on the company name field
+          FocusScope.of(context).requestFocus(FocusNode());
+        }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

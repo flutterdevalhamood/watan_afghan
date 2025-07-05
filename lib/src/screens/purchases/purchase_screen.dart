@@ -19,7 +19,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
   // Form values
   String? selectedSupplier;
   String? selectedCurrency;
-  String invoiceNumber = "ECFT-0087";
+  String? invoiceNumber;
   DateTime invoiceDate = DateTime.now();
 
   List<SalesItem> salesItems = [SalesItem()];
@@ -36,7 +36,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
   @override
   void initState() {
     super.initState();
-    invoiceNumberController.text = invoiceNumber;
+    invoiceNumberController.text = invoiceNumber ?? '';
     _updateTotals();
 
     // Load base data when screen initializes

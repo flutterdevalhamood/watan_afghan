@@ -454,7 +454,7 @@ class CustomerController with ChangeNotifier {
     }
   }
 
-  Future<bool> postCustomerRegistration({
+  Future<CustomerRegistrationResult> postCustomerRegistration({
     String? name,
     String? representative,
     int? companyTypeId,
@@ -470,7 +470,12 @@ class CustomerController with ChangeNotifier {
     int? regionId,
     String? postCode,
   }) async {
-    if (!await _checkToken()) return false;
+    if (!await _checkToken()) {
+      return CustomerRegistrationResult(
+        success: false,
+        message: 'Authentication failed',
+      );
+    }
 
     try {
       final response = await restApi.postCustomerRegistration(
@@ -492,27 +497,46 @@ class CustomerController with ChangeNotifier {
       );
 
       // Check response
-      if (response != null &&
-          response is Map<String, dynamic> &&
-          response['IsSuccess'] == true) {
-        debugPrint("Customer registration posted successfully!");
-        await getCustomerData();
-        return true;
-      } else if (response != null && response is Map<String, dynamic>) {
-        debugPrint(
-          "Registration failed: ${response['Message'] ?? 'Unknown error'}",
-        );
-        errorMessage =
-            response['Message'] as String? ??
-            'Failed to save customer registration';
+      if (response != null && response is Map<String, dynamic>) {
+        if (response['IsSuccess'] == true) {
+          debugPrint("Customer registration posted successfully!");
+          await getCustomerData();
+          return CustomerRegistrationResult(success: true);
+        } else {
+          final errorMessage =
+              response['Message'] as String? ?? 'Unknown error';
+          debugPrint("Registration failed: $errorMessage");
+
+          // Check if it's a duplicate name error
+          // Adjust this condition based on your API's actual response for duplicate names
+          bool isDuplicate =
+              errorMessage.toLowerCase().contains('duplicate') ||
+              errorMessage.toLowerCase().contains('already exists') ||
+              errorMessage.toLowerCase().contains('name already') ||
+              response['ErrorCode'] ==
+                  'DUPLICATE_NAME' || // if your API returns error codes
+              response['StatusCode'] ==
+                  409; // if your API returns 409 for conflicts
+
+          return CustomerRegistrationResult(
+            success: false,
+            message: errorMessage,
+            isDuplicateName: isDuplicate,
+          );
+        }
       } else {
         debugPrint("Unknown response format");
-        errorMessage = 'Unexpected response format';
+        return CustomerRegistrationResult(
+          success: false,
+          message: 'Unexpected response format',
+        );
       }
-      return false;
     } catch (e) {
       _handleApiError(e);
-      return false;
+      return CustomerRegistrationResult(
+        success: false,
+        message: errorMessage ?? 'An error occurred',
+      );
     }
   }
 
@@ -625,4 +649,16 @@ class CustomerController with ChangeNotifier {
     }
     return false;
   }
+}
+
+class CustomerRegistrationResult {
+  final bool success;
+  final String? message;
+  final bool isDuplicateName;
+
+  CustomerRegistrationResult({
+    required this.success,
+    this.message,
+    this.isDuplicateName = false,
+  });
 }

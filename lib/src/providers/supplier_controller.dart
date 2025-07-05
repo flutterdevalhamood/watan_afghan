@@ -256,7 +256,7 @@ class SupplierController with ChangeNotifier {
     }
   }
 
-  Future<bool> postSupplierRegistration({
+  Future<SupplierRegistrationResult> postSupplierRegistration({
     String? name,
     String? representative,
     int? companyTypeId,
@@ -272,7 +272,12 @@ class SupplierController with ChangeNotifier {
     int? regionId,
     String? postCode,
   }) async {
-    if (!await _checkToken()) return false;
+    if (!await _checkToken()) {
+      return SupplierRegistrationResult(
+        success: false,
+        message: 'Authentication failed',
+      );
+    }
 
     try {
       final response = await restApi.postSupplierRegistration(
@@ -297,20 +302,36 @@ class SupplierController with ChangeNotifier {
       if (response is Map<String, dynamic> && response['IsSuccess'] == true) {
         await getSupplierData();
         debugPrint("Supplier registration posted successfully!");
-        return true;
+        return SupplierRegistrationResult(success: true);
       } else if (response is Map<String, dynamic>) {
-        debugPrint(
-          "Supplier registration failed: ${response['Message'] ?? 'Unknown error'}",
+        final errorMessage = response['Message'] as String? ?? 'Unknown error';
+        debugPrint("Supplier registration failed: $errorMessage");
+
+        // Check for duplicate name error
+        bool isDuplicate =
+            errorMessage.toLowerCase().contains('duplicate') ||
+            errorMessage.toLowerCase().contains('already exists') ||
+            errorMessage.toLowerCase().contains('name already');
+
+        this.errorMessage = errorMessage;
+
+        return SupplierRegistrationResult(
+          success: false,
+          message: errorMessage,
+          isDuplicateName: isDuplicate,
         );
-        errorMessage =
-            response['Message'] ?? 'Failed to save supplier registration';
       } else {
         debugPrint("Unknown response format");
         errorMessage = 'Unexpected response format';
+        return SupplierRegistrationResult(
+          success: false,
+          message: 'Unexpected response format',
+        );
       }
-      return false;
     } catch (e) {
-      return _handleApiError(e);
+      final errorMsg = _getErrorMessage(e);
+      errorMessage = errorMsg;
+      return SupplierRegistrationResult(success: false, message: errorMsg);
     }
   }
 
@@ -418,4 +439,16 @@ class SupplierController with ChangeNotifier {
     }
     return false;
   }
+}
+
+class SupplierRegistrationResult {
+  final bool success;
+  final String? message;
+  final bool isDuplicateName;
+
+  SupplierRegistrationResult({
+    required this.success,
+    this.message,
+    this.isDuplicateName = false,
+  });
 }

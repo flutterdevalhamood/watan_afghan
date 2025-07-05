@@ -37,7 +37,69 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
 
   void _initializeData() {
     final controller = Provider.of<CustomerController>(context, listen: false);
+    controller.resetFormState();
     controller.getCustomerBaseData();
+  }
+
+  @override
+  void dispose() {
+    // Clear all controllers before disposing
+    _companyNameController.clear();
+    _representativeController.clear();
+    _registrationDateController.clear();
+    _openingBalanceController.clear();
+    _openingBalanceAsOfDateController.clear();
+    _mobileController.clear();
+    _phoneController.clear();
+    _emailController.clear();
+    _addressController.clear();
+    _postCodeController.clear();
+    _noteController.clear();
+
+    // Clear provider state
+    final controller = Provider.of<CustomerController>(context, listen: false);
+    controller.resetFormState();
+
+    // Dispose controllers
+    _companyNameController.dispose();
+    _representativeController.dispose();
+    _registrationDateController.dispose();
+    _openingBalanceController.dispose();
+    _openingBalanceAsOfDateController.dispose();
+    _mobileController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    _addressController.dispose();
+    _postCodeController.dispose();
+    _noteController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _clearAllFields() {
+    _companyNameController.clear();
+    _representativeController.clear();
+    _registrationDateController.clear();
+    _openingBalanceController.clear();
+    _openingBalanceAsOfDateController.clear();
+    _mobileController.clear();
+    _phoneController.clear();
+    _emailController.clear();
+    _addressController.clear();
+    _postCodeController.clear();
+    _noteController.clear();
+
+    // Reset form validation
+    _formKey.currentState?.reset();
+
+    // Clear company name error
+
+    // Clear provider state
+    final controller = Provider.of<CustomerController>(context, listen: false);
+    controller.resetFormState();
+
+    // Set default values again
+    _setDefaultDate();
   }
 
   void _setDefaultDate() {
@@ -78,6 +140,8 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
   }
 
   Future<void> _submitForm() async {
+    // Clear previous company name error
+
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -89,7 +153,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
     final controller = Provider.of<CustomerController>(context, listen: false);
 
     try {
-      final success = await controller.postCustomerRegistration(
+      final result = await controller.postCustomerRegistration(
         name: _companyNameController.text.trim(),
         representative: _representativeController.text.trim(),
         companyTypeId: controller.selectedCompanyTypeId,
@@ -107,7 +171,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
         postCode: _postCodeController.text.trim(),
       );
 
-      if (success) {
+      if (result.success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Customer registered successfully!'),
@@ -120,16 +184,38 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
         );
         Navigator.pop(context);
       } else {
+        String errorMessage = result.message ?? 'Registration failed';
+        if (result.isDuplicateName) {
+          errorMessage =
+              'A supplier with this name already exists. Please choose a different name.';
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(controller.errorMessage ?? 'Registration failed'),
-            backgroundColor: Colors.red.shade600,
+            content: Text(errorMessage),
+            backgroundColor:
+                result.isDuplicateName
+                    ? Colors.orange.shade600
+                    : Colors.red.shade600,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
             ),
+            duration: const Duration(
+              seconds: 4,
+            ), // Longer duration for duplicate name message
           ),
         );
+
+        // If it's a duplicate name, highlight the company name field
+        if (result.isDuplicateName) {
+          _companyNameController.selection = TextSelection(
+            baseOffset: 0,
+            extentOffset: _companyNameController.text.length,
+          );
+          // Focus on the company name field
+          FocusScope.of(context).requestFocus(FocusNode());
+        }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -195,7 +281,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
                             _buildTextField(
                               controller: _companyNameController,
                               label: 'Company Name',
-                              isRequired: true,
+                              isRequired: true, // Pass the custom error
                             ),
                             const SizedBox(height: 20),
                             _buildTextField(
@@ -415,7 +501,10 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
                             onPressed:
                                 _isLoading
                                     ? null
-                                    : () => Navigator.pop(context),
+                                    : () {
+                                      _clearAllFields();
+                                      Navigator.pop(context);
+                                    },
                             style: OutlinedButton.styleFrom(
                               foregroundColor: const Color(0xFF6B7280),
                               side: const BorderSide(color: Color(0xFFD1D5DB)),
@@ -542,6 +631,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
     TextInputType? keyboardType,
     int maxLines = 1,
     bool isMobile = false,
+    String? customError, // Add custom error parameter
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -782,22 +872,5 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
         ),
       ],
     );
-  }
-
-  @override
-  void dispose() {
-    _companyNameController.dispose();
-    _representativeController.dispose();
-    _registrationDateController.dispose();
-    _openingBalanceController.dispose();
-    _openingBalanceAsOfDateController.dispose();
-    _mobileController.dispose();
-    _phoneController.dispose();
-    _emailController.dispose();
-    _addressController.dispose();
-    _postCodeController.dispose();
-    _noteController.dispose();
-    _scrollController.dispose();
-    super.dispose();
   }
 }

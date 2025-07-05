@@ -741,22 +741,22 @@ class _CustomerDetailsSheetState extends State<CustomerDetailsSheet>
 
   // Helper Methods
   String _formatDate(String? dateStr) {
-    if (dateStr == null) return 'N/A';
+    if (dateStr == null || dateStr == "0000-00-00") return 'Not available';
     try {
       final date = DateTime.parse(dateStr);
       return '${date.day}/${date.month}/${date.year}';
     } catch (e) {
-      return dateStr;
+      return 'N/A';
     }
   }
 
   String _formatYear(String? dateStr) {
-    if (dateStr == null) return 'N/A';
+    if (dateStr == null || dateStr == "0000-00-00") return 'N/A';
     try {
       final date = DateTime.parse(dateStr);
       return date.year.toString();
     } catch (e) {
-      return dateStr;
+      return 'N/A';
     }
   }
 

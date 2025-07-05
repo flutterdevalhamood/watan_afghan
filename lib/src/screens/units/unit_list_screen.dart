@@ -244,15 +244,15 @@ class _UnitListScreenState extends State<UnitListScreen> {
                                                   ),
                                                 ),
                                                 SizedBox(width: 8),
-                                                IconButton(
-                                                  onPressed: () async {
-                                                    _deleteUnit(index);
-                                                  },
-                                                  icon: Icon(
-                                                    Icons.delete,
-                                                    color: Colors.red,
-                                                  ),
-                                                ),
+                                                // IconButton(
+                                                //   onPressed: () async {
+                                                //     _deleteUnit(index);
+                                                //   },
+                                                //   icon: Icon(
+                                                //     Icons.delete,
+                                                //     color: Colors.red,
+                                                //   ),
+                                                // ),
                                               ],
                                             ),
                                           ),
