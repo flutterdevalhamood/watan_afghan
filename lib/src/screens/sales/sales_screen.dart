@@ -46,7 +46,7 @@ class _SalesScreenState extends State<SalesScreen> {
   @override
   void initState() {
     super.initState();
-    invoiceNumberController.text = invoiceNumber;
+
     _clearFormData();
     _updateTotals();
 
@@ -54,7 +54,13 @@ class _SalesScreenState extends State<SalesScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final controller = Provider.of<SalesController>(context, listen: false);
       controller.clearSelections();
-      controller.getSalesBaseData();
+      controller.getSalesBaseData().then((_) {
+        if (controller.nextInvoiceNumber != null &&
+            controller.nextInvoiceNumber!.isNotEmpty) {
+          invoiceNumberController.text = controller.nextInvoiceNumber!;
+          invoiceNumber = controller.nextInvoiceNumber!;
+        }
+      });
     });
   }
 
@@ -232,11 +238,13 @@ class _SalesScreenState extends State<SalesScreen> {
                                   _buildLabeledField(
                                     'Invoice Number:',
                                     required: true,
+
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
                                         TextFormField(
+                                          enabled: false,
                                           controller: invoiceNumberController,
                                           focusNode: _invoiceNumberFocusNode,
                                           decoration: InputDecoration(

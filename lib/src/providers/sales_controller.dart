@@ -44,6 +44,7 @@ class SalesController with ChangeNotifier {
   List<Map<String, dynamic>>? currencyType;
   List<Map<String, dynamic>>? unitType;
   List<Map<String, dynamic>>? customer;
+  String? nextInvoiceNumber;
 
   int? selectedProductTypeId;
   int? selectedCurrencyTypeId;
@@ -111,6 +112,11 @@ class SalesController with ChangeNotifier {
 
   void setCustomer(int? customerId) {
     selectedCustomerId = customerId;
+    notifyListeners();
+  }
+
+  void setInvoiceNumber(String invoiceNumber) {
+    invoiceNumber = invoiceNumber;
     notifyListeners();
   }
 
@@ -318,6 +324,7 @@ class SalesController with ChangeNotifier {
         customer = List<Map<String, dynamic>>.from(
           salesBaseData['Data']['customers'],
         );
+        nextInvoiceNumber = salesBaseData['Data']['next_invoice_number'];
 
         debugPrint('Base data fetched successfully');
       } else {
