@@ -191,18 +191,20 @@ class _SalesListScreenState extends State<SalesListScreen> {
               ? _buildPdfViewer()
               : Consumer<SalesController>(
                 builder: (context, controller, child) {
-                  return RefreshIndicator(
-                    onRefresh: controller.refresh,
-                    color: Colors.indigo[600],
-                    child: CustomScrollView(
-                      slivers: [
-                        // Search Bar
-                        SliverToBoxAdapter(child: _buildSearchBar(controller)),
+                  return Column(
+                    children: [
+                      // Search Bar - Fixed at top
+                      _buildSearchBar(controller),
 
-                        // Main Content
-                        SliverFillRemaining(child: _buildContent(controller)),
-                      ],
-                    ),
+                      // Main Content with RefreshIndicator
+                      Expanded(
+                        child: RefreshIndicator(
+                          onRefresh: controller.refresh,
+                          color: Colors.indigo[600],
+                          child: _buildContent(controller),
+                        ),
+                      ),
+                    ],
                   );
                 },
               ),
