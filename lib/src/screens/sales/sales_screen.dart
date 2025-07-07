@@ -19,6 +19,9 @@ class SalesScreen extends StatefulWidget {
 class _SalesScreenState extends State<SalesScreen> {
   final _formKey = GlobalKey<FormState>();
 
+  List<TextEditingController> quantityControllers = [];
+  List<TextEditingController> priceControllers = [];
+
   // Form values
   String? selectedCustomer;
   String? selectedCurrency;
@@ -50,6 +53,8 @@ class _SalesScreenState extends State<SalesScreen> {
     _clearFormData();
     _updateTotals();
 
+    _initializeControllers();
+
     // Load base data when screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final controller = Provider.of<SalesController>(context, listen: false);
@@ -71,7 +76,100 @@ class _SalesScreenState extends State<SalesScreen> {
     invoiceNumberController.dispose();
     termsController.dispose();
     notesController.dispose();
+    for (var controller in quantityControllers) {
+      controller.dispose();
+    }
+    for (var controller in priceControllers) {
+      controller.dispose();
+    }
     super.dispose();
+  }
+
+  void _initializeControllers() {
+    quantityControllers.clear();
+    priceControllers.clear();
+
+    for (int i = 0; i < salesItems.length; i++) {
+      quantityControllers.add(
+        TextEditingController(text: salesItems[i].quantity.toString()),
+      );
+      priceControllers.add(
+        TextEditingController(text: salesItems[i].price.toString()),
+      );
+    }
+  }
+
+  void _addNewProduct() {
+    setState(() {
+      salesItems.add(SalesItem());
+      quantityControllers.add(TextEditingController(text: '0'));
+      priceControllers.add(TextEditingController(text: '0.0'));
+    });
+  }
+
+  void _removeProduct(int index) {
+    if (salesItems.length > 1) {
+      setState(() {
+        salesItems.removeAt(index);
+        quantityControllers[index].dispose();
+        priceControllers[index].dispose();
+        quantityControllers.removeAt(index);
+        priceControllers.removeAt(index);
+
+        // Remove from available quantities and loading state maps
+        availableQuantities.remove(index);
+        isLoadingQuantity.remove(index);
+
+        // Reindex the maps for items after the removed index
+        Map<int, double?> newAvailableQuantities = {};
+        Map<int, bool> newIsLoadingQuantity = {};
+
+        availableQuantities.forEach((key, value) {
+          if (key > index) {
+            newAvailableQuantities[key - 1] = value;
+          } else if (key < index) {
+            newAvailableQuantities[key] = value;
+          }
+        });
+
+        isLoadingQuantity.forEach((key, value) {
+          if (key > index) {
+            newIsLoadingQuantity[key - 1] = value;
+          } else if (key < index) {
+            newIsLoadingQuantity[key] = value;
+          }
+        });
+
+        availableQuantities = newAvailableQuantities;
+        isLoadingQuantity = newIsLoadingQuantity;
+
+        _updateTotals();
+      });
+    }
+  }
+
+  bool _areAllPreviousProductsFilled() {
+    for (int i = 0; i < salesItems.length; i++) {
+      if (salesItems[i].productId == null ||
+          salesItems[i].unitId == null ||
+          salesItems[i].quantity <= 0 ||
+          salesItems[i].price <= 0) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  int _getFirstIncompleteProductIndex() {
+    for (int i = 0; i < salesItems.length; i++) {
+      if (salesItems[i].productId == null ||
+          salesItems[i].unitId == null ||
+          salesItems[i].quantity <= 0 ||
+          salesItems[i].price <= 0) {
+        return i;
+      }
+    }
+    return -1;
   }
 
   // Controller for Terms and Customer Note
@@ -96,6 +194,15 @@ class _SalesScreenState extends State<SalesScreen> {
       availableQuantities.clear();
       isLoadingQuantity.clear();
     });
+
+    // Clear and reinitialize controllers
+    for (var controller in quantityControllers) {
+      controller.dispose();
+    }
+    for (var controller in priceControllers) {
+      controller.dispose();
+    }
+    _initializeControllers();
 
     // Clear text controllers
     invoiceNumberController.clear();
@@ -474,7 +581,6 @@ class _SalesScreenState extends State<SalesScreen> {
 
                             const SizedBox(height: 20),
 
-                            // Products Section
                             Container(
                               width: double.infinity,
                               padding: const EdgeInsets.all(16),
@@ -493,6 +599,62 @@ class _SalesScreenState extends State<SalesScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  // Products Section Header with Add Button
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text(
+                                        'Products',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      Column(
+                                        children: [
+                                          ElevatedButton.icon(
+                                            onPressed:
+                                                _areAllPreviousProductsFilled()
+                                                    ? _addNewProduct
+                                                    : null,
+                                            icon: const Icon(
+                                              Icons.add,
+                                              size: 18,
+                                            ),
+                                            label: const Text('Add Product'),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor:
+                                                  _areAllPreviousProductsFilled()
+                                                      ? Colors.teal
+                                                      : Colors.grey,
+                                              foregroundColor: Colors.white,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 8,
+                                                  ),
+                                            ),
+                                          ),
+                                          if (!_areAllPreviousProductsFilled())
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                top: 4,
+                                              ),
+                                              child: Text(
+                                                'Complete Product ${_getFirstIncompleteProductIndex() + 1} first',
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  color: Colors.red.shade600,
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+
                                   // Products Table Rows
                                   ListView.builder(
                                     shrinkWrap: true,
@@ -511,6 +673,36 @@ class _SalesScreenState extends State<SalesScreen> {
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: [
+                                              // Product row header with delete button
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Text(
+                                                    'Product ${index + 1}',
+                                                    style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 16,
+                                                    ),
+                                                  ),
+                                                  if (salesItems.length > 1)
+                                                    IconButton(
+                                                      onPressed:
+                                                          () => _removeProduct(
+                                                            index,
+                                                          ),
+                                                      icon: const Icon(
+                                                        Icons.delete,
+                                                        color: Colors.red,
+                                                      ),
+                                                      tooltip: 'Remove Product',
+                                                    ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 8),
+
                                               // Product Dropdown
                                               _buildLabeledField(
                                                 'Product:',
@@ -574,6 +766,13 @@ class _SalesScreenState extends State<SalesScreen> {
                                                           );
                                                     }
                                                   },
+                                                  validator: (value) {
+                                                    if (value == null ||
+                                                        value.isEmpty) {
+                                                      return 'Please select a product';
+                                                    }
+                                                    return null;
+                                                  },
                                                 ),
                                               ),
 
@@ -628,6 +827,13 @@ class _SalesScreenState extends State<SalesScreen> {
                                                       });
                                                     }
                                                   },
+                                                  validator: (value) {
+                                                    if (value == null ||
+                                                        value.isEmpty) {
+                                                      return 'Please select a unit';
+                                                    }
+                                                    return null;
+                                                  },
                                                 ),
                                               ),
 
@@ -647,7 +853,7 @@ class _SalesScreenState extends State<SalesScreen> {
                                                   items:
                                                       controller
                                                               .isLoadingInvoices
-                                                          ? [] // Empty items while loading
+                                                          ? []
                                                           : controller
                                                                   .invoicesOfProductData
                                                                   ?.map(
@@ -658,10 +864,10 @@ class _SalesScreenState extends State<SalesScreen> {
                                                                     >(
                                                                       value:
                                                                           item['id']
-                                                                              .toString(), // Use the index as ID
+                                                                              .toString(),
                                                                       child: Text(
                                                                         item['invoice_number'] ??
-                                                                            'Unknown', // Display the invoice number
+                                                                            'Unknown',
                                                                       ),
                                                                     ),
                                                                   )
@@ -676,7 +882,6 @@ class _SalesScreenState extends State<SalesScreen> {
                                                           ? null
                                                           : (value) async {
                                                             if (value != null) {
-                                                              // Find the invoice number from the data first
                                                               String?
                                                               invoiceNumber;
                                                               if (controller
@@ -705,7 +910,6 @@ class _SalesScreenState extends State<SalesScreen> {
                                                                     'Unknown';
                                                               });
 
-                                                              // Get available quantity using the actual invoice number
                                                               if (invoiceNumber !=
                                                                       null &&
                                                                   invoiceNumber
@@ -839,10 +1043,8 @@ class _SalesScreenState extends State<SalesScreen> {
                                                       'Quantity:',
                                                       required: true,
                                                       child: TextFormField(
-                                                        initialValue:
-                                                            salesItems[index]
-                                                                .quantity
-                                                                .toString(),
+                                                        controller:
+                                                            quantityControllers[index],
                                                         keyboardType:
                                                             TextInputType
                                                                 .number,
@@ -905,13 +1107,28 @@ class _SalesScreenState extends State<SalesScreen> {
                                                       'Price:',
                                                       required: true,
                                                       child: TextFormField(
-                                                        initialValue:
-                                                            salesItems[index]
-                                                                .price
-                                                                .toString(),
+                                                        controller:
+                                                            priceControllers[index],
                                                         keyboardType:
                                                             TextInputType
                                                                 .number,
+                                                        validator: (value) {
+                                                          if (value == null ||
+                                                              value.isEmpty) {
+                                                            return 'Required';
+                                                          }
+                                                          if (double.tryParse(
+                                                                    value,
+                                                                  ) ==
+                                                                  null ||
+                                                              double.parse(
+                                                                    value,
+                                                                  ) <
+                                                                  0) {
+                                                            return 'Invalid price';
+                                                          }
+                                                          return null;
+                                                        },
                                                         onChanged: (value) {
                                                           setState(() {
                                                             salesItems[index]
