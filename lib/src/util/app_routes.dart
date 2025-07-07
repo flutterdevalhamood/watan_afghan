@@ -41,7 +41,7 @@ import 'package:sample/src/screens/units/unit_registration_screen.dart';
 import 'package:sample/src/screens/units/unit_update_screen.dart';
 
 import '../constants/string_constants.dart';
-import '../screens/dashboard_screen.dart';
+import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/login_screen.dart';
 
 class Screenroutes {
@@ -56,6 +56,8 @@ class Screenroutes {
   static const String changePassword = "changePassword";
   static const String userUpdateScreen = "userUpdateScreen";
   static const String profileUpdateScreen = "profileUpdateScreen";
+
+  static const String bankDetailsScreen = "bankDetailsScreen";
 
   //investortransaction
   static const String investorTransactionScreen = "investorTransactionScreen";
@@ -148,6 +150,17 @@ class Screenroutes {
             return DashboardScreen();
           },
         );
+
+      // case Screenroutes.bankDetailsScreen:
+      //   final data = settings.arguments as Map<String, dynamic>?;
+      //   return MaterialPageRoute(
+      //     settings: const RouteSettings(name: Screenroutes.bankDetailsScreen),
+      //     builder: (BuildContext context) {
+      //       return BankDetailsScreen(
+      //
+      //       );
+      //     },
+      //   );
 
       case Screenroutes.expenseScreen:
         return MaterialPageRoute(

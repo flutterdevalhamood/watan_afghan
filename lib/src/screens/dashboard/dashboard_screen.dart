@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:sample/src/providers/dashboard_controller.dart';
+import 'package:sample/src/screens/dashboard/bank_details_screen.dart';
 import 'package:sample/src/util/currency_utils.dart';
+import 'package:sample/src/util/snack.dart';
 import 'package:sample/src/widgets/drawer_widget.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -203,18 +205,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
         "data": controller.cashOnHand,
         "icon": Icons.payments_outlined,
         "color": Colors.green,
+        "isClickable": false, // Cash on hand is not clickable
       },
       {
         "title": "Amount in Bank",
         "data": controller.amountInBank,
         "icon": Icons.account_balance_outlined,
         "color": Colors.blue,
+        "isClickable": true, // Bank amounts are clickable
       },
       {
         "title": "Investor Payable",
         "data": controller.investorPayable,
         "icon": Icons.person_outline,
         "color": Colors.orange,
+        "isClickable": false, // Investor payable is not clickable
       },
     ];
 
@@ -269,13 +274,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Text(
-                          section["title"] as String,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                        Expanded(
+                          child: Text(
+                            section["title"] as String,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
+                        // Add clickable indicator for bank section
+                        if (section["isClickable"] == true)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.blue.shade200),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.touch_app,
+                                  size: 14,
+                                  color: Colors.blue.shade600,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Tap for details',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.blue.shade600,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -316,6 +355,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ...currencyBalances.map((balance) {
                     final bool isNegative = balance.amount < 0;
                     final double absAmount = balance.amount.abs();
+                    final bool isClickable = section["isClickable"] == true;
 
                     return Container(
                       decoration: BoxDecoration(
@@ -326,38 +366,67 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         ),
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: balance.color.withOpacity(0.1),
-                            child: Text(
-                              balance.flag,
-                              style: const TextStyle(fontSize: 18),
-                            ),
-                          ),
-                          title: Text(
-                            balance.currency,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w500,
-                              fontSize: 16,
-                            ),
-                          ),
-                          subtitle: Text(
-                            balance.code,
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 12,
-                            ),
-                          ),
-                          trailing: Text(
-                            isNegative
-                                ? "-${formatCurrency(absAmount, balance.code)}"
-                                : formatCurrency(balance.amount, balance.code),
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                              color: isNegative ? Colors.red : null,
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap:
+                              isClickable
+                                  ? () => _navigateToBankDetails(
+                                    balance.code,
+                                    balance.amount,
+                                    controller,
+                                  )
+                                  : null,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: balance.color.withOpacity(0.1),
+                                child: Text(
+                                  balance.flag,
+                                  style: const TextStyle(fontSize: 18),
+                                ),
+                              ),
+                              title: Text(
+                                balance.currency,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              subtitle: Text(
+                                balance.code,
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    isNegative
+                                        ? "-${formatCurrency(absAmount, balance.code)}"
+                                        : formatCurrency(
+                                          balance.amount,
+                                          balance.code,
+                                        ),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 16,
+                                      color: isNegative ? Colors.red : null,
+                                    ),
+                                  ),
+                                  if (isClickable) ...[
+                                    const SizedBox(width: 8),
+                                    Icon(
+                                      Icons.chevron_right,
+                                      color: Colors.grey.shade400,
+                                      size: 20,
+                                    ),
+                                  ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -369,6 +438,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
             );
           }).toList(),
     );
+  }
+
+  void _navigateToBankDetails(
+    String currency,
+    double amount,
+    DashboardController controller,
+  ) {
+    if (controller.allBankAccounts != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder:
+              (context) => BankDetailsScreen(
+                currency: currency,
+                amount: amount,
+                bankAccounts: controller.allBankAccounts!,
+              ),
+        ),
+      );
+    } else {
+      showErrorSnack('Bank account data not available');
+    }
   }
 
   Widget _buildExpandableSection({

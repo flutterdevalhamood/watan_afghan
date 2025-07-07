@@ -11,6 +11,7 @@ class DashboardController with ChangeNotifier {
   Map<String, dynamic>? cashOnHand;
   Map<String, dynamic>? amountInBank;
   Map<String, dynamic>? investorPayable;
+  List<Map<String, dynamic>>? allBankAccounts;
 
   Future<bool> _checkToken() async {
     final token = AuthRepo.token;
@@ -59,6 +60,9 @@ class DashboardController with ChangeNotifier {
         );
         investorPayable = Map<String, dynamic>.from(
           adminDashboardData['Data']['investor_payable'],
+        );
+        allBankAccounts = List<Map<String, dynamic>>.from(
+          adminDashboardData['Data']['all_bank_accounts'],
         );
 
         debugPrint('Base data fetched successfully');

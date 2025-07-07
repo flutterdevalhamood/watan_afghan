@@ -16,6 +16,31 @@ class PurchaseScreen extends StatefulWidget {
 class _PurchaseScreenState extends State<PurchaseScreen> {
   final _formKey = GlobalKey<FormState>();
 
+  List<TextEditingController> quantityControllers = [];
+  List<TextEditingController> priceControllers = [];
+
+  void _initializeControllers() {
+    for (var controller in quantityControllers) {
+      controller.dispose();
+    }
+    for (var controller in priceControllers) {
+      controller.dispose();
+    }
+
+    quantityControllers.clear();
+    priceControllers.clear();
+
+    // Create new controllers for each item
+    for (int i = 0; i < salesItems.length; i++) {
+      quantityControllers.add(
+        TextEditingController(text: salesItems[i].quantity.toString()),
+      );
+      priceControllers.add(
+        TextEditingController(text: salesItems[i].price.toString()),
+      );
+    }
+  }
+
   // Form values
   String? selectedSupplier;
   String? selectedCurrency;
@@ -37,6 +62,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
   void initState() {
     super.initState();
     invoiceNumberController.text = invoiceNumber ?? '';
+    _initializeControllers();
     _updateTotals();
 
     // Load base data when screen initializes
@@ -48,6 +74,20 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
       controller.clearSelections();
       controller.getPurchaseBaseData();
     });
+  }
+
+  @override
+  void dispose() {
+    for (var controller in quantityControllers) {
+      controller.dispose();
+    }
+    for (var controller in priceControllers) {
+      controller.dispose();
+    }
+    termsController.dispose();
+    notesController.dispose();
+    invoiceNumberController.dispose();
+    super.dispose();
   }
 
   // Controller for Terms and Customer Note
@@ -526,10 +566,8 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                                                       'Quantity:',
                                                       required: true,
                                                       child: TextFormField(
-                                                        initialValue:
-                                                            salesItems[index]
-                                                                .quantity
-                                                                .toString(),
+                                                        controller:
+                                                            quantityControllers[index],
                                                         keyboardType:
                                                             TextInputType
                                                                 .number,
@@ -570,16 +608,13 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
 
                                                   const SizedBox(width: 16),
 
-                                                  // Price TextField
                                                   Expanded(
                                                     child: _buildLabeledField(
                                                       'Price:',
                                                       required: true,
                                                       child: TextFormField(
-                                                        initialValue:
-                                                            salesItems[index]
-                                                                .price
-                                                                .toString(),
+                                                        controller:
+                                                            priceControllers[index],
                                                         keyboardType:
                                                             TextInputType
                                                                 .number,
@@ -875,7 +910,8 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     if (_areAllPreviousProductsFilled()) {
       setState(() {
         salesItems.add(SalesItem());
-        _updateTotals();
+        _initializeControllers();
+        // _updateTotals();
       });
     } else {
       // Show error message
@@ -896,6 +932,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     if (salesItems.length > 1) {
       setState(() {
         salesItems.removeAt(index);
+        _initializeControllers();
         _updateTotals();
       });
     }
