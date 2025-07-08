@@ -15,6 +15,8 @@ class PurchaseScreen extends StatefulWidget {
 
 class _PurchaseScreenState extends State<PurchaseScreen> {
   final _formKey = GlobalKey<FormState>();
+  final ScrollController _scrollController = ScrollController(); // Add this
+  final List<GlobalKey> _productKeys = [];
 
   List<TextEditingController> quantityControllers = [];
   List<TextEditingController> priceControllers = [];
@@ -61,6 +63,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
   @override
   void initState() {
     super.initState();
+    _productKeys.add(GlobalKey());
     invoiceNumberController.text = invoiceNumber ?? '';
     _initializeControllers();
     _updateTotals();
@@ -78,6 +81,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
 
   @override
   void dispose() {
+    _scrollController.dispose();
     for (var controller in quantityControllers) {
       controller.dispose();
     }
@@ -142,6 +146,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: SingleChildScrollView(
+                        controller: _scrollController,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -394,6 +399,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                                     itemCount: salesItems.length,
                                     itemBuilder: (context, index) {
                                       return Card(
+                                        key: _productKeys[index],
                                         margin: const EdgeInsets.symmetric(
                                           vertical: 8,
                                         ),
@@ -905,34 +911,82 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     );
   }
 
-  // Modified add new product function with validation
   void _addNewProduct() {
-    if (_areAllPreviousProductsFilled()) {
-      setState(() {
-        salesItems.add(SalesItem());
-        _initializeControllers();
-        // _updateTotals();
-      });
-    } else {
-      // Show error message
-      final incompleteIndex = _getFirstIncompleteProductIndex();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Please complete all fields in Product ${incompleteIndex + 1} before adding a new product.',
-          ),
-          backgroundColor: Colors.red,
-        ),
-      );
+    setState(() {
+      salesItems.add(SalesItem());
+      quantityControllers.add(TextEditingController());
+      priceControllers.add(TextEditingController());
+      _productKeys.add(GlobalKey()); // Add key for new product
+    });
+
+    // Auto-scroll to the new product after a short delay
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToNewProduct();
+    });
+  }
+
+  void _scrollToNewProduct() {
+    if (_productKeys.isNotEmpty) {
+      final RenderBox? renderBox =
+          _productKeys.last.currentContext?.findRenderObject() as RenderBox?;
+      if (renderBox != null) {
+        final position = renderBox.localToGlobal(Offset.zero);
+        final scrollOffset =
+            _scrollController.offset +
+            position.dy -
+            100; // 100px padding from top
+
+        _scrollController.animateTo(
+          scrollOffset,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
     }
   }
 
-  // Remove product function
+  // Modified add new product function with validation
+  // void _addNewProduct() {
+  //   if (_areAllPreviousProductsFilled()) {
+  //     setState(() {
+  //       salesItems.add(SalesItem());
+  //       _initializeControllers();
+  //       // _updateTotals();
+  //     });
+  //   } else {
+  //     // Show error message
+  //     final incompleteIndex = _getFirstIncompleteProductIndex();
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text(
+  //           'Please complete all fields in Product ${incompleteIndex + 1} before adding a new product.',
+  //         ),
+  //         backgroundColor: Colors.red,
+  //       ),
+  //     );
+  //   }
+  // }
+
+  // // Remove product function
+  // void _removeProduct(int index) {
+  //   if (salesItems.length > 1) {
+  //     setState(() {
+  //       salesItems.removeAt(index);
+  //       _initializeControllers();
+  //       _updateTotals();
+  //     });
+  //   }
+  // }
+
   void _removeProduct(int index) {
     if (salesItems.length > 1) {
       setState(() {
         salesItems.removeAt(index);
-        _initializeControllers();
+        quantityControllers[index].dispose();
+        priceControllers[index].dispose();
+        quantityControllers.removeAt(index);
+        priceControllers.removeAt(index);
+        _productKeys.removeAt(index); // Remove corresponding key
         _updateTotals();
       });
     }

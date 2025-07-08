@@ -80,6 +80,9 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     text: '0.0',
   );
 
+  final TextEditingController _accountNumberController =
+      TextEditingController();
+
   // Stamp and signature
   String? needStamp = 'No';
   final List<String> stampOptions = ['Yes', 'No'];
@@ -94,12 +97,19 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
   @override
   void initState() {
     super.initState();
+    _accountNumberController.text = accountNumber;
     // Load base data when screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadBaseData();
     });
     // Initialize calculations
     _updateTotals();
+  }
+
+  @override
+  void dispose() {
+    _accountNumberController.dispose();
+    super.dispose();
   }
 
   Future<void> _captureImageFromCamera() async {
@@ -337,38 +347,6 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Products Table Header
-                            Container(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              color: Colors.teal.shade100,
-                              child: const Row(
-                                children: [
-                                  Expanded(
-                                    flex: 2,
-                                    child: Text(
-                                      'Category *',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ),
-                                  Expanded(
-                                    flex: 1,
-                                    child: Text(
-                                      'Amount *',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
                             // Products Table Rows
                             ListView.builder(
                               shrinkWrap: true,
@@ -977,83 +955,6 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
     }
   }
 
-  // Future<void> _uploadDocuments() async {
-  //   if (_selectedFile == null && _cameraImage == null) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(
-  //         content: Text('Please select a file or capture an image to upload'),
-  //         backgroundColor: Colors.red,
-  //       ),
-  //     );
-  //     return;
-  //   }
-  //
-  //   if (_savedExpenseId == null) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(
-  //         content: Text('No expense ID found for document upload'),
-  //         backgroundColor: Colors.red,
-  //       ),
-  //     );
-  //     return;
-  //   }
-  //
-  //   final controller = Provider.of<ExpenseController>(context, listen: false);
-  //
-  //   try {
-  //     MultipartFile multipartFile;
-  //
-  //     if (_cameraImage != null) {
-  //       // Handle camera image
-  //       final file = _cameraImage!;
-  //       final fileName = 'expense_${DateTime.now().millisecondsSinceEpoch}.jpg';
-  //       final fileStream = file.openRead();
-  //       final length = await file.length();
-  //
-  //       multipartFile = MultipartFile(fileStream, length, filename: fileName);
-  //     } else {
-  //       // Handle picked file
-  //       final file = File(_selectedFile!.path!);
-  //       final fileName = _selectedFile!.name;
-  //       final fileStream = file.openRead();
-  //       final length = await file.length();
-  //
-  //       multipartFile = MultipartFile(fileStream, length, filename: fileName);
-  //     }
-  //
-  //     bool success = await controller.postExpenseDocumentUpload(
-  //       id: _savedExpenseId,
-  //       files: [multipartFile],
-  //     );
-  //
-  //     if (success) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         const SnackBar(
-  //           content: Text('Documents uploaded successfully!'),
-  //           backgroundColor: Colors.green,
-  //         ),
-  //       );
-  //       Navigator.pop(context);
-  //     } else {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         SnackBar(
-  //           content: Text(
-  //             'Failed to upload documents: ${controller.errorMessage ?? 'Unknown error'}',
-  //           ),
-  //           backgroundColor: Colors.red,
-  //         ),
-  //       );
-  //     }
-  //   } catch (e) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(
-  //         content: Text('Error uploading documents: $e'),
-  //         backgroundColor: Colors.red,
-  //       ),
-  //     );
-  //   }
-  // }
-
   Widget _buildFileUploadSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1144,9 +1045,33 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
             label: 'Bank Type',
             isRequired: true,
             onChanged: (value) {
+              debugPrint('Bank selected: $value');
               controller.setBankType(value);
               setState(() {
                 selectedBankId = value;
+                // Autofill account number when bank is selected
+                if (value != null && controller.banks != null) {
+                  debugPrint('Available banks: ${controller.banks}');
+                  final selectedBank = controller.banks!.firstWhere(
+                    (bank) => bank['id'] == value,
+                    orElse: () => <String, dynamic>{},
+                  );
+                  debugPrint('Selected bank: $selectedBank');
+                  if (selectedBank.isNotEmpty &&
+                      selectedBank['account_number'] != null) {
+                    accountNumber = selectedBank['account_number'].toString();
+                    _accountNumberController.text = accountNumber;
+                    debugPrint('Account number set to: $accountNumber');
+                  } else {
+                    accountNumber = '';
+                    _accountNumberController.text = '';
+                    debugPrint('No account number found for selected bank');
+                  }
+                } else {
+                  accountNumber = '';
+                  _accountNumberController.text = '';
+                  debugPrint('No bank selected or banks not loaded');
+                }
               });
             },
           ),
@@ -1160,7 +1085,8 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
             'Account Number:',
             required: true,
             child: TextFormField(
-              initialValue: accountNumber,
+              readOnly: true,
+              controller: _accountNumberController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 hintText: 'Enter Account Number',
