@@ -18,6 +18,8 @@ class SalesScreen extends StatefulWidget {
 
 class _SalesScreenState extends State<SalesScreen> {
   final _formKey = GlobalKey<FormState>();
+  final ScrollController _scrollController = ScrollController(); // Add this
+  final List<GlobalKey> _productKeys = [];
 
   List<TextEditingController> quantityControllers = [];
   List<TextEditingController> priceControllers = [];
@@ -49,7 +51,7 @@ class _SalesScreenState extends State<SalesScreen> {
   @override
   void initState() {
     super.initState();
-
+    _productKeys.add(GlobalKey());
     _clearFormData();
     _updateTotals();
 
@@ -104,7 +106,31 @@ class _SalesScreenState extends State<SalesScreen> {
       salesItems.add(SalesItem());
       quantityControllers.add(TextEditingController(text: '0'));
       priceControllers.add(TextEditingController(text: '0.0'));
+      _productKeys.add(GlobalKey());
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToNewProduct();
+    });
+  }
+
+  void _scrollToNewProduct() {
+    if (_productKeys.isNotEmpty) {
+      final RenderBox? renderBox =
+          _productKeys.last.currentContext?.findRenderObject() as RenderBox?;
+      if (renderBox != null) {
+        final position = renderBox.localToGlobal(Offset.zero);
+        final scrollOffset =
+            _scrollController.offset +
+            position.dy -
+            100; // 100px padding from top
+
+        _scrollController.animateTo(
+          scrollOffset,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
+    }
   }
 
   void _removeProduct(int index) {
@@ -115,7 +141,7 @@ class _SalesScreenState extends State<SalesScreen> {
         priceControllers[index].dispose();
         quantityControllers.removeAt(index);
         priceControllers.removeAt(index);
-
+        _productKeys.removeAt(index);
         // Remove from available quantities and loading state maps
         availableQuantities.remove(index);
         isLoadingQuantity.remove(index);
@@ -274,6 +300,7 @@ class _SalesScreenState extends State<SalesScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: SingleChildScrollView(
+                        controller: _scrollController,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -663,6 +690,7 @@ class _SalesScreenState extends State<SalesScreen> {
                                     itemCount: salesItems.length,
                                     itemBuilder: (context, index) {
                                       return Card(
+                                        key: _productKeys[index],
                                         margin: const EdgeInsets.symmetric(
                                           vertical: 8,
                                         ),
