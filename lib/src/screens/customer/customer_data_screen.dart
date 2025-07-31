@@ -26,6 +26,27 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
   final _postCodeController = TextEditingController();
   final _noteController = TextEditingController();
 
+  // Global keys for form fields to track their positions
+  final Map<String, GlobalKey> _fieldKeys = {
+    'companyName': GlobalKey(),
+    'representative': GlobalKey(),
+    'companyType': GlobalKey(),
+    'registrationDate': GlobalKey(),
+    'paymentType': GlobalKey(),
+    'openingBalance': GlobalKey(),
+    'openingBalanceDate': GlobalKey(),
+    'mobile': GlobalKey(),
+    'phone': GlobalKey(),
+    'email': GlobalKey(),
+    'address': GlobalKey(),
+    'country': GlobalKey(),
+    'postCode': GlobalKey(),
+    'state': GlobalKey(),
+    'city': GlobalKey(),
+    'region': GlobalKey(),
+    'note': GlobalKey(),
+  };
+
   bool _isLoading = false;
 
   @override
@@ -139,10 +160,103 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
     }
   }
 
+  // Method to scroll to the first validation error
+  Future<void> _scrollToFirstError() async {
+    await Future.delayed(
+      const Duration(milliseconds: 100),
+    ); // Wait for validation to complete
+
+    final controller = Provider.of<CustomerController>(context, listen: false);
+
+    // List of field validation checks in order of appearance
+    final validationChecks = [
+      {
+        'key': 'companyName',
+        'check': () => _companyNameController.text.trim().isEmpty,
+      },
+      {
+        'key': 'representative',
+        'check': () => _representativeController.text.trim().isEmpty,
+      },
+      {
+        'key': 'companyType',
+        'check': () => controller.selectedCompanyTypeId == null,
+      },
+      {
+        'key': 'registrationDate',
+        'check': () => _registrationDateController.text.trim().isEmpty,
+      },
+      {
+        'key': 'paymentType',
+        'check': () => controller.selectedPaymentTypeId == null,
+      },
+      {
+        'key': 'openingBalance',
+        'check': () => _openingBalanceController.text.trim().isEmpty,
+      },
+      {
+        'key': 'openingBalanceDate',
+        'check': () => _openingBalanceAsOfDateController.text.trim().isEmpty,
+      },
+      {'key': 'mobile', 'check': () => _mobileController.text.trim().isEmpty},
+      {'key': 'region', 'check': () => controller.selectedRegionId == null},
+    ];
+
+    // Find the first field with validation error
+    for (final validation in validationChecks) {
+      final checkFunction = validation['check'] as bool Function()?;
+      if (checkFunction != null && checkFunction()) {
+        final fieldKey = _fieldKeys[validation['key']];
+        if (fieldKey?.currentContext != null) {
+          await _scrollToWidget(fieldKey!);
+          break;
+        }
+      }
+    }
+  }
+
+  // Method to scroll to a specific widget
+  Future<void> _scrollToWidget(GlobalKey key) async {
+    final context = key.currentContext;
+    if (context != null) {
+      final RenderBox renderBox = context.findRenderObject() as RenderBox;
+      final position = renderBox.localToGlobal(Offset.zero);
+
+      // Calculate the scroll offset needed
+      final scrollOffset =
+          _scrollController.offset +
+          position.dy -
+          100; // 100px padding from top
+
+      // Animate to the error field
+      await _scrollController.animateTo(
+        scrollOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+
+      // Add a subtle shake animation to highlight the error field
+      _shakeWidget(key);
+    }
+  }
+
+  // Method to add a shake animation to highlight the error field
+  void _shakeWidget(GlobalKey key) {
+    final context = key.currentContext;
+    if (context != null) {
+      // You can add a shake animation here if needed
+      // For now, we'll just focus on the field if possible
+      final focusNode = FocusScope.of(context);
+      focusNode.requestFocus();
+    }
+  }
+
   Future<void> _submitForm() async {
     // Clear previous company name error
 
     if (!_formKey.currentState!.validate()) {
+      // Scroll to the first validation error
+      await _scrollToFirstError();
       return;
     }
 
@@ -207,8 +321,9 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
           ),
         );
 
-        // If it's a duplicate name, highlight the company name field
+        // If it's a duplicate name, scroll to and highlight the company name field
         if (result.isDuplicateName) {
+          await _scrollToWidget(_fieldKeys['companyName']!);
           _companyNameController.selection = TextSelection(
             baseOffset: 0,
             extentOffset: _companyNameController.text.length,
@@ -279,12 +394,14 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
                           icon: Icons.business_outlined,
                           children: [
                             _buildTextField(
+                              key: _fieldKeys['companyName'],
                               controller: _companyNameController,
                               label: 'Company Name',
-                              isRequired: true, // Pass the custom error
+                              isRequired: true,
                             ),
                             const SizedBox(height: 20),
                             _buildTextField(
+                              key: _fieldKeys['representative'],
                               controller: _representativeController,
                               label: 'Owner/Representative Name',
                               isRequired: true,
@@ -294,6 +411,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
                               children: [
                                 Expanded(
                                   child: _buildDropdown(
+                                    key: _fieldKeys['companyType'],
                                     value: controller.selectedCompanyTypeId,
                                     items: controller.companyType ?? [],
                                     label: 'Company Type',
@@ -304,6 +422,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: _buildDateField(
+                                    key: _fieldKeys['registrationDate'],
                                     controller: _registrationDateController,
                                     label: 'Registration Date',
                                     isRequired: true,
@@ -325,6 +444,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
                               children: [
                                 Expanded(
                                   child: _buildDropdown(
+                                    key: _fieldKeys['paymentType'],
                                     value: controller.selectedPaymentTypeId,
                                     items: controller.paymentType ?? [],
                                     label: 'Payment Type',
@@ -335,6 +455,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: _buildTextField(
+                                    key: _fieldKeys['openingBalance'],
                                     controller: _openingBalanceController,
                                     label: 'Opening Balance',
                                     isRequired: true,
@@ -348,6 +469,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
                             ),
                             const SizedBox(height: 20),
                             _buildDateField(
+                              key: _fieldKeys['openingBalanceDate'],
                               controller: _openingBalanceAsOfDateController,
                               label: 'Opening Balance As of Date',
                               isRequired: true,
@@ -366,6 +488,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
                               children: [
                                 Expanded(
                                   child: _buildTextField(
+                                    key: _fieldKeys['mobile'],
                                     controller: _mobileController,
                                     label: 'Mobile',
                                     isRequired: true,
@@ -376,6 +499,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: _buildTextField(
+                                    key: _fieldKeys['phone'],
                                     controller: _phoneController,
                                     label: 'Phone',
                                     keyboardType: TextInputType.phone,
@@ -385,6 +509,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
                             ),
                             const SizedBox(height: 20),
                             _buildTextField(
+                              key: _fieldKeys['email'],
                               controller: _emailController,
                               label: 'Email',
                               keyboardType: TextInputType.emailAddress,
@@ -400,6 +525,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
                           icon: Icons.location_on_outlined,
                           children: [
                             _buildTextField(
+                              key: _fieldKeys['address'],
                               controller: _addressController,
                               label: 'Street Address',
                               maxLines: 2,
@@ -419,6 +545,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
                                 Expanded(
                                   flex: 2,
                                   child: _buildDropdown(
+                                    key: _fieldKeys['country'],
                                     value: controller.selectedCountryId,
                                     items: controller.countries ?? [],
                                     label: 'Country',
@@ -428,6 +555,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: _buildTextField(
+                                    key: _fieldKeys['postCode'],
                                     controller: _postCodeController,
                                     label: 'Post Code',
                                   ),
@@ -440,6 +568,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
                               children: [
                                 Expanded(
                                   child: _buildDropdown(
+                                    key: _fieldKeys['state'],
                                     value: controller.selectedStateId,
                                     items: controller.states,
                                     label: 'State',
@@ -449,6 +578,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: _buildDropdown(
+                                    key: _fieldKeys['city'],
                                     value: controller.selectedCityId,
                                     items: controller.cities,
                                     label: 'City',
@@ -461,6 +591,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
 
                             // Updated region dropdown to show all regions and use controller handler
                             _buildDropdown(
+                              key: _fieldKeys['region'],
                               value: controller.selectedRegionId,
                               items: controller.getAllRegions(),
                               label: 'Region',
@@ -470,6 +601,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
                             const SizedBox(height: 20),
 
                             _buildTextField(
+                              key: _fieldKeys['note'],
                               controller: _noteController,
                               label: 'Note',
                               maxLines: 3,
@@ -625,15 +757,17 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
   }
 
   Widget _buildTextField({
+    GlobalKey? key,
     required TextEditingController controller,
     required String label,
     bool isRequired = false,
     TextInputType? keyboardType,
     int maxLines = 1,
     bool isMobile = false,
-    String? customError, // Add custom error parameter
+    String? customError,
   }) {
     return Column(
+      key: key,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         RichText(
@@ -713,6 +847,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
   }
 
   Widget _buildDropdown({
+    GlobalKey? key,
     required int? value,
     required List<Map<String, dynamic>> items,
     required String label,
@@ -720,6 +855,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
     required ValueChanged<int?> onChanged,
   }) {
     return Column(
+      key: key,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         RichText(
@@ -797,11 +933,13 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
   }
 
   Widget _buildDateField({
+    GlobalKey? key,
     required TextEditingController controller,
     required String label,
     bool isRequired = false,
   }) {
     return Column(
+      key: key,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         RichText(
