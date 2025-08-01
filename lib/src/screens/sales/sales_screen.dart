@@ -1484,7 +1484,9 @@ class _SalesScreenState extends State<SalesScreen> {
         showSuccessSnack(
           'Sales saved successfully! ID: ${controller.savedSalesId}',
         );
-        Navigator.pop(context);
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
       }
     } else {
       if (mounted) {

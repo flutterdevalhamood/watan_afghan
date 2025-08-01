@@ -23,6 +23,8 @@ class _SupplierAdvanceListScreenState extends State<SupplierAdvanceListScreen>
   late AnimationController _blinkController;
   late Animation<double> _blinkAnimation;
 
+  final TextEditingController _pushReasonController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -80,6 +82,11 @@ class _SupplierAdvanceListScreenState extends State<SupplierAdvanceListScreen>
   }
 
   Future<void> _handlePushAdvance(SupplierAdvance advance) async {
+    // Show confirmation dialog first
+    final bool? shouldPush = await _showPushConfirmation(advance);
+
+    if (shouldPush != true) return;
+
     final provider = Provider.of<SupplierAdvanceController>(
       context,
       listen: false,
@@ -123,11 +130,53 @@ class _SupplierAdvanceListScreenState extends State<SupplierAdvanceListScreen>
     }
   }
 
+  Future<bool?> _showPushConfirmation(SupplierAdvance advance) async {
+    _pushReasonController.clear();
+    return await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Push Supplier Advance'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Are you sure you want to push "${advance.receiptNumber}" to the server?',
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _pushReasonController,
+                decoration: const InputDecoration(
+                  labelText: 'Reason for pushing (optional)',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 2,
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed:
+                  () => NavigationService().popNavigation(arguments: false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed:
+                  () => NavigationService().popNavigation(arguments: true),
+              child: const Text('Push', style: TextStyle(color: Colors.blue)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     _scrollController.dispose();
     _searchController.dispose();
     _blinkController.dispose();
+    _pushReasonController.dispose();
     super.dispose();
   }
 

@@ -32,7 +32,7 @@ class _InvestorTransactionDataScreenState
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
   List<String> transactionType = ['Deposit', 'Withdrawal'];
-  List<String> paymentType = ['bank', 'cash'];
+  List<String> paymentType = ['bank', 'cash', 'cheque'];
 
   @override
   void initState() {
@@ -131,6 +131,11 @@ class _InvestorTransactionDataScreenState
           const SnackBar(content: Text('Transaction saved successfully')),
         );
         _resetForm();
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) {
+            Navigator.of(context).pop();
+          }
+        });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to save transaction')),
@@ -470,6 +475,7 @@ class _InvestorTransactionDataScreenState
                       },
                     ),
                   ),
+
                   const SizedBox(height: 16),
 
                   // Payment Receive Date

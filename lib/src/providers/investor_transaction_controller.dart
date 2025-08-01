@@ -213,6 +213,7 @@ class InvestorTransactionController with ChangeNotifier {
       // Check response
       if (response is Map<String, dynamic> && response['IsSuccess'] == true) {
         debugPrint("Transaction posted successfully!");
+        getInvestorTransaction();
         return true;
       } else if (response is Map<String, dynamic>) {
         debugPrint(

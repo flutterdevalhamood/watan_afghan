@@ -212,10 +212,18 @@ class _SalesListScreenState extends State<SalesListScreen> {
           _showPdfViewer
               ? null
               : FloatingActionButton(
-                onPressed: () {
-                  NavigationService().pushNavigation(
+                onPressed: () async {
+                  final result = NavigationService().pushNavigation(
                     Screenroutes.salesRegistration,
                   );
+                  if (result == true && mounted) {
+                    final controller = Provider.of<SalesController>(
+                      context,
+                      listen: false,
+                    );
+                    await controller
+                        .refresh(); // This will reload the sales data
+                  }
                 },
                 child: const Icon(Icons.add),
               ),

@@ -266,26 +266,15 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                 ),
                 const SizedBox(height: 5), // Reduced spacing
                 // Menu Items - More compact
-                _buildMenuItem(
-                  context: context,
-                  icon: Icons.dashboard_rounded,
-                  title: 'Dashboard',
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                ),
+                // _buildMenuItem(
+                //   context: context,
+                //   icon: Icons.dashboard_rounded,
+                //   title: 'Dashboard',
+                //   onTap: () {
+                //     Navigator.pop(context);
+                //   },
+                // ),
                 // New menu item for Profile Update
-                _buildMenuItem(
-                  context: context,
-                  icon: Icons.person,
-                  title: 'My Profile',
-                  onTap: () {
-                    Navigator.pop(context);
-                    NavigationService().pushNavigation(
-                      Screenroutes.profileUpdateScreen,
-                    );
-                  },
-                ),
                 _buildMenuItem(
                   context: context,
                   icon: Icons.contact_page,
@@ -357,7 +346,17 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                     );
                   },
                 ),
-
+                _buildMenuItem(
+                  context: context,
+                  icon: Icons.person,
+                  title: 'My Profile',
+                  onTap: () {
+                    Navigator.pop(context);
+                    NavigationService().pushNavigation(
+                      Screenroutes.profileUpdateScreen,
+                    );
+                  },
+                ),
                 _buildMenuItem(
                   context: context,
                   icon: Icons.lock_reset,

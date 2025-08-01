@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:sample/src/providers/supplier_advance_controller.dart';
 import 'package:sample/src/util/app_navigation.dart';
 import 'package:sample/src/util/app_routes.dart';
+import 'package:sample/src/util/number_to_words_convertor.dart';
 import 'package:sample/src/util/snack.dart';
 
 class SupplierAdvanceDataScreen extends StatefulWidget {
@@ -58,6 +59,10 @@ class _SupplierAdvanceDataScreenState extends State<SupplierAdvanceDataScreen> {
 
     // Add listener to PV number field for real-time validation
     _pvNumberController.addListener(_onPvNumberChanged);
+
+    _amountController.addListener(
+      () => _onAmountChanged(_amountController.text),
+    );
   }
 
   void _loadBaseData() {
@@ -331,6 +336,9 @@ class _SupplierAdvanceDataScreenState extends State<SupplierAdvanceDataScreen> {
   void dispose() {
     _debounceTimer?.cancel();
     _pvNumberController.removeListener(_onPvNumberChanged);
+    _amountController.removeListener(
+      () => _onAmountChanged(_amountController.text),
+    );
     _transferDateController.dispose();
     _amountController.dispose();
     _sumOfController.dispose();
@@ -340,6 +348,18 @@ class _SupplierAdvanceDataScreenState extends State<SupplierAdvanceDataScreen> {
     _accountNumberController.dispose();
     _chequeNumberController.dispose();
     super.dispose();
+  }
+
+  void _onAmountChanged(String value) {
+    if (value.isNotEmpty) {
+      double? amount = double.tryParse(value);
+      if (amount != null) {
+        String amountInWords = convertAmountToWords(amount);
+        _sumOfController.text = amountInWords;
+      }
+    } else {
+      _sumOfController.text = '';
+    }
   }
 
   @override
@@ -660,14 +680,17 @@ class _SupplierAdvanceDataScreenState extends State<SupplierAdvanceDataScreen> {
 
                           const SizedBox(height: 16),
 
-                          // Sum Of
                           TextFormField(
                             controller: _sumOfController,
                             decoration: const InputDecoration(
-                              labelText: 'Sum Of',
+                              labelText: 'Sum Of (Auto-filled)',
                               border: OutlineInputBorder(),
+                              helperText:
+                                  'Automatically filled when amount is entered',
                             ),
                             maxLines: 2,
+                            readOnly:
+                                true, // Make it read-only since it's auto-filled
                           ),
 
                           const SizedBox(height: 16),

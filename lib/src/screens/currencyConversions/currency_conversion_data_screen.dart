@@ -109,7 +109,7 @@ class _CurrencyConversionScreenState
         description: _descriptionController.text,
       );
 
-      // Hide loading indicator
+      // // Hide loading indicator
       Navigator.of(context).pop();
 
       if (success) {
@@ -118,7 +118,11 @@ class _CurrencyConversionScreenState
             content: Text('Currency conversion saved successfully'),
           ),
         );
-        Navigator.of(context).pop(); // Return to previous screen
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) {
+            Navigator.of(context).pop();
+          }
+        }); // Return to previous screen
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(controller.errorMessage ?? 'Failed to save')),
