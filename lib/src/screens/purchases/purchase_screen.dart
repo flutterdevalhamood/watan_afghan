@@ -18,6 +18,13 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
   final ScrollController _scrollController = ScrollController(); // Add this
   final List<GlobalKey> _productKeys = [];
 
+  final Map<String, GlobalKey> _fieldKeys = {
+    'supplier': GlobalKey(),
+    'invoiceNumber': GlobalKey(),
+    'purchaseDate': GlobalKey(),
+    'currency': GlobalKey(),
+  };
+
   List<TextEditingController> quantityControllers = [];
   List<TextEditingController> priceControllers = [];
 
@@ -129,6 +136,72 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     return -1;
   }
 
+  Future<void> _scrollToFirstError() async {
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    final controller = Provider.of<PurchaseController>(context, listen: false);
+
+    // Check main form fields first
+    final mainValidationChecks = [
+      {'key': 'supplier', 'check': () => controller.selectedSupplierId == null},
+      {
+        'key': 'invoiceNumber',
+        'check': () => invoiceNumberController.text.trim().isEmpty,
+      },
+      {
+        'key': 'currency',
+        'check': () => controller.selectedCurrencyTypeId == null,
+      },
+    ];
+
+    // Check main form fields
+    for (final validation in mainValidationChecks) {
+      final checkFunction = validation['check'] as bool Function()?;
+      if (checkFunction != null && checkFunction()) {
+        final fieldKey = _fieldKeys[validation['key']];
+        if (fieldKey?.currentContext != null) {
+          await _scrollToWidget(fieldKey!);
+          return;
+        }
+      }
+    }
+
+    // Check product fields if main fields are valid
+    for (int i = 0; i < salesItems.length; i++) {
+      if (salesItems[i].productId == null ||
+          salesItems[i].unitId == null ||
+          salesItems[i].quantity <= 0 ||
+          salesItems[i].price <= 0) {
+        if (i < _productKeys.length && _productKeys[i].currentContext != null) {
+          await _scrollToWidget(_productKeys[i]);
+          return;
+        }
+      }
+    }
+  }
+
+  // Add this method to scroll to a specific widget
+  Future<void> _scrollToWidget(GlobalKey key) async {
+    final context = key.currentContext;
+    if (context != null) {
+      final RenderBox renderBox = context.findRenderObject() as RenderBox;
+      final position = renderBox.localToGlobal(Offset.zero);
+
+      // Calculate the scroll offset needed
+      final scrollOffset =
+          _scrollController.offset +
+          position.dy -
+          100; // 100px padding from top
+
+      // Animate to the error field
+      await _scrollController.animateTo(
+        scrollOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<PurchaseController>(
@@ -172,45 +245,49 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                                   _buildLabeledField(
                                     'Supplier Name:',
                                     required: true,
-                                    child: DropdownButtonFormField<String>(
-                                      decoration: const InputDecoration(
-                                        hintText: 'Select Supplier',
-                                      ),
-                                      value:
-                                          controller.selectedSupplierId
-                                              ?.toString(),
-                                      items:
-                                          controller.supplier
-                                              ?.map(
-                                                (
-                                                  item,
-                                                ) => DropdownMenuItem<String>(
-                                                  value: item['id'].toString(),
-                                                  child: Text(
-                                                    item['Name'] ??
-                                                        item['supplier_name'] ??
-                                                        'Unknown',
+                                    child: Container(
+                                      key: _fieldKeys['supplier'],
+                                      child: DropdownButtonFormField<String>(
+                                        decoration: const InputDecoration(
+                                          hintText: 'Select Supplier',
+                                        ),
+                                        value:
+                                            controller.selectedSupplierId
+                                                ?.toString(),
+                                        items:
+                                            controller.supplier
+                                                ?.map(
+                                                  (
+                                                    item,
+                                                  ) => DropdownMenuItem<String>(
+                                                    value:
+                                                        item['id'].toString(),
+                                                    child: Text(
+                                                      item['Name'] ??
+                                                          item['supplier_name'] ??
+                                                          'Unknown',
+                                                    ),
                                                   ),
-                                                ),
-                                              )
-                                              .toList() ??
-                                          [],
-                                      onChanged: (value) {
-                                        if (value != null) {
-                                          controller.setSupplier(
-                                            int.parse(value),
-                                          );
-                                          setState(() {
-                                            selectedSupplier = value;
-                                          });
-                                        }
-                                      },
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Please select a supplier';
-                                        }
-                                        return null;
-                                      },
+                                                )
+                                                .toList() ??
+                                            [],
+                                        onChanged: (value) {
+                                          if (value != null) {
+                                            controller.setSupplier(
+                                              int.parse(value),
+                                            );
+                                            setState(() {
+                                              selectedSupplier = value;
+                                            });
+                                          }
+                                        },
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'Please select a supplier';
+                                          }
+                                          return null;
+                                        },
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(height: 16),
@@ -219,23 +296,26 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                                   _buildLabeledField(
                                     'Invoice Number:',
                                     required: true,
-                                    child: TextFormField(
-                                      controller: invoiceNumberController,
-                                      decoration: const InputDecoration(
-                                        hintText: 'Enter Invoice Number',
-                                        border: OutlineInputBorder(),
+                                    child: Container(
+                                      key: _fieldKeys['invoiceNumber'],
+                                      child: TextFormField(
+                                        controller: invoiceNumberController,
+                                        decoration: const InputDecoration(
+                                          hintText: 'Enter Invoice Number',
+                                          border: OutlineInputBorder(),
+                                        ),
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'Please enter invoice number';
+                                          }
+                                          return null;
+                                        },
+                                        onChanged: (value) {
+                                          setState(() {
+                                            invoiceNumber = value;
+                                          });
+                                        },
                                       ),
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Please enter invoice number';
-                                        }
-                                        return null;
-                                      },
-                                      onChanged: (value) {
-                                        setState(() {
-                                          invoiceNumber = value;
-                                        });
-                                      },
                                     ),
                                   ),
                                   const SizedBox(height: 16),
@@ -244,20 +324,23 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                                   _buildLabeledField(
                                     'Purchase date:',
                                     required: true,
-                                    child: GestureDetector(
-                                      onTap: () => _selectDate(context),
-                                      child: AbsorbPointer(
-                                        child: TextFormField(
-                                          decoration: const InputDecoration(
-                                            hintText: 'Select Date',
-                                            suffixIcon: Icon(
-                                              Icons.calendar_today,
+                                    child: Container(
+                                      key: _fieldKeys['purchaseDate'],
+                                      child: GestureDetector(
+                                        onTap: () => _selectDate(context),
+                                        child: AbsorbPointer(
+                                          child: TextFormField(
+                                            decoration: const InputDecoration(
+                                              hintText: 'Select Date',
+                                              suffixIcon: Icon(
+                                                Icons.calendar_today,
+                                              ),
                                             ),
-                                          ),
-                                          controller: TextEditingController(
-                                            text: DateFormat(
-                                              'dd/MM/yyyy',
-                                            ).format(invoiceDate),
+                                            controller: TextEditingController(
+                                              text: DateFormat(
+                                                'dd/MM/yyyy',
+                                              ).format(invoiceDate),
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -269,45 +352,49 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                                   _buildLabeledField(
                                     'Currency',
                                     required: true,
-                                    child: DropdownButtonFormField<String>(
-                                      decoration: const InputDecoration(
-                                        hintText: 'Select Currency',
-                                      ),
-                                      value:
-                                          controller.selectedCurrencyTypeId
-                                              ?.toString(),
-                                      items:
-                                          controller.currencyType
-                                              ?.map(
-                                                (
-                                                  item,
-                                                ) => DropdownMenuItem<String>(
-                                                  value: item['id'].toString(),
-                                                  child: Text(
-                                                    item['Name'] ??
-                                                        item['currency_name'] ??
-                                                        'Unknown',
+                                    child: Container(
+                                      key: _fieldKeys['currency'],
+                                      child: DropdownButtonFormField<String>(
+                                        decoration: const InputDecoration(
+                                          hintText: 'Select Currency',
+                                        ),
+                                        value:
+                                            controller.selectedCurrencyTypeId
+                                                ?.toString(),
+                                        items:
+                                            controller.currencyType
+                                                ?.map(
+                                                  (
+                                                    item,
+                                                  ) => DropdownMenuItem<String>(
+                                                    value:
+                                                        item['id'].toString(),
+                                                    child: Text(
+                                                      item['Name'] ??
+                                                          item['currency_name'] ??
+                                                          'Unknown',
+                                                    ),
                                                   ),
-                                                ),
-                                              )
-                                              .toList() ??
-                                          [],
-                                      onChanged: (value) {
-                                        if (value != null) {
-                                          controller.setCurrencyType(
-                                            int.parse(value),
-                                          );
-                                          setState(() {
-                                            selectedCurrency = value;
-                                          });
-                                        }
-                                      },
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Please select a currency';
-                                        }
-                                        return null;
-                                      },
+                                                )
+                                                .toList() ??
+                                            [],
+                                        onChanged: (value) {
+                                          if (value != null) {
+                                            controller.setCurrencyType(
+                                              int.parse(value),
+                                            );
+                                            setState(() {
+                                              selectedCurrency = value;
+                                            });
+                                          }
+                                        },
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'Please select a currency';
+                                          }
+                                          return null;
+                                        },
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -895,8 +982,10 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                                           : () async {
                                             if (_formKey.currentState!
                                                 .validate()) {
-                                              await _savePurchase(controller);
+                                              await _scrollToFirstError();
+                                              return;
                                             }
+                                            await _savePurchase(controller);
                                           },
                                 ),
                               ],
@@ -994,6 +1083,10 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
 
   // Save purchase function
   Future<void> _savePurchase(PurchaseController controller) async {
+    if (!_formKey.currentState!.validate()) {
+      await _scrollToFirstError();
+      return;
+    }
     // Validate that all products have required fields
     for (int i = 0; i < salesItems.length; i++) {
       if (salesItems[i].productId == null ||
