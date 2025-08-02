@@ -728,9 +728,6 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
   Future<void> _saveExpense(ExpenseController controller) async {
     if (_isSaving) return;
 
-    setState(() {
-      _isSaving = true;
-    });
     if (_formKey.currentState!.validate()) {
       if (selectedSupplierId == null) {
         ScaffoldMessenger.of(context).showSnackBar(
