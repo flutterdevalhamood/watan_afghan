@@ -503,6 +503,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
                                     controller: _phoneController,
                                     label: 'Phone',
                                     keyboardType: TextInputType.phone,
+                                    isPhone: true,
                                   ),
                                 ),
                               ],
@@ -764,6 +765,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
     TextInputType? keyboardType,
     int maxLines = 1,
     bool isMobile = false,
+    bool isPhone = false,
     String? customError,
   }) {
     return Column(
@@ -794,7 +796,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
           controller: controller,
           keyboardType: keyboardType,
           maxLines: maxLines,
-          maxLength: isMobile ? 15 : null,
+          maxLength: (isMobile || isPhone) ? 15 : null,
           style: const TextStyle(fontSize: 16, color: Color(0xFF1F2937)),
           decoration: InputDecoration(
             hintText: 'Enter ${label.toLowerCase()}',
@@ -828,17 +830,79 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
             counterText: '',
           ),
           validator: (value) {
+            // Custom error takes precedence
+            if (customError != null) {
+              return customError;
+            }
+
+            // Required field validation
             if (isRequired && (value == null || value.trim().isEmpty)) {
               return '$label is required';
             }
-            if (isMobile && value != null && value.isNotEmpty) {
-              if (value.length > 15) {
+
+            // Skip further validation if field is empty and not required
+            if (value == null || value.trim().isEmpty) {
+              return null;
+            }
+
+            // Mobile number validation
+            if (isMobile) {
+              // Remove any spaces, dashes, or parentheses for validation
+              String cleanedValue = value.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+
+              // Check if only digits (and optional + at the beginning)
+              if (!RegExp(r'^\+?[0-9]+$').hasMatch(cleanedValue)) {
+                return 'Only digits and optional + are allowed';
+              }
+
+              // Remove + for length check
+              String digitsOnly = cleanedValue.replaceAll('+', '');
+
+              // Check minimum length (at least 7 digits for local numbers)
+              if (digitsOnly.length < 7) {
+                return 'Mobile number must be at least 7 digits';
+              }
+
+              // Check maximum length
+              if (digitsOnly.length > 15) {
                 return 'Mobile number cannot exceed 15 digits';
               }
-              if (!RegExp(r'^[0-9]+$').hasMatch(value)) {
-                return 'Only digits are allowed';
+            }
+
+            // Phone number validation
+            if (isPhone) {
+              // Remove any spaces, dashes, parentheses for validation
+              String cleanedValue = value.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+
+              // Check if only digits (and optional + at the beginning)
+              if (!RegExp(r'^\+?[0-9]+$').hasMatch(cleanedValue)) {
+                return 'Only digits and optional + are allowed';
+              }
+
+              // Remove + for length check
+              String digitsOnly = cleanedValue.replaceAll('+', '');
+
+              // Check minimum length
+              if (digitsOnly.length < 7) {
+                return 'Phone number must be at least 7 digits';
+              }
+
+              // Check maximum length
+              if (digitsOnly.length > 15) {
+                return 'Phone number cannot exceed 15 digits';
               }
             }
+
+            // Email validation (if it's an email field)
+            if (keyboardType == TextInputType.emailAddress &&
+                value.isNotEmpty) {
+              if (!RegExp(
+                r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+              ).hasMatch(value)) {
+                return 'Please enter a valid email address';
+              }
+            }
+
             return null;
           },
         ),

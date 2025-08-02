@@ -21,6 +21,13 @@ class _SalesScreenState extends State<SalesScreen> {
   final ScrollController _scrollController = ScrollController(); // Add this
   final List<GlobalKey> _productKeys = [];
 
+  final Map<String, GlobalKey> _fieldKeys = {
+    'customer': GlobalKey(),
+    'invoiceNumber': GlobalKey(),
+    'saleDate': GlobalKey(),
+    'currency': GlobalKey(),
+  };
+
   List<TextEditingController> quantityControllers = [];
   List<TextEditingController> priceControllers = [];
 
@@ -283,6 +290,78 @@ class _SalesScreenState extends State<SalesScreen> {
     });
   }
 
+  Future<void> _scrollToFirstError() async {
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    final controller = Provider.of<SalesController>(context, listen: false);
+
+    // Check main form fields first
+    final mainValidationChecks = [
+      {'key': 'customer', 'check': () => controller.selectedCustomerId == null},
+      {
+        'key': 'invoiceNumber',
+        'check':
+            () =>
+                invoiceNumberController.text.trim().isEmpty ||
+                controller.invoiceExists == true,
+      },
+      {
+        'key': 'currency',
+        'check': () => controller.selectedCurrencyTypeId == null,
+      },
+    ];
+
+    // Check main form fields
+    for (final validation in mainValidationChecks) {
+      final checkFunction = validation['check'] as bool Function()?;
+      if (checkFunction != null && checkFunction()) {
+        final fieldKey = _fieldKeys[validation['key']];
+        if (fieldKey?.currentContext != null) {
+          await _scrollToWidget(fieldKey!);
+          return;
+        }
+      }
+    }
+
+    // Check product fields if main fields are valid
+    for (int i = 0; i < salesItems.length; i++) {
+      if (salesItems[i].productId == null ||
+          salesItems[i].unitId == null ||
+          salesItems[i].fromInvId == null ||
+          salesItems[i].quantity <= 0 ||
+          salesItems[i].price <= 0 ||
+          (availableQuantities[i] != null &&
+              salesItems[i].quantity > availableQuantities[i]!)) {
+        if (i < _productKeys.length && _productKeys[i].currentContext != null) {
+          await _scrollToWidget(_productKeys[i]);
+          return;
+        }
+      }
+    }
+  }
+
+  // Add this method to scroll to a specific widget
+  Future<void> _scrollToWidget(GlobalKey key) async {
+    final context = key.currentContext;
+    if (context != null) {
+      final RenderBox renderBox = context.findRenderObject() as RenderBox;
+      final position = renderBox.localToGlobal(Offset.zero);
+
+      // Calculate the scroll offset needed
+      final scrollOffset =
+          _scrollController.offset +
+          position.dy -
+          100; // 100px padding from top
+
+      // Animate to the error field
+      await _scrollController.animateTo(
+        scrollOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<SalesController>(
@@ -326,45 +405,50 @@ class _SalesScreenState extends State<SalesScreen> {
                                   _buildLabeledField(
                                     'Customer:',
                                     required: true,
-                                    child: DropdownButtonFormField<String>(
-                                      decoration: const InputDecoration(
-                                        hintText: 'Select Customer',
-                                      ),
-                                      value:
-                                          controller.selectedCustomerId
-                                              ?.toString(),
-                                      items:
-                                          controller.customer
-                                              ?.map(
-                                                (item) =>
-                                                    DropdownMenuItem<String>(
-                                                      value:
-                                                          item['id'].toString(),
-                                                      child: Text(
-                                                        item['Name'] ??
-                                                            item['customers'] ??
-                                                            'Unknown',
-                                                      ),
+
+                                    child: Container(
+                                      key: _fieldKeys['customer'],
+                                      child: DropdownButtonFormField<String>(
+                                        decoration: const InputDecoration(
+                                          hintText: 'Select Customer',
+                                        ),
+                                        value:
+                                            controller.selectedCustomerId
+                                                ?.toString(),
+                                        items:
+                                            controller.customer
+                                                ?.map(
+                                                  (
+                                                    item,
+                                                  ) => DropdownMenuItem<String>(
+                                                    value:
+                                                        item['id'].toString(),
+                                                    child: Text(
+                                                      item['Name'] ??
+                                                          item['customers'] ??
+                                                          'Unknown',
                                                     ),
-                                              )
-                                              .toList() ??
-                                          [],
-                                      onChanged: (value) {
-                                        if (value != null) {
-                                          controller.setCustomer(
-                                            int.parse(value),
-                                          );
-                                          setState(() {
-                                            selectedCustomer = value;
-                                          });
-                                        }
-                                      },
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Please select a customer';
-                                        }
-                                        return null;
-                                      },
+                                                  ),
+                                                )
+                                                .toList() ??
+                                            [],
+                                        onChanged: (value) {
+                                          if (value != null) {
+                                            controller.setCustomer(
+                                              int.parse(value),
+                                            );
+                                            setState(() {
+                                              selectedCustomer = value;
+                                            });
+                                          }
+                                        },
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'Please select a customer';
+                                          }
+                                          return null;
+                                        },
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(height: 16),
@@ -373,128 +457,20 @@ class _SalesScreenState extends State<SalesScreen> {
                                     'Invoice Number:',
                                     required: true,
 
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        TextFormField(
-                                          enabled: false,
-                                          controller: invoiceNumberController,
-                                          focusNode: _invoiceNumberFocusNode,
-                                          decoration: InputDecoration(
-                                            hintText: 'Enter Invoice Number',
-                                            border: OutlineInputBorder(
-                                              borderSide: BorderSide(
-                                                color:
-                                                    controller.invoiceExists ==
-                                                            true
-                                                        ? Colors.red
-                                                        : controller
-                                                                .invoiceExists ==
-                                                            false
-                                                        ? Colors.green
-                                                        : Colors.grey,
-                                              ),
-                                            ),
-                                            enabledBorder: OutlineInputBorder(
-                                              borderSide: BorderSide(
-                                                color:
-                                                    controller.invoiceExists ==
-                                                            true
-                                                        ? Colors.red
-                                                        : controller
-                                                                .invoiceExists ==
-                                                            false
-                                                        ? Colors.green
-                                                        : Colors.grey,
-                                              ),
-                                            ),
-                                            focusedBorder: OutlineInputBorder(
-                                              borderSide: BorderSide(
-                                                color:
-                                                    controller.invoiceExists ==
-                                                            true
-                                                        ? Colors.red
-                                                        : controller
-                                                                .invoiceExists ==
-                                                            false
-                                                        ? Colors.green
-                                                        : Theme.of(
-                                                          context,
-                                                        ).primaryColor,
-                                                width: 2,
-                                              ),
-                                            ),
-                                            suffixIcon:
-                                                controller.isCheckingInvoice
-                                                    ? const SizedBox(
-                                                      width: 20,
-                                                      height: 20,
-                                                      child: Padding(
-                                                        padding: EdgeInsets.all(
-                                                          12.0,
-                                                        ),
-                                                        child:
-                                                            CircularProgressIndicator(
-                                                              strokeWidth: 2,
-                                                            ),
-                                                      ),
-                                                    )
-                                                    : controller
-                                                            .invoiceExists !=
-                                                        null
-                                                    ? Icon(
-                                                      controller.invoiceExists ==
-                                                              true
-                                                          ? Icons.error
-                                                          : Icons.check_circle,
-                                                      color:
-                                                          controller.invoiceExists ==
-                                                                  true
-                                                              ? Colors.red
-                                                              : Colors.green,
-                                                    )
-                                                    : null,
-                                          ),
-                                          validator: (value) {
-                                            if (value == null ||
-                                                value.isEmpty) {
-                                              return 'Please enter invoice number';
-                                            }
-                                            if (controller.invoiceExists ==
-                                                true) {
-                                              return 'Invoice number already exists';
-                                            }
-                                            return null;
-                                          },
-                                          onChanged:
-                                              (value) =>
-                                                  _onInvoiceNumberChanged(
-                                                    value,
-                                                    controller,
-                                                  ),
-                                        ),
-
-                                        // Invoice check status message
-                                        if (controller.invoiceCheckMessage !=
-                                            null)
-                                          Padding(
-                                            padding: const EdgeInsets.only(
-                                              top: 8.0,
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  controller.invoiceExists ==
-                                                          true
-                                                      ? Icons.error_outline
-                                                      : controller
-                                                              .invoiceExists ==
-                                                          false
-                                                      ? Icons
-                                                          .check_circle_outline
-                                                      : Icons.info_outline,
-                                                  size: 16,
+                                    child: Container(
+                                      key: _fieldKeys['invoiceNumber'],
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          TextFormField(
+                                            enabled: false,
+                                            controller: invoiceNumberController,
+                                            focusNode: _invoiceNumberFocusNode,
+                                            decoration: InputDecoration(
+                                              hintText: 'Enter Invoice Number',
+                                              border: OutlineInputBorder(
+                                                borderSide: BorderSide(
                                                   color:
                                                       controller.invoiceExists ==
                                                               true
@@ -503,31 +479,144 @@ class _SalesScreenState extends State<SalesScreen> {
                                                                   .invoiceExists ==
                                                               false
                                                           ? Colors.green
-                                                          : Colors.orange,
+                                                          : Colors.grey,
                                                 ),
-                                                const SizedBox(width: 4),
-                                                Expanded(
-                                                  child: Text(
-                                                    controller
-                                                        .invoiceCheckMessage!,
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      color:
-                                                          controller.invoiceExists ==
-                                                                  true
-                                                              ? Colors.red
-                                                              : controller
-                                                                      .invoiceExists ==
-                                                                  false
-                                                              ? Colors.green
-                                                              : Colors.orange,
+                                              ),
+                                              enabledBorder: OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                  color:
+                                                      controller.invoiceExists ==
+                                                              true
+                                                          ? Colors.red
+                                                          : controller
+                                                                  .invoiceExists ==
+                                                              false
+                                                          ? Colors.green
+                                                          : Colors.grey,
+                                                ),
+                                              ),
+                                              focusedBorder: OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                  color:
+                                                      controller.invoiceExists ==
+                                                              true
+                                                          ? Colors.red
+                                                          : controller
+                                                                  .invoiceExists ==
+                                                              false
+                                                          ? Colors.green
+                                                          : Theme.of(
+                                                            context,
+                                                          ).primaryColor,
+                                                  width: 2,
+                                                ),
+                                              ),
+                                              suffixIcon:
+                                                  controller.isCheckingInvoice
+                                                      ? const SizedBox(
+                                                        width: 20,
+                                                        height: 20,
+                                                        child: Padding(
+                                                          padding:
+                                                              EdgeInsets.all(
+                                                                12.0,
+                                                              ),
+                                                          child:
+                                                              CircularProgressIndicator(
+                                                                strokeWidth: 2,
+                                                              ),
+                                                        ),
+                                                      )
+                                                      : controller
+                                                              .invoiceExists !=
+                                                          null
+                                                      ? Icon(
+                                                        controller.invoiceExists ==
+                                                                true
+                                                            ? Icons.error
+                                                            : Icons
+                                                                .check_circle,
+                                                        color:
+                                                            controller.invoiceExists ==
+                                                                    true
+                                                                ? Colors.red
+                                                                : Colors.green,
+                                                      )
+                                                      : null,
+                                            ),
+                                            validator: (value) {
+                                              if (value == null ||
+                                                  value.isEmpty) {
+                                                return 'Please enter invoice number';
+                                              }
+                                              if (controller.invoiceExists ==
+                                                  true) {
+                                                return 'Invoice number already exists';
+                                              }
+                                              return null;
+                                            },
+                                            onChanged:
+                                                (value) =>
+                                                    _onInvoiceNumberChanged(
+                                                      value,
+                                                      controller,
+                                                    ),
+                                          ),
+
+                                          // Invoice check status message
+                                          if (controller.invoiceCheckMessage !=
+                                              null)
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                top: 8.0,
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    controller.invoiceExists ==
+                                                            true
+                                                        ? Icons.error_outline
+                                                        : controller
+                                                                .invoiceExists ==
+                                                            false
+                                                        ? Icons
+                                                            .check_circle_outline
+                                                        : Icons.info_outline,
+                                                    size: 16,
+                                                    color:
+                                                        controller.invoiceExists ==
+                                                                true
+                                                            ? Colors.red
+                                                            : controller
+                                                                    .invoiceExists ==
+                                                                false
+                                                            ? Colors.green
+                                                            : Colors.orange,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Expanded(
+                                                    child: Text(
+                                                      controller
+                                                          .invoiceCheckMessage!,
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        color:
+                                                            controller.invoiceExists ==
+                                                                    true
+                                                                ? Colors.red
+                                                                : controller
+                                                                        .invoiceExists ==
+                                                                    false
+                                                                ? Colors.green
+                                                                : Colors.orange,
+                                                      ),
                                                     ),
                                                   ),
-                                                ),
-                                              ],
+                                                ],
+                                              ),
                                             ),
-                                          ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(height: 16),
@@ -536,20 +625,24 @@ class _SalesScreenState extends State<SalesScreen> {
                                   _buildLabeledField(
                                     'Sale date:',
                                     required: true,
-                                    child: GestureDetector(
-                                      onTap: () => _selectDate(context),
-                                      child: AbsorbPointer(
-                                        child: TextFormField(
-                                          decoration: const InputDecoration(
-                                            hintText: 'Select Date',
-                                            suffixIcon: Icon(
-                                              Icons.calendar_today,
+
+                                    child: Container(
+                                      key: _fieldKeys['saleDate'],
+                                      child: GestureDetector(
+                                        onTap: () => _selectDate(context),
+                                        child: AbsorbPointer(
+                                          child: TextFormField(
+                                            decoration: const InputDecoration(
+                                              hintText: 'Select Date',
+                                              suffixIcon: Icon(
+                                                Icons.calendar_today,
+                                              ),
                                             ),
-                                          ),
-                                          controller: TextEditingController(
-                                            text: DateFormat(
-                                              'dd/MM/yyyy',
-                                            ).format(saleDate),
+                                            controller: TextEditingController(
+                                              text: DateFormat(
+                                                'dd/MM/yyyy',
+                                              ).format(saleDate),
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -561,45 +654,49 @@ class _SalesScreenState extends State<SalesScreen> {
                                   _buildLabeledField(
                                     'Currency',
                                     required: true,
-                                    child: DropdownButtonFormField<String>(
-                                      decoration: const InputDecoration(
-                                        hintText: 'Select Currency',
-                                      ),
-                                      value:
-                                          controller.selectedCurrencyTypeId
-                                              ?.toString(),
-                                      items:
-                                          controller.currencyType
-                                              ?.map(
-                                                (item) =>
-                                                    DropdownMenuItem<String>(
-                                                      value:
-                                                          item['id'].toString(),
-                                                      child: Text(
-                                                        item['Name'] ??
-                                                            item['currency'] ??
-                                                            'Unknown',
-                                                      ),
+                                    child: Container(
+                                      key: _fieldKeys['currency'],
+                                      child: DropdownButtonFormField<String>(
+                                        decoration: const InputDecoration(
+                                          hintText: 'Select Currency',
+                                        ),
+                                        value:
+                                            controller.selectedCurrencyTypeId
+                                                ?.toString(),
+                                        items:
+                                            controller.currencyType
+                                                ?.map(
+                                                  (
+                                                    item,
+                                                  ) => DropdownMenuItem<String>(
+                                                    value:
+                                                        item['id'].toString(),
+                                                    child: Text(
+                                                      item['Name'] ??
+                                                          item['currency'] ??
+                                                          'Unknown',
                                                     ),
-                                              )
-                                              .toList() ??
-                                          [],
-                                      onChanged: (value) {
-                                        if (value != null) {
-                                          controller.setCurrencyType(
-                                            int.parse(value),
-                                          );
-                                          setState(() {
-                                            selectedCurrency = value;
-                                          });
-                                        }
-                                      },
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Please select a currency';
-                                        }
-                                        return null;
-                                      },
+                                                  ),
+                                                )
+                                                .toList() ??
+                                            [],
+                                        onChanged: (value) {
+                                          if (value != null) {
+                                            controller.setCurrencyType(
+                                              int.parse(value),
+                                            );
+                                            setState(() {
+                                              selectedCurrency = value;
+                                            });
+                                          }
+                                        },
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'Please select a currency';
+                                          }
+                                          return null;
+                                        },
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -1129,7 +1226,6 @@ class _SalesScreenState extends State<SalesScreen> {
 
                                                   const SizedBox(width: 16),
 
-                                                  // Price TextField
                                                   Expanded(
                                                     child: _buildLabeledField(
                                                       'Price:',
@@ -1145,15 +1241,15 @@ class _SalesScreenState extends State<SalesScreen> {
                                                               value.isEmpty) {
                                                             return 'Required';
                                                           }
-                                                          if (double.tryParse(
-                                                                    value,
-                                                                  ) ==
-                                                                  null ||
-                                                              double.parse(
-                                                                    value,
-                                                                  ) <
-                                                                  0) {
+                                                          final price =
+                                                              double.tryParse(
+                                                                value,
+                                                              );
+                                                          if (price == null) {
                                                             return 'Invalid price';
+                                                          }
+                                                          if (price <= 0) {
+                                                            return 'Price must be greater than 0';
                                                           }
                                                           return null;
                                                         },
@@ -1411,8 +1507,10 @@ class _SalesScreenState extends State<SalesScreen> {
                                           : () async {
                                             if (_formKey.currentState!
                                                 .validate()) {
-                                              await _saveSales(controller);
+                                              await _scrollToFirstError();
+                                              return;
                                             }
+                                            await _saveSales(controller);
                                           },
                                 ),
                               ],
@@ -1428,9 +1526,14 @@ class _SalesScreenState extends State<SalesScreen> {
   }
 
   Future<void> _saveSales(SalesController controller) async {
+    if (!_formKey.currentState!.validate()) {
+      await _scrollToFirstError();
+      return;
+    }
     final invoiceExists = await controller.checkInvoiceExists(invoiceNumber);
 
     if (invoiceExists) {
+      await _scrollToWidget(_fieldKeys['invoiceNumber']!);
       // Invoice already exists, show error and don't proceed
       if (mounted) {
         showErrorSnack(
@@ -1443,6 +1546,7 @@ class _SalesScreenState extends State<SalesScreen> {
 
     if (controller.invoiceExists == null &&
         controller.invoiceCheckMessage != null) {
+      await _scrollToWidget(_fieldKeys['invoiceNumber']!);
       if (mounted) {
         showErrorSnack(
           controller.invoiceCheckMessage ??

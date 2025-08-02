@@ -18,9 +18,16 @@ class _PurchaseReportScreenState extends State<PurchaseReportScreen> {
   DateTime? _toDate;
   int? _selectedCurrencyId;
   dynamic _selectedSupplierId;
+  String? _selectedSupplierName;
   bool _isLoading = false;
   String? _pdfPath;
   bool _isGeneratingReport = false;
+
+  // Search controllers
+  final TextEditingController _supplierSearchController =
+      TextEditingController();
+  List<Map<String, dynamic>> _filteredSuppliers = [];
+  bool _isSupplierDropdownOpen = false;
 
   late ReportsController _controller;
   late PurchaseController _purchaseController;
@@ -40,6 +47,16 @@ class _PurchaseReportScreenState extends State<PurchaseReportScreen> {
 
     // Load investors and currencies data
     _loadFormData();
+
+    // Initialize search controller listener
+    _supplierSearchController.addListener(_filterSuppliers);
+  }
+
+  @override
+  void dispose() {
+    _supplierSearchController.removeListener(_filterSuppliers);
+    _supplierSearchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadFormData() async {
@@ -50,6 +67,7 @@ class _PurchaseReportScreenState extends State<PurchaseReportScreen> {
     try {
       // Get investors and currencies data
       await _purchaseController.getPurchaseBaseData();
+      _initializeFilteredSuppliers();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -65,6 +83,53 @@ class _PurchaseReportScreenState extends State<PurchaseReportScreen> {
         });
       }
     }
+  }
+
+  void _initializeFilteredSuppliers() {
+    if (_purchaseController.supplier != null) {
+      _filteredSuppliers = List<Map<String, dynamic>>.from(
+        _purchaseController.supplier!,
+      );
+    }
+  }
+
+  void _filterSuppliers() {
+    final query = _supplierSearchController.text.toLowerCase();
+    setState(() {
+      if (query.isEmpty) {
+        _filteredSuppliers =
+            _purchaseController.supplier != null
+                ? List<Map<String, dynamic>>.from(_purchaseController.supplier!)
+                : [];
+      } else {
+        _filteredSuppliers =
+            _purchaseController.supplier
+                ?.where(
+                  (supplier) =>
+                      supplier['Name'].toString().toLowerCase().contains(query),
+                )
+                .toList() ??
+            [];
+      }
+    });
+  }
+
+  void _selectSupplier(dynamic supplierId, String supplierName) {
+    setState(() {
+      _selectedSupplierId = supplierId;
+      _selectedSupplierName = supplierName;
+      _supplierSearchController.text = supplierName;
+      _isSupplierDropdownOpen = false;
+    });
+  }
+
+  void _clearSupplierSelection() {
+    setState(() {
+      _selectedSupplierId = null;
+      _selectedSupplierName = null;
+      _supplierSearchController.clear();
+      _isSupplierDropdownOpen = false;
+    });
   }
 
   Future<void> _selectDate(BuildContext context, bool isFromDate) async {
@@ -308,38 +373,101 @@ class _PurchaseReportScreenState extends State<PurchaseReportScreen> {
 
                   const SizedBox(height: 24),
 
-                  DropdownButtonFormField<dynamic>(
-                    decoration: InputDecoration(
-                      labelText: 'Supplier',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  // Searchable Supplier Dropdown
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextFormField(
+                        controller: _supplierSearchController,
+                        decoration: InputDecoration(
+                          labelText: 'Supplier',
+                          hintText: 'Search or select supplier',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          suffixIcon: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (_selectedSupplierId != null)
+                                IconButton(
+                                  icon: const Icon(Icons.clear, size: 20),
+                                  onPressed: _clearSupplierSelection,
+                                  padding: const EdgeInsets.all(4),
+                                  constraints: const BoxConstraints(),
+                                ),
+                              IconButton(
+                                icon: Icon(
+                                  _isSupplierDropdownOpen
+                                      ? Icons.keyboard_arrow_up
+                                      : Icons.keyboard_arrow_down,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _isSupplierDropdownOpen =
+                                        !_isSupplierDropdownOpen;
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        onTap: () {
+                          setState(() {
+                            _isSupplierDropdownOpen = true;
+                          });
+                        },
+                        readOnly: _selectedSupplierId != null,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                    ),
-                    value: _selectedSupplierId,
-                    hint: const Text('Select Category'),
-                    isExpanded: true,
-                    items: [
-                      const DropdownMenuItem<dynamic>(
-                        value: 'all',
-                        child: Text('All'),
-                      ),
-                      ..._purchaseController.supplier?.map((expense) {
-                            return DropdownMenuItem<dynamic>(
-                              value: expense['id'],
-                              child: Text(expense['Name']),
-                            );
-                          }).toList() ??
-                          [],
+                      if (_isSupplierDropdownOpen)
+                        Container(
+                          margin: const EdgeInsets.only(top: 4),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(8),
+                            color: Colors.white,
+                          ),
+                          constraints: const BoxConstraints(maxHeight: 200),
+                          child: ListView(
+                            shrinkWrap: true,
+                            children: [
+                              // "All" option
+                              ListTile(
+                                dense: true,
+                                title: const Text('All'),
+                                onTap: () => _selectSupplier('all', 'All'),
+                                selected: _selectedSupplierId == 'all',
+                              ),
+                              // Filtered suppliers
+                              ..._filteredSuppliers.map((supplier) {
+                                return ListTile(
+                                  dense: true,
+                                  title: Text(supplier['Name']),
+                                  onTap:
+                                      () => _selectSupplier(
+                                        supplier['id'],
+                                        supplier['Name'],
+                                      ),
+                                  selected:
+                                      _selectedSupplierId == supplier['id'],
+                                );
+                              }).toList(),
+                              if (_filteredSuppliers.isEmpty &&
+                                  _supplierSearchController.text.isNotEmpty)
+                                const ListTile(
+                                  dense: true,
+                                  title: Text(
+                                    'No suppliers found',
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
                     ],
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedSupplierId = value;
-                      });
-                    },
                   ),
                   const SizedBox(height: 16),
                 ],
