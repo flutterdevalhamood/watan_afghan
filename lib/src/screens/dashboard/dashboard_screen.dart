@@ -55,11 +55,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             drawer: DrawerWidget(),
             backgroundColor: Colors.grey.shade50,
             appBar: AppBar(
+              backgroundColor: Theme.of(context).colorScheme.primary,
               title: const Text(
                 'Dashboard',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              backgroundColor: primaryColor,
+
               foregroundColor: Colors.white,
               elevation: 0,
               centerTitle: true,
@@ -168,13 +169,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildWelcomeSection() {
     return Container(
       width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [primaryColor, secondaryColor],
-        ),
-      ),
+      color: Theme.of(context).colorScheme.primary,
+      // decoration: BoxDecoration(
+      //   gradient: LinearGradient(
+      //     begin: Alignment.topLeft,
+      //     end: Alignment.bottomRight,
+      //     colors: [primaryColor, secondaryColor],
+      //   ),
+      // ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
         child: Column(

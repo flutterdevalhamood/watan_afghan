@@ -18,6 +18,8 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
   final ScrollController _scrollController = ScrollController(); // Add this
   final List<GlobalKey> _productKeys = [];
 
+  List<FocusNode> quantityFocusNodes = [];
+
   final Map<String, GlobalKey> _fieldKeys = {
     'supplier': GlobalKey(),
     'invoiceNumber': GlobalKey(),
@@ -35,18 +37,36 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     for (var controller in priceControllers) {
       controller.dispose();
     }
+    for (var focusNode in quantityFocusNodes) {
+      focusNode.dispose();
+    }
 
     quantityControllers.clear();
     priceControllers.clear();
+    quantityFocusNodes.clear();
 
     // Create new controllers for each item
     for (int i = 0; i < salesItems.length; i++) {
       quantityControllers.add(
-        TextEditingController(text: salesItems[i].quantity.toString()),
+        TextEditingController(
+          text:
+              salesItems[i].quantity == 0
+                  ? ''
+                  : salesItems[i].quantity.toString(),
+        ),
       );
       priceControllers.add(
         TextEditingController(text: salesItems[i].price.toString()),
       );
+      quantityFocusNodes.add(FocusNode());
+
+      // Add focus listener to clear field when focused
+      quantityFocusNodes[i].addListener(() {
+        if (quantityFocusNodes[i].hasFocus &&
+            quantityControllers[i].text == '0') {
+          quantityControllers[i].clear();
+        }
+      });
     }
   }
 
@@ -94,6 +114,9 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     }
     for (var controller in priceControllers) {
       controller.dispose();
+    }
+    for (var focusNode in quantityFocusNodes) {
+      focusNode.dispose();
     }
     termsController.dispose();
     notesController.dispose();
@@ -661,6 +684,8 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                                                       child: TextFormField(
                                                         controller:
                                                             quantityControllers[index],
+                                                        focusNode:
+                                                            quantityFocusNodes[index],
                                                         keyboardType:
                                                             TextInputType
                                                                 .number,
@@ -680,6 +705,15 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                                                             return 'Invalid quantity';
                                                           }
                                                           return null;
+                                                        },
+                                                        onTap: () {
+                                                          // Alternative approach: Clear on tap if value is 0
+                                                          if (quantityControllers[index]
+                                                                  .text ==
+                                                              '0') {
+                                                            quantityControllers[index]
+                                                                .clear();
+                                                          }
                                                         },
                                                         onChanged: (value) {
                                                           setState(() {
@@ -980,11 +1014,6 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                                       controller.isLoading
                                           ? null
                                           : () async {
-                                            if (_formKey.currentState!
-                                                .validate()) {
-                                              await _scrollToFirstError();
-                                              return;
-                                            }
                                             await _savePurchase(controller);
                                           },
                                 ),
@@ -1003,8 +1032,17 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
   void _addNewProduct() {
     setState(() {
       salesItems.add(SalesItem());
+      final newIndex = quantityControllers.length;
       quantityControllers.add(TextEditingController());
       priceControllers.add(TextEditingController());
+      final newFocusNode = FocusNode();
+      newFocusNode.addListener(() {
+        if (newFocusNode.hasFocus &&
+            quantityControllers[newIndex].text == '0') {
+          quantityControllers[newIndex].clear();
+        }
+      });
+      quantityFocusNodes.add(newFocusNode);
       _productKeys.add(GlobalKey()); // Add key for new product
     });
 
@@ -1075,7 +1113,8 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
         priceControllers[index].dispose();
         quantityControllers.removeAt(index);
         priceControllers.removeAt(index);
-        _productKeys.removeAt(index); // Remove corresponding key
+        _productKeys.removeAt(index);
+        quantityFocusNodes.removeAt(index); // Remove corresponding key
         _updateTotals();
       });
     }

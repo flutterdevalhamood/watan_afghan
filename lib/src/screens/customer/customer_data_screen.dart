@@ -62,6 +62,142 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
     controller.getCustomerBaseData();
   }
 
+  static const Map<String, Map<String, dynamic>> countryPhoneValidation = {
+    '+1': {'minLength': 10, 'maxLength': 10, 'name': 'US/Canada'}, // US/Canada
+    '+44': {'minLength': 10, 'maxLength': 10, 'name': 'UK'},
+    '+91': {'minLength': 10, 'maxLength': 10, 'name': 'India'},
+    '+86': {'minLength': 11, 'maxLength': 11, 'name': 'China'},
+    '+81': {'minLength': 10, 'maxLength': 11, 'name': 'Japan'},
+    '+49': {'minLength': 10, 'maxLength': 12, 'name': 'Germany'},
+    '+33': {'minLength': 9, 'maxLength': 9, 'name': 'France'},
+    '+39': {'minLength': 9, 'maxLength': 10, 'name': 'Italy'},
+    '+34': {'minLength': 9, 'maxLength': 9, 'name': 'Spain'},
+    '+61': {'minLength': 9, 'maxLength': 9, 'name': 'Australia'},
+    '+55': {'minLength': 10, 'maxLength': 11, 'name': 'Brazil'},
+    '+52': {'minLength': 10, 'maxLength': 10, 'name': 'Mexico'},
+    '+7': {'minLength': 10, 'maxLength': 10, 'name': 'Russia'},
+    '+82': {'minLength': 9, 'maxLength': 9, 'name': 'South Korea'},
+    '+65': {'minLength': 8, 'maxLength': 8, 'name': 'Singapore'},
+    '+60': {'minLength': 9, 'maxLength': 10, 'name': 'Malaysia'},
+    '+66': {'minLength': 9, 'maxLength': 9, 'name': 'Thailand'},
+    '+84': {'minLength': 9, 'maxLength': 10, 'name': 'Vietnam'},
+    '+62': {'minLength': 9, 'maxLength': 12, 'name': 'Indonesia'},
+    '+63': {'minLength': 10, 'maxLength': 10, 'name': 'Philippines'},
+    '+971': {'minLength': 9, 'maxLength': 9, 'name': 'UAE'},
+    '+966': {'minLength': 9, 'maxLength': 9, 'name': 'Saudi Arabia'},
+    '+974': {'minLength': 8, 'maxLength': 8, 'name': 'Qatar'},
+    '+965': {'minLength': 8, 'maxLength': 8, 'name': 'Kuwait'},
+    '+973': {'minLength': 8, 'maxLength': 8, 'name': 'Bahrain'},
+    '+968': {'minLength': 8, 'maxLength': 8, 'name': 'Oman'},
+  };
+
+  // Add method to validate mobile number with country code
+  String? _validateMobileNumber(String value) {
+    if (value.trim().isEmpty) {
+      return 'Mobile number is required';
+    }
+
+    // Remove any spaces, dashes, or parentheses for validation
+    String cleanedValue = value.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+
+    // Check if it starts with + (country code required)
+    if (!cleanedValue.startsWith('+')) {
+      return 'Mobile number must include country code (e.g., +971xxxxxxxxx)';
+    }
+
+    // Extract country code and number
+    String? countryCode;
+    String numberPart = '';
+
+    // Try to match country codes (longest first to avoid conflicts)
+    List<String> sortedCodes =
+        countryPhoneValidation.keys.toList()
+          ..sort((a, b) => b.length.compareTo(a.length));
+
+    for (String code in sortedCodes) {
+      if (cleanedValue.startsWith(code)) {
+        countryCode = code;
+        numberPart = cleanedValue.substring(code.length);
+        break;
+      }
+    }
+
+    if (countryCode == null) {
+      return 'Invalid country code. Please use a valid country code (e.g., +971, +1, +44)';
+    }
+
+    // Check if number part contains only digits
+    if (!RegExp(r'^[0-9]+$').hasMatch(numberPart)) {
+      return 'Phone number can only contain digits after country code';
+    }
+
+    // Get validation rules for the country
+    Map<String, dynamic> rules = countryPhoneValidation[countryCode]!;
+    int minLength = rules['minLength'];
+    int maxLength = rules['maxLength'];
+    String countryName = rules['name'];
+
+    // Validate length
+    if (numberPart.length < minLength) {
+      return 'Invalid ${countryName} number. Must be at least $minLength digits after $countryCode';
+    }
+
+    if (numberPart.length > maxLength) {
+      return 'Invalid ${countryName} number. Cannot exceed $maxLength digits after $countryCode';
+    }
+
+    return null; // Valid
+  }
+
+  // Add method to validate phone number (less strict, optional country code)
+  String? _validatePhoneNumber(String value) {
+    if (value.trim().isEmpty) {
+      return null; // Phone is optional
+    }
+
+    // Remove any spaces, dashes, or parentheses for validation
+    String cleanedValue = value.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+
+    // Check basic format
+    if (!RegExp(r'^\+?[0-9]+$').hasMatch(cleanedValue)) {
+      return 'Phone number can only contain digits and optional country code (+)';
+    }
+
+    // Remove + for length check
+    String digitsOnly = cleanedValue.replaceAll('+', '');
+
+    // Check minimum and maximum length
+    if (digitsOnly.length < 7) {
+      return 'Phone number must be at least 7 digits';
+    }
+
+    if (digitsOnly.length > 15) {
+      return 'Phone number cannot exceed 15 digits';
+    }
+
+    return null; // Valid
+  }
+
+  // Method to format mobile number as user types
+  String _formatMobileNumber(String value) {
+    // This is a simple formatter - you can enhance it based on country
+    String cleaned = value.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+
+    if (cleaned.startsWith('+971')) {
+      // UAE formatting: +971 XX XXX XXXX
+      String number = cleaned.substring(4);
+      if (number.length <= 2) {
+        return '+971 $number';
+      } else if (number.length <= 5) {
+        return '+971 ${number.substring(0, 2)} ${number.substring(2)}';
+      } else {
+        return '+971 ${number.substring(0, 2)} ${number.substring(2, 5)} ${number.substring(5)}';
+      }
+    }
+
+    return cleaned; // Return as-is for other countries
+  }
+
   @override
   void dispose() {
     // Clear all controllers before disposing
@@ -796,11 +932,29 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
           controller: controller,
           keyboardType: keyboardType,
           maxLines: maxLines,
-          maxLength: (isMobile || isPhone) ? 15 : null,
+          maxLength:
+              (isMobile || isPhone)
+                  ? (isMobile ? 20 : 18)
+                  : null, // Increased for country codes
           style: const TextStyle(fontSize: 16, color: Color(0xFF1F2937)),
           decoration: InputDecoration(
-            hintText: 'Enter ${label.toLowerCase()}',
+            hintText:
+                isMobile
+                    ? 'e.g., +971501234567'
+                    : isPhone
+                    ? 'e.g., +97145551234 or 045551234'
+                    : 'Enter ${label.toLowerCase()}',
             hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+            helperText:
+                isMobile
+                    ? 'Include country code (e.g., +971 for UAE)'
+                    : isPhone
+                    ? 'Country code optional for landline'
+                    : null,
+            helperStyle: const TextStyle(
+              color: Color(0xFF6B7280),
+              fontSize: 12,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
@@ -829,13 +983,39 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
             ),
             counterText: '',
           ),
+          onChanged:
+              isMobile
+                  ? (value) {
+                    // Optional: Auto-format as user types
+                    // Uncomment if you want live formatting
+                    /*
+          String formatted = _formatMobileNumber(value);
+          if (formatted != value) {
+            controller.value = TextEditingValue(
+              text: formatted,
+              selection: TextSelection.collapsed(offset: formatted.length),
+            );
+          }
+          */
+                  }
+                  : null,
           validator: (value) {
             // Custom error takes precedence
             if (customError != null) {
               return customError;
             }
 
-            // Required field validation
+            // Mobile number validation
+            if (isMobile) {
+              return _validateMobileNumber(value ?? '');
+            }
+
+            // Phone number validation
+            if (isPhone) {
+              return _validatePhoneNumber(value ?? '');
+            }
+
+            // Required field validation for other fields
             if (isRequired && (value == null || value.trim().isEmpty)) {
               return '$label is required';
             }
@@ -843,54 +1023,6 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
             // Skip further validation if field is empty and not required
             if (value == null || value.trim().isEmpty) {
               return null;
-            }
-
-            // Mobile number validation
-            if (isMobile) {
-              // Remove any spaces, dashes, or parentheses for validation
-              String cleanedValue = value.replaceAll(RegExp(r'[\s\-\(\)]'), '');
-
-              // Check if only digits (and optional + at the beginning)
-              if (!RegExp(r'^\+?[0-9]+$').hasMatch(cleanedValue)) {
-                return 'Only digits and optional + are allowed';
-              }
-
-              // Remove + for length check
-              String digitsOnly = cleanedValue.replaceAll('+', '');
-
-              // Check minimum length (at least 7 digits for local numbers)
-              if (digitsOnly.length < 7) {
-                return 'Mobile number must be at least 7 digits';
-              }
-
-              // Check maximum length
-              if (digitsOnly.length > 15) {
-                return 'Mobile number cannot exceed 15 digits';
-              }
-            }
-
-            // Phone number validation
-            if (isPhone) {
-              // Remove any spaces, dashes, parentheses for validation
-              String cleanedValue = value.replaceAll(RegExp(r'[\s\-\(\)]'), '');
-
-              // Check if only digits (and optional + at the beginning)
-              if (!RegExp(r'^\+?[0-9]+$').hasMatch(cleanedValue)) {
-                return 'Only digits and optional + are allowed';
-              }
-
-              // Remove + for length check
-              String digitsOnly = cleanedValue.replaceAll('+', '');
-
-              // Check minimum length
-              if (digitsOnly.length < 7) {
-                return 'Phone number must be at least 7 digits';
-              }
-
-              // Check maximum length
-              if (digitsOnly.length > 15) {
-                return 'Phone number cannot exceed 15 digits';
-              }
             }
 
             // Email validation (if it's an email field)

@@ -100,7 +100,12 @@ class _SalesScreenState extends State<SalesScreen> {
 
     for (int i = 0; i < salesItems.length; i++) {
       quantityControllers.add(
-        TextEditingController(text: salesItems[i].quantity.toString()),
+        TextEditingController(
+          text:
+              salesItems[i].quantity == 0
+                  ? ''
+                  : salesItems[i].quantity.toString(),
+        ),
       );
       priceControllers.add(
         TextEditingController(text: salesItems[i].price.toString()),
@@ -1505,11 +1510,6 @@ class _SalesScreenState extends State<SalesScreen> {
                                       controller.isLoading
                                           ? null
                                           : () async {
-                                            if (_formKey.currentState!
-                                                .validate()) {
-                                              await _scrollToFirstError();
-                                              return;
-                                            }
                                             await _saveSales(controller);
                                           },
                                 ),

@@ -337,12 +337,12 @@ class PurchaseController with ChangeNotifier {
 
       if (response is Map<String, dynamic>) {
         if (response['IsSuccess'] == true) {
+          getPurchaseData();
           // Check if the response contains the ID directly or in a Data field
           if (response['Data'] != null) {
             // Case 1: ID is in the Data field (as object or direct value)
             if (response['Data'] is Map) {
               savedPurchaseId = response['Data']['id'];
-              getPurchaseData();
             } else if (response['Data'] is int) {
               savedPurchaseId = response['Data'];
             }
