@@ -274,6 +274,6 @@ flutter_native_splash:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: "AppIcon"
-  image_path: "assets/images/splash/vehicleregsplash.png"
+  image_path: "assets/watan_afghan_logo.png"
   min_sdk_android: 21 # android min sdk min:16, default 21
   remove_alpha_ios: true
