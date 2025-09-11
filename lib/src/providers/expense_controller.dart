@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:sample/src/models/expense_model.dart';
+import 'package:sample/src/util/snack.dart';
 
 import '../data/rest_client.dart';
 import '../repo/auth_repo.dart';
@@ -438,17 +439,21 @@ class ExpenseController with ChangeNotifier {
         if (response['IsSuccess'] == true) {
           debugPrint("Delete successful, refreshing expense list...");
           await getExpenseData();
+          showSuccessSnack('Transaction deleted successfully');
         } else {
           errorMessage = response['Message'] ?? 'Failed to delete expense data';
           debugPrint("Delete failed: $errorMessage");
+          showErrorSnack(errorMessage.toString());
         }
       } else {
         debugPrint("Delete completed, refreshing expense list...");
         await getExpenseData();
+        showErrorSnack(errorMessage.toString());
       }
     } catch (e) {
       debugPrint("Delete API Exception: $e");
       _handleApiError(e);
+      showErrorSnack('Failed to delete expense ${e.toString()}');
     } finally {
       isLoading = false;
       notifyListeners();

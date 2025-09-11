@@ -284,12 +284,12 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
     if (result == true) {
       _controller.deleteExpenses(expense.id, _deleteReasonController.text);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Transaction deleted successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   const SnackBar(
+      //     content: Text('Transaction deleted successfully'),
+      //     backgroundColor: Colors.green,
+      //   ),
+      // );
     }
   }
 }
