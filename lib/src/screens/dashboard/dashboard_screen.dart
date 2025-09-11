@@ -125,34 +125,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                                   const SizedBox(height: 24),
 
-                                  // Sales Monitor Section
-                                  _buildExpandableSection(
-                                    title: "Sales Monitor (Last Month)",
-                                    isExpanded: _isSalesExpanded,
-                                    onTap: () {
-                                      setState(() {
-                                        _isSalesExpanded = !_isSalesExpanded;
-                                      });
-                                    },
-                                    child: _buildExpenseMonitorContent(),
-                                  ),
+                                  // // Sales Monitor Section
+                                  // _buildExpandableSection(
+                                  //   title: "Sales Monitor (Last Month)",
+                                  //   isExpanded: _isSalesExpanded,
+                                  //   onTap: () {
+                                  //     setState(() {
+                                  //       _isSalesExpanded = !_isSalesExpanded;
+                                  //     });
+                                  //   },
+                                  //   child: _buildExpenseMonitorContent(),
+                                  // ),
 
-                                  const SizedBox(height: 16),
-
-                                  // Purchase Monitor Section
-                                  _buildExpandableSection(
-                                    title: "Purchase Monitor (Last Month)",
-                                    isExpanded: _isPurchaseExpanded,
-                                    onTap: () {
-                                      setState(() {
-                                        _isPurchaseExpanded =
-                                            !_isPurchaseExpanded;
-                                      });
-                                    },
-                                    child: _buildExpenseMonitorContent(),
-                                  ),
-
-                                  const SizedBox(height: 24),
+                                  // const SizedBox(height: 16),
+                                  //
+                                  // // Purchase Monitor Section
+                                  // _buildExpandableSection(
+                                  //   title: "Purchase Monitor (Last Month)",
+                                  //   isExpanded: _isPurchaseExpanded,
+                                  //   onTap: () {
+                                  //     setState(() {
+                                  //       _isPurchaseExpanded =
+                                  //           !_isPurchaseExpanded;
+                                  //     });
+                                  //   },
+                                  //   child: _buildExpenseMonitorContent(),
+                                  // ),
+                                  // const SizedBox(height: 24),
                                 ],
                               ),
                             ),
@@ -679,100 +678,100 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  Widget _buildExpandableSection({
-    required String title,
-    required bool isExpanded,
-    required VoidCallback onTap,
-    required Widget child,
-  }) {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Column(
-        children: [
-          InkWell(
-            onTap: onTap,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(16),
-              topRight: Radius.circular(16),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade800,
-                    ),
-                  ),
-                  Icon(
-                    isExpanded
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
-                    color: primaryColor,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (isExpanded)
-            Container(
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: Colors.grey.shade200, width: 1),
-                ),
-              ),
-              child: child,
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildExpenseMonitorContent() {
-    double sum = dailyExpenses.fold(0, (prev, curr) => prev + curr);
-    double average = sum / dailyExpenses.length;
-
-    return Padding(
-      padding: const EdgeInsets.all(20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Current Month (${DateFormat('MMMM yyyy').format(currentMonth)})',
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-          ),
-          const SizedBox(height: 16),
-
-          // SUM and AVE row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildSummaryItem(
-                label: 'SUM',
-                value: sum,
-                color: Colors.blue.shade700,
-              ),
-              _buildSummaryItem(
-                label: 'AVE',
-                value: average,
-                color: Colors.green.shade700,
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Daily expense grid
-          _buildDailyExpenseGrid(),
-        ],
-      ),
-    );
-  }
+  // Widget _buildExpandableSection({
+  //   required String title,
+  //   required bool isExpanded,
+  //   required VoidCallback onTap,
+  //   required Widget child,
+  // }) {
+  //   return Card(
+  //     elevation: 3,
+  //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+  //     child: Column(
+  //       children: [
+  //         InkWell(
+  //           onTap: onTap,
+  //           borderRadius: const BorderRadius.only(
+  //             topLeft: Radius.circular(16),
+  //             topRight: Radius.circular(16),
+  //           ),
+  //           child: Padding(
+  //             padding: const EdgeInsets.all(20.0),
+  //             child: Row(
+  //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //               children: [
+  //                 Text(
+  //                   title,
+  //                   style: TextStyle(
+  //                     fontSize: 18,
+  //                     fontWeight: FontWeight.bold,
+  //                     color: Colors.grey.shade800,
+  //                   ),
+  //                 ),
+  //                 Icon(
+  //                   isExpanded
+  //                       ? Icons.keyboard_arrow_up
+  //                       : Icons.keyboard_arrow_down,
+  //                   color: primaryColor,
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ),
+  //         if (isExpanded)
+  //           Container(
+  //             decoration: BoxDecoration(
+  //               border: Border(
+  //                 top: BorderSide(color: Colors.grey.shade200, width: 1),
+  //               ),
+  //             ),
+  //             child: child,
+  //           ),
+  //       ],
+  //     ),
+  //   );
+  // }
+  //
+  // Widget _buildExpenseMonitorContent() {
+  //   double sum = dailyExpenses.fold(0, (prev, curr) => prev + curr);
+  //   double average = sum / dailyExpenses.length;
+  //
+  //   return Padding(
+  //     padding: const EdgeInsets.all(20.0),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Text(
+  //           'Current Month (${DateFormat('MMMM yyyy').format(currentMonth)})',
+  //           style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+  //         ),
+  //         const SizedBox(height: 16),
+  //
+  //         // SUM and AVE row
+  //         Row(
+  //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //           children: [
+  //             _buildSummaryItem(
+  //               label: 'SUM',
+  //               value: sum,
+  //               color: Colors.blue.shade700,
+  //             ),
+  //             _buildSummaryItem(
+  //               label: 'AVE',
+  //               value: average,
+  //               color: Colors.green.shade700,
+  //             ),
+  //           ],
+  //         ),
+  //
+  //         const SizedBox(height: 16),
+  //
+  //         // Daily expense grid
+  //         _buildDailyExpenseGrid(),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildSummaryItem({
     required String label,
