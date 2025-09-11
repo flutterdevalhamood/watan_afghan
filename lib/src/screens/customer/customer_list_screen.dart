@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:sample/src/providers/customer_controller.dart';
 import 'package:sample/src/screens/customer/customer_detail_sheet.dart';
@@ -62,39 +63,51 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
       body: Consumer<CustomerController>(
         builder: (context, controller, child) {
           return RefreshIndicator(
-            onRefresh: () async => controller.refresh(),
-            child: CustomScrollView(
-              slivers: [
-                // Search Bar
-                SliverToBoxAdapter(
-                  child: Container(
-                    color: Colors.white,
-                    padding: const EdgeInsets.all(16),
-                    child: SearchBar(
-                      controller: _searchController,
-                      hintText: 'Search customers...',
-                      leading: const Icon(Icons.search),
-                      trailing: [
-                        if (_searchController.text.isNotEmpty)
-                          IconButton(
-                            onPressed: () {
-                              _searchController.clear();
-                              controller.clearSearch();
-                            },
-                            icon: const Icon(Icons.clear),
-                          ),
-                      ],
-                      onChanged: (value) => controller.searchCustomers(value),
-                      backgroundColor: WidgetStateProperty.all(
-                        Colors.grey[100],
-                      ),
-                      elevation: WidgetStateProperty.all(0),
-                    ),
+            onRefresh: () async {
+              HapticFeedback.lightImpact();
+              controller.refresh();
+            },
+            color: Theme.of(context).colorScheme.primary,
+            backgroundColor: Colors.white,
+            // Add some displacement for better visual feedback
+            // displacement: 40.0,
+            // Stroke width for the refresh indicator
+            // strokeWidth: 2.0,
+            child: Column(
+              children: [
+                // Search Bar - Fixed at top
+                Container(
+                  color: Colors.white,
+                  padding: const EdgeInsets.all(16),
+                  child: SearchBar(
+                    controller: _searchController,
+                    hintText: 'Search customers...',
+                    leading: const Icon(Icons.search),
+                    trailing: [
+                      if (_searchController.text.isNotEmpty)
+                        IconButton(
+                          onPressed: () {
+                            _searchController.clear();
+                            controller.clearSearch();
+                          },
+                          icon: const Icon(Icons.clear),
+                        ),
+                    ],
+                    onChanged: (value) => controller.searchCustomers(value),
+                    backgroundColor: WidgetStateProperty.all(Colors.grey[100]),
+                    elevation: WidgetStateProperty.all(0),
                   ),
                 ),
 
-                // Content Area
-                SliverFillRemaining(child: _buildContent(controller)),
+                // Content Area - Expandable
+                Expanded(
+                  child: CustomScrollView(
+                    controller: _scrollController,
+                    // This is important for pull-to-refresh to work properly
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [_buildContentSliver(controller)],
+                  ),
+                ),
               ],
             ),
           );
@@ -111,71 +124,89 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
     );
   }
 
-  Widget _buildContent(CustomerController controller) {
+  Widget _buildContentSliver(CustomerController controller) {
     if (controller.isLoading && controller.customers.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const SliverFillRemaining(
+        child: Center(child: CircularProgressIndicator()),
+      );
     }
 
     if (controller.errorMessage != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
-            const SizedBox(height: 16),
-            Text(
-              controller.errorMessage!,
-              style: TextStyle(color: Colors.red[600], fontSize: 16),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => controller.refresh(),
-              child: const Text('Try Again'),
-            ),
-          ],
+      return SliverFillRemaining(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+              const SizedBox(height: 16),
+              Text(
+                controller.errorMessage!,
+                style: TextStyle(color: Colors.red[600], fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => controller.refresh(),
+                child: const Text('Try Again'),
+              ),
+            ],
+          ),
         ),
       );
     }
 
     if (controller.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.people_outline, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              controller.searchQuery.isNotEmpty
-                  ? 'No customers found for "${controller.searchQuery}"'
-                  : 'No customers found',
-              style: TextStyle(color: Colors.grey[600], fontSize: 16),
-              textAlign: TextAlign.center,
-            ),
-          ],
+      return SliverFillRemaining(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.people_outline, size: 64, color: Colors.grey[400]),
+              const SizedBox(height: 16),
+              Text(
+                controller.searchQuery.isNotEmpty
+                    ? 'No customers found for "${controller.searchQuery}"'
+                    : 'No customers found',
+                style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              if (controller.searchQuery.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Text(
+                    'Pull down to refresh',
+                    style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                  ),
+                ),
+            ],
+          ),
         ),
       );
     }
 
-    return ListView.builder(
-      controller: _scrollController,
+    return SliverPadding(
       padding: const EdgeInsets.all(16),
-      itemCount: controller.customers.length + (controller.hasMore ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (index == controller.customers.length) {
-          return const Padding(
-            padding: EdgeInsets.all(16),
-            child: Center(child: CircularProgressIndicator()),
-          );
-        }
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            if (index == controller.customers.length) {
+              return const Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
 
-        final customer = controller.customers[index];
-        return CustomerCard(
-          customer: customer,
-          onTap: () => _showCustomerDetails(customer),
-          onDelete: () => _showDeleteConfirmation(customer),
-        );
-      },
+            final customer = controller.customers[index];
+            return CustomerCard(
+              customer: customer,
+              onTap: () => _showCustomerDetails(customer),
+              onDelete: () => _showDeleteConfirmation(customer),
+            );
+          },
+          childCount:
+              controller.customers.length + (controller.hasMore ? 1 : 0),
+        ),
+      ),
     );
   }
 
@@ -194,11 +225,11 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Delete Transaction'),
+          title: const Text('Delete Customer'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Are you sure you want to delete this transaction?'),
+              const Text('Are you sure you want to delete this customer?'),
               const SizedBox(height: 16),
               TextField(
                 controller: _deleteReasonController,
@@ -231,7 +262,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Transaction deleted successfully'),
+          content: Text('Customer deleted successfully'),
           backgroundColor: Colors.green,
         ),
       );

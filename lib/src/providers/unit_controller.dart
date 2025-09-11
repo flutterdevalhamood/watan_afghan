@@ -13,6 +13,13 @@ class UnitController with ChangeNotifier {
   int currentPage = 1;
   final int totalPages = 10;
 
+  Future<void> refresh() async {
+    currentPage = 1;
+    hasMore = true;
+    unitData?.clear();
+    await getUnitData();
+  }
+
   Future<void> getUnitData({bool loadMore = false}) async {
     isLoading = true;
     notifyListeners();

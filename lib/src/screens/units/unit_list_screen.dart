@@ -163,117 +163,75 @@ class _UnitListScreenState extends State<UnitListScreen> {
                         colors: [Colors.blue.shade50, Colors.white],
                       ),
                     ),
-                    child: Column(
-                      children: [
-                        // Search Box
-                        Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: TextField(
-                            controller: _searchController,
-                            decoration: InputDecoration(
-                              hintText: 'Search by name...',
-                              hintStyle: TextStyle(
-                                color: Appcolors.textLightGrayColor(context),
-                              ),
-                              prefixIcon: Icon(Icons.search),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                            ),
-
-                            onChanged: _onSearchChanged,
-                          ),
-                        ),
-                        // Customer List
-                        Expanded(
-                          child:
-                              units.isEmpty
-                                  ? Center(
-                                    child: Text(
-                                      _searchQuery.isEmpty
-                                          ? 'No units registered yet.'
-                                          : 'No results found.',
-                                      style:
-                                          Theme.of(context).textTheme.bodyLarge,
+                    child: RefreshIndicator(
+                      onRefresh: () async {
+                        await _unitListController.refresh();
+                      },
+                      child: ListView.builder(
+                        controller: _scrollController,
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        itemCount: units.length + 1, // +1 for search box
+                        itemBuilder: (context, index) {
+                          if (index == 0) {
+                            // First item = Search Box
+                            return Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: TextField(
+                                controller: _searchController,
+                                decoration: InputDecoration(
+                                  hintText: 'Search by name...',
+                                  hintStyle: TextStyle(
+                                    color: Appcolors.textLightGrayColor(
+                                      context,
                                     ),
-                                  )
-                                  : ListView.builder(
-                                    controller: _scrollController,
-                                    // padding: EdgeInsets.symmetric(horizontal: 16.0),
-                                    itemCount: units.length,
-                                    itemBuilder: (context, index) {
-                                      final unit = units[index];
-                                      return Column(
-                                        children: [
-                                          ListTile(
-                                            // contentPadding: EdgeInsets.all(
-                                            //   8.0,
-                                            // ),
-                                            leading: Icon(
-                                              Icons.person,
-                                              size: 30,
-                                            ),
-                                            title: Padding(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: 2,
-                                              ),
-                                              child: Text(
-                                                unit['Name'] ?? '',
-                                                style: Theme.of(
-                                                  context,
-                                                ).textTheme.bodyLarge!.copyWith(
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                            trailing: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                IconButton(
-                                                  onPressed: () {
-                                                    NavigationService()
-                                                        .pushNavigation(
-                                                          Screenroutes.unitEdit,
-                                                          arguments: unit,
-                                                        );
-                                                  },
-
-                                                  icon: Icon(
-                                                    Icons.edit,
-                                                    color: Colors.blue,
-                                                  ),
-                                                ),
-                                                SizedBox(width: 8),
-                                                // IconButton(
-                                                //   onPressed: () async {
-                                                //     _deleteUnit(index);
-                                                //   },
-                                                //   icon: Icon(
-                                                //     Icons.delete,
-                                                //     color: Colors.red,
-                                                //   ),
-                                                // ),
-                                              ],
-                                            ),
-                                          ),
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 20,
-                                            ),
-                                            child: Divider(
-                                              color: Colors.grey,
-                                              thickness: .5,
-                                            ),
-                                          ),
-                                        ],
-                                      );
-                                    },
                                   ),
-                        ),
-                      ],
+                                  prefixIcon: Icon(Icons.search),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                  ),
+                                ),
+                                onChanged: _onSearchChanged,
+                              ),
+                            );
+                          }
+
+                          final unit = units[index - 1];
+                          return Column(
+                            children: [
+                              ListTile(
+                                leading: Icon(Icons.person, size: 30),
+                                title: Text(
+                                  unit['Name'] ?? '',
+                                  style: Theme.of(context).textTheme.bodyLarge!
+                                      .copyWith(fontWeight: FontWeight.bold),
+                                ),
+                                trailing: IconButton(
+                                  onPressed: () {
+                                    NavigationService().pushNavigation(
+                                      Screenroutes.unitEdit,
+                                      arguments: unit,
+                                    );
+                                  },
+                                  icon: Icon(Icons.edit, color: Colors.blue),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                ),
+                                child: Divider(
+                                  color: Colors.grey,
+                                  thickness: .5,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
                     ),
                   )
                   : SizedBox.shrink(),
+
           floatingActionButton: FloatingActionButton(
             onPressed: () {
               Navigator.push(
