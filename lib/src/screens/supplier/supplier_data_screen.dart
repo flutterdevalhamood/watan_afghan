@@ -339,6 +339,38 @@ class _SupplierDataScreenState extends State<SupplierDataScreen> {
     }
   }
 
+  String? _validateMobileNumber(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Mobile number is required';
+    }
+
+    // Remove any spaces, hyphens, or other non-digit characters for validation
+    String cleanedValue = value.replaceAll(RegExp(r'[^\d+]'), '');
+
+    // Check if it starts with + and has country code
+    if (cleanedValue.startsWith('+')) {
+      // Remove the + sign for length checking
+      String withoutPlus = cleanedValue.substring(1);
+
+      // International format: should be 10-15 digits after country code
+      if (withoutPlus.length < 10 || withoutPlus.length > 15) {
+        return 'Please enter a valid mobile number (10-15 digits)';
+      }
+    } else {
+      // Local format: should be 10 digits
+      if (cleanedValue.length != 10) {
+        return 'Please enter a valid 10-digit mobile number';
+      }
+    }
+
+    // Check if it contains only digits (and + at the beginning if international)
+    if (!RegExp(r'^\+?[0-9]+$').hasMatch(cleanedValue)) {
+      return 'Mobile number can only contain digits and + sign';
+    }
+
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -479,11 +511,84 @@ class _SupplierDataScreenState extends State<SupplierDataScreen> {
                         Row(
                           children: [
                             Expanded(
-                              child: _buildTextField(
-                                controller: _mobileController,
-                                label: 'Mobile',
-                                isRequired: true,
-                                keyboardType: TextInputType.phone,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  RichText(
+                                    text: const TextSpan(
+                                      text: 'Mobile',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: Color(0xFF374151),
+                                      ),
+                                      children: [
+                                        TextSpan(
+                                          text: ' *',
+                                          style: TextStyle(
+                                            color: Color(0xFFEF4444),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TextFormField(
+                                    controller: _mobileController,
+                                    keyboardType: TextInputType.phone,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: Color(0xFF1F2937),
+                                    ),
+                                    decoration: InputDecoration(
+                                      hintText: 'Enter mobile number',
+                                      hintStyle: const TextStyle(
+                                        color: Color(0xFF9CA3AF),
+                                      ),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(
+                                          color: Color(0xFFE5E7EB),
+                                        ),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(
+                                          color: Color(0xFFE5E7EB),
+                                        ),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(
+                                          color: Color(0xFF2563EB),
+                                          width: 2,
+                                        ),
+                                      ),
+                                      errorBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(
+                                          color: Color(0xFFEF4444),
+                                          width: 2,
+                                        ),
+                                      ),
+                                      focusedErrorBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: const BorderSide(
+                                          color: Color(0xFFEF4444),
+                                          width: 2,
+                                        ),
+                                      ),
+                                      filled: true,
+                                      fillColor: const Color(0xFFFAFAFA),
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 16,
+                                          ),
+                                    ),
+                                    validator: _validateMobileNumber,
+                                  ),
+                                ],
                               ),
                             ),
                             const SizedBox(width: 16),

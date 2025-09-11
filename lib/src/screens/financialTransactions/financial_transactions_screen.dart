@@ -11,6 +11,15 @@ class FinancialTransactionsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Financial Transactions'),
+        leading: IconButton(
+          onPressed: () {
+            NavigationService().pushAndRemoveUntilNavigation(
+              Screenroutes.dashboard,
+              removeUntilPageName: Screenroutes.dashboard,
+            );
+          },
+          icon: const Icon(Icons.arrow_back),
+        ),
         elevation: 2,
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),

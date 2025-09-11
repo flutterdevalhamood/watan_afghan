@@ -184,8 +184,17 @@ class _SalesListScreenState extends State<SalesListScreen> {
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
                   onPressed: _hidePdfViewer,
                 )
-                : null,
+                : IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () {
+                    NavigationService().pushAndRemoveUntilNavigation(
+                      Screenroutes.dashboard,
+                      removeUntilPageName: Screenroutes.dashboard,
+                    );
+                  },
+                ),
       ),
+
       body:
           _showPdfViewer
               ? _buildPdfViewer()

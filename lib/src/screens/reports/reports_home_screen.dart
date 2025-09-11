@@ -14,6 +14,15 @@ class ReportsHomeScreen extends StatelessWidget {
           'Reports',
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
+        leading: IconButton(
+          onPressed: () {
+            NavigationService().pushAndRemoveUntilNavigation(
+              Screenroutes.dashboard,
+              removeUntilPageName: Screenroutes.dashboard,
+            );
+          },
+          icon: const Icon(Icons.arrow_back),
+        ),
         backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 2,
         centerTitle: true,

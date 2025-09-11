@@ -55,6 +55,15 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
           'Expenses',
           style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
         ),
+        leading: IconButton(
+          onPressed: () {
+            NavigationService().pushAndRemoveUntilNavigation(
+              Screenroutes.dashboard,
+              removeUntilPageName: Screenroutes.dashboard,
+            );
+          },
+          icon: const Icon(Icons.arrow_back),
+        ),
         backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 0,
       ),

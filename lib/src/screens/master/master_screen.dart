@@ -71,7 +71,12 @@ class _MasterScreenState extends State<MasterScreen>
               size: 18,
             ),
           ),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            NavigationService().pushAndRemoveUntilNavigation(
+              Screenroutes.dashboard,
+              removeUntilPageName: Screenroutes.dashboard,
+            );
+          },
         ),
         title: Text(
           'Master',

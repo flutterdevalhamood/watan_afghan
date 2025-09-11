@@ -62,6 +62,15 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
           'Purchase List',
           style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
         ),
+        leading: IconButton(
+          onPressed: () {
+            NavigationService().pushAndRemoveUntilNavigation(
+              Screenroutes.dashboard,
+              removeUntilPageName: Screenroutes.dashboard,
+            );
+          },
+          icon: const Icon(Icons.arrow_back),
+        ),
       ),
       body: Consumer<PurchaseController>(
         builder: (context, controller, child) {

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sample/src/providers/login_controller.dart';
+import 'package:sample/src/util/app_navigation.dart';
+import 'package:sample/src/util/app_routes.dart';
 import 'package:sample/src/util/snack.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
@@ -76,6 +78,15 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         title: const Text(
           'Change Password',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        ),
+        leading: IconButton(
+          onPressed: () {
+            NavigationService().pushAndRemoveUntilNavigation(
+              Screenroutes.dashboard,
+              removeUntilPageName: Screenroutes.dashboard,
+            );
+          },
+          icon: const Icon(Icons.arrow_back),
         ),
         backgroundColor: primaryColor,
         elevation: 0,
