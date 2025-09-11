@@ -620,27 +620,23 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
                           title: 'Contact Information',
                           icon: Icons.contact_phone_outlined,
                           children: [
-                            Row(
+                            Column(
                               children: [
-                                Expanded(
-                                  child: _buildTextField(
-                                    key: _fieldKeys['mobile'],
-                                    controller: _mobileController,
-                                    label: 'Mobile',
-                                    isRequired: true,
-                                    keyboardType: TextInputType.phone,
-                                    isMobile: true,
-                                  ),
+                                _buildTextField(
+                                  key: _fieldKeys['mobile'],
+                                  controller: _mobileController,
+                                  label: 'Mobile',
+                                  isRequired: true,
+                                  keyboardType: TextInputType.phone,
+                                  isMobile: true,
                                 ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: _buildTextField(
-                                    key: _fieldKeys['phone'],
-                                    controller: _phoneController,
-                                    label: 'Phone',
-                                    keyboardType: TextInputType.phone,
-                                    isPhone: true,
-                                  ),
+                                const SizedBox(height: 16),
+                                _buildTextField(
+                                  key: _fieldKeys['phone'],
+                                  controller: _phoneController,
+                                  label: 'Phone',
+                                  keyboardType: TextInputType.phone,
+                                  isPhone: true,
                                 ),
                               ],
                             ),
@@ -655,7 +651,6 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
                         ),
 
                         const SizedBox(height: 20),
-
                         // Address Information Card
                         _buildCard(
                           title: 'Address Information',

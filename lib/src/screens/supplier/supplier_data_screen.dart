@@ -508,96 +508,89 @@ class _SupplierDataScreenState extends State<SupplierDataScreen> {
                       title: 'Contact Information',
                       icon: Icons.contact_phone_outlined,
                       children: [
-                        Row(
+                        Column(
                           children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  RichText(
-                                    text: const TextSpan(
-                                      text: 'Mobile',
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: RichText(
+                                text: const TextSpan(
+                                  text: 'Mobile',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF374151),
+                                  ),
+                                  children: [
+                                    TextSpan(
+                                      text: ' *',
                                       style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                        color: Color(0xFF374151),
+                                        color: Color(0xFFEF4444),
                                       ),
-                                      children: [
-                                        TextSpan(
-                                          text: ' *',
-                                          style: TextStyle(
-                                            color: Color(0xFFEF4444),
-                                          ),
-                                        ),
-                                      ],
                                     ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  TextFormField(
-                                    controller: _mobileController,
-                                    keyboardType: TextInputType.phone,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      color: Color(0xFF1F2937),
-                                    ),
-                                    decoration: InputDecoration(
-                                      hintText: 'Enter mobile number',
-                                      hintStyle: const TextStyle(
-                                        color: Color(0xFF9CA3AF),
-                                      ),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: const BorderSide(
-                                          color: Color(0xFFE5E7EB),
-                                        ),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: const BorderSide(
-                                          color: Color(0xFFE5E7EB),
-                                        ),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: const BorderSide(
-                                          color: Color(0xFF2563EB),
-                                          width: 2,
-                                        ),
-                                      ),
-                                      errorBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: const BorderSide(
-                                          color: Color(0xFFEF4444),
-                                          width: 2,
-                                        ),
-                                      ),
-                                      focusedErrorBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: const BorderSide(
-                                          color: Color(0xFFEF4444),
-                                          width: 2,
-                                        ),
-                                      ),
-                                      filled: true,
-                                      fillColor: const Color(0xFFFAFAFA),
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 16,
-                                          ),
-                                    ),
-                                    validator: _validateMobileNumber,
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildTextField(
-                                controller: _phoneController,
-                                label: 'Phone',
-                                keyboardType: TextInputType.phone,
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _mobileController,
+                              keyboardType: TextInputType.phone,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFF1F2937),
                               ),
+                              decoration: InputDecoration(
+                                hintText: 'Enter mobile number',
+                                hintStyle: const TextStyle(
+                                  color: Color(0xFF9CA3AF),
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFFE5E7EB),
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFFE5E7EB),
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFF2563EB),
+                                    width: 2,
+                                  ),
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFFEF4444),
+                                    width: 2,
+                                  ),
+                                ),
+                                focusedErrorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFFEF4444),
+                                    width: 2,
+                                  ),
+                                ),
+                                filled: true,
+                                fillColor: const Color(0xFFFAFAFA),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 16,
+                                ),
+                              ),
+                              validator: _validateMobileNumber,
+                            ),
+                            const SizedBox(height: 20),
+                            _buildTextField(
+                              controller: _phoneController,
+                              label: 'Phone',
+                              keyboardType: TextInputType.phone,
                             ),
                           ],
                         ),
