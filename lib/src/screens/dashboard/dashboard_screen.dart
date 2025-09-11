@@ -475,10 +475,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _showBankAccountsDialog(DashboardController controller) {
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Bank Accounts'),
-            content: SizedBox(
+      builder: (context) {
+        final screenHeight = MediaQuery.of(context).size.height;
+        final screenWidth = MediaQuery.of(context).size.width;
+
+        return AlertDialog(
+          title: const Text('Bank Accounts'),
+          content: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: screenHeight * 0.6,
+              maxWidth: screenWidth > 600 ? 500 : screenWidth * 0.9,
+            ),
+            child: SizedBox(
               width: double.maxFinite,
               child:
                   controller.amountInBank != null &&
@@ -502,13 +510,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 style: const TextStyle(fontSize: 16),
                               ),
                             ),
-                            title: Text(getCurrencyName(currency)),
+                            title: Text(
+                              getCurrencyName(currency),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                             subtitle: Text(currency),
-                            trailing: Text(
-                              formatCurrency(amountValue, currency),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
+                            trailing: SizedBox(
+                              width: 80,
+                              child: Text(
+                                formatCurrency(amountValue, currency),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                                textAlign: TextAlign.end,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             onTap: () {
@@ -524,15 +542,78 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       )
                       : const Text('No bank account data available'),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Close'),
-              ),
-            ],
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
     );
   }
+  // void _showBankAccountsDialog(DashboardController controller) {
+  //   showDialog(
+  //     context: context,
+  //     builder:
+  //         (context) => AlertDialog(
+  //           title: const Text('Bank Accounts'),
+  //           content: SizedBox(
+  //             width: double.maxFinite,
+  //             child:
+  //                 controller.amountInBank != null &&
+  //                         controller.amountInBank!.isNotEmpty
+  //                     ? ListView.builder(
+  //                       shrinkWrap: true,
+  //                       itemCount: controller.amountInBank!.length,
+  //                       itemBuilder: (context, index) {
+  //                         final entry =
+  //                             controller.amountInBank!.entries.toList()[index];
+  //                         final currency = entry.key;
+  //                         final amount = entry.value;
+  //                         final double amountValue =
+  //                             (amount is int) ? amount.toDouble() : amount;
+  //
+  //                         return ListTile(
+  //                           leading: CircleAvatar(
+  //                             backgroundColor: Colors.blue.withOpacity(0.1),
+  //                             child: Text(
+  //                               getCurrencyFlag(currency),
+  //                               style: const TextStyle(fontSize: 16),
+  //                             ),
+  //                           ),
+  //                           title: Text(getCurrencyName(currency)),
+  //                           subtitle: Text(currency),
+  //                           trailing: Text(
+  //                             formatCurrency(amountValue, currency),
+  //                             style: const TextStyle(
+  //                               fontWeight: FontWeight.bold,
+  //                               fontSize: 14,
+  //                             ),
+  //                           ),
+  //                           onTap: () {
+  //                             Navigator.pop(context);
+  //                             _navigateToBankDetails(
+  //                               currency,
+  //                               amountValue,
+  //                               controller,
+  //                             );
+  //                           },
+  //                         );
+  //                       },
+  //                     )
+  //                     : const Text('No bank account data available'),
+  //           ),
+  //           actions: [
+  //             TextButton(
+  //               onPressed: () => Navigator.pop(context),
+  //               child: const Text('Close'),
+  //             ),
+  //           ],
+  //         ),
+  //   );
+  // }
 
   Widget _buildInvestorPayableSection(DashboardController controller) {
     final Map<String, dynamic>? data = controller.investorPayable;

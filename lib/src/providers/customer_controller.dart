@@ -438,6 +438,7 @@ class CustomerController with ChangeNotifier {
               data['countries'] ?? [],
             );
             debugPrint('Base data fetched successfully');
+            _setDefaultCompanyType();
           }
         } else {
           errorMessage =
@@ -451,6 +452,38 @@ class CustomerController with ChangeNotifier {
     } finally {
       isLoading = false;
       notifyListeners();
+    }
+  }
+
+  void _setDefaultCompanyType() {
+    if (companyType != null && companyType!.isNotEmpty) {
+      // Find Customer type in the list (case-insensitive search)
+      var customerType = companyType!.firstWhere(
+        (item) => (item['Name'] as String?)?.toLowerCase() == 'customer',
+        orElse: () => <String, dynamic>{},
+      );
+
+      // If not found with exact name, try partial match
+      if (customerType.isEmpty) {
+        customerType = companyType!.firstWhere(
+          (item) =>
+              (item['Name'] as String?)?.toLowerCase().contains('customer') ??
+              false,
+          orElse: () => <String, dynamic>{},
+        );
+      }
+
+      // If still not found, use the first item as fallback
+      if (customerType.isEmpty && companyType!.isNotEmpty) {
+        customerType = companyType!.first;
+      }
+
+      if (customerType.isNotEmpty && customerType['id'] != null) {
+        selectedCompanyTypeId = customerType['id'];
+        debugPrint(
+          'Default company type set to: ${customerType['Name']} (ID: ${customerType['id']})',
+        );
+      }
     }
   }
 
