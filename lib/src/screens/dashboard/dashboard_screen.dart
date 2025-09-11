@@ -326,7 +326,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.15),
                   shape: BoxShape.circle,
@@ -388,7 +388,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     data: controller.cashOnHand,
                     icon: Icons.payments_outlined,
                     color: Colors.green,
-                    onTap: null, // Not clickable
+                    onTap:
+                        () =>
+                            _showCashAccountDialog(controller), // Not clickable
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -471,6 +473,169 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
+
+  void _showCashAccountDialog(DashboardController controller) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        final screenHeight = MediaQuery.of(context).size.height;
+        final screenWidth = MediaQuery.of(context).size.width;
+
+        return AlertDialog(
+          title: const Text('Cash on Hand', textAlign: TextAlign.center),
+          content: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: screenHeight * 0.6,
+              maxWidth: screenWidth > 600 ? 500 : screenWidth * 0.8,
+            ),
+            child: SizedBox(
+              width: double.maxFinite,
+              child:
+                  controller.cashOnHand != null &&
+                          controller.cashOnHand!.isNotEmpty
+                      ? ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: controller.cashOnHand!.length,
+                        itemBuilder: (context, index) {
+                          final entry =
+                              controller.cashOnHand!.entries.toList()[index];
+                          final currency = entry.key;
+                          final amount = entry.value;
+                          final double amountValue =
+                              (amount is int) ? amount.toDouble() : amount;
+
+                          return ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 8.0,
+                              vertical: 4.0,
+                            ),
+                            leading: CircleAvatar(
+                              backgroundColor: Colors.blue.withOpacity(0.1),
+                              child: Text(
+                                getCurrencyFlag(currency),
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            ),
+                            title: Text(
+                              currency, // Display currency code (USD, AFN, etc.)
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            subtitle: Text(
+                              getCurrencyName(
+                                currency,
+                              ), // Full name as subtitle
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            trailing: SizedBox(
+                              width: 120,
+                              child: Text(
+                                formatCurrency(amountValue, currency),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Colors.black,
+                                ),
+                                textAlign: TextAlign.end,
+                                maxLines: 2,
+                              ),
+                            ),
+                          );
+                        },
+                      )
+                      : const Center(
+                        child: Text('No cash on hand data available'),
+                      ),
+            ),
+          ),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // void _showCashAccountDialog(DashboardController controller) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) {
+  //       final screenHeight = MediaQuery.of(context).size.height;
+  //       final screenWidth = MediaQuery.of(context).size.width;
+  //
+  //       return AlertDialog(
+  //         title: const Text('Cash on Hand'),
+  //         content: ConstrainedBox(
+  //           constraints: BoxConstraints(
+  //             maxHeight: screenHeight * 0.6,
+  //             maxWidth: screenWidth > 600 ? 500 : screenWidth * 1.5,
+  //           ),
+  //           child: SizedBox(
+  //             width: double.maxFinite,
+  //             child:
+  //                 controller.cashOnHand != null &&
+  //                         controller.cashOnHand!.isNotEmpty
+  //                     ? ListView.builder(
+  //                       shrinkWrap: true,
+  //                       itemCount: controller.cashOnHand!.length,
+  //                       itemBuilder: (context, index) {
+  //                         final entry =
+  //                             controller.cashOnHand!.entries.toList()[index];
+  //                         final currency = entry.key;
+  //                         final amount = entry.value;
+  //                         final double amountValue =
+  //                             (amount is int) ? amount.toDouble() : amount;
+  //
+  //                         return ListTile(
+  //                           leading: CircleAvatar(
+  //                             backgroundColor: Colors.blue.withOpacity(0.1),
+  //                             child: Text(
+  //                               getCurrencyFlag(currency),
+  //                               style: const TextStyle(fontSize: 16),
+  //                             ),
+  //                           ),
+  //                           title: Text(
+  //                             getCurrencyName(currency),
+  //                             maxLines: 1,
+  //                             overflow: TextOverflow.ellipsis,
+  //                           ),
+  //                           subtitle: Text(currency),
+  //                           trailing: SizedBox(
+  //                             width: 80,
+  //                             child: Text(
+  //                               formatCurrency(amountValue, currency),
+  //                               style: const TextStyle(
+  //                                 fontWeight: FontWeight.bold,
+  //                                 fontSize: 14,
+  //                               ),
+  //                               textAlign: TextAlign.end,
+  //                               maxLines: 2,
+  //                               // overflow: TextOverflow.ellipsis,
+  //                             ),
+  //                           ),
+  //                         );
+  //                       },
+  //                     )
+  //                     : const Text('No cash on hand data available'),
+  //           ),
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () => Navigator.pop(context),
+  //             child: const Text('Close'),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 
   void _showBankAccountsDialog(DashboardController controller) {
     showDialog(

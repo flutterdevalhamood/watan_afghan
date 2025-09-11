@@ -27,209 +27,211 @@ class ReportsHomeScreen extends StatelessWidget {
         elevation: 2,
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Reports Section
-            const Text(
-              'Reports',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Reports Section
+              const Text(
+                'Reports',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Choose from the available reports below',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 24),
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 1.2,
-              children: [
-                ReportTile(
-                  title: 'Sales Report',
-                  icon: Icons.trending_up,
-                  color: Colors.green,
-                  onTap: () {
-                    NavigationService().pushNavigation(
-                      Screenroutes.salesReportScreen,
-                    );
-                  },
-                ),
-                ReportTile(
-                  title: 'Purchase Report',
-                  icon: Icons.shopping_cart,
-                  color: Colors.blue,
-                  onTap: () {
-                    NavigationService().pushNavigation(
-                      Screenroutes.purchaseReportScreen,
-                    );
-                  },
-                ),
-                ReportTile(
-                  title: 'Expense Report',
-                  icon: Icons.receipt_long,
-                  color: Colors.orange,
-                  onTap: () {
-                    NavigationService().pushNavigation(
-                      Screenroutes.expenseReportScreen,
-                    );
-                  },
-                ),
-                ReportTile(
-                  title: 'Landscape Expense Report',
-                  icon: Icons.landscape,
-                  color: Colors.purple,
-                  onTap: () {
-                    NavigationService().pushNavigation(
-                      Screenroutes.landscapeExpenseReportScreen,
-                    );
-                  },
-                ),
-                ReportTile(
-                  title: 'Cash Report',
-                  icon: Icons.account_balance_wallet,
-                  color: Colors.teal,
-                  onTap: () {
-                    NavigationService().pushNavigation(
-                      Screenroutes.cashReportScreen,
-                    );
-                  },
-                ),
-              ],
-            ),
+              const SizedBox(height: 8),
+              Text(
+                'Choose from the available reports below',
+                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 24),
+              GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 1.0,
+                children: [
+                  ReportTile(
+                    title: 'Sales Report',
+                    icon: Icons.trending_up,
+                    color: Colors.green,
+                    onTap: () {
+                      NavigationService().pushNavigation(
+                        Screenroutes.salesReportScreen,
+                      );
+                    },
+                  ),
+                  ReportTile(
+                    title: 'Purchase Report',
+                    icon: Icons.shopping_cart,
+                    color: Colors.blue,
+                    onTap: () {
+                      NavigationService().pushNavigation(
+                        Screenroutes.purchaseReportScreen,
+                      );
+                    },
+                  ),
+                  ReportTile(
+                    title: 'Expense Report',
+                    icon: Icons.receipt_long,
+                    color: Colors.orange,
+                    onTap: () {
+                      NavigationService().pushNavigation(
+                        Screenroutes.expenseReportScreen,
+                      );
+                    },
+                  ),
+                  ReportTile(
+                    title: 'Landscape Expense Report',
+                    icon: Icons.landscape,
+                    color: Colors.purple,
+                    onTap: () {
+                      NavigationService().pushNavigation(
+                        Screenroutes.landscapeExpenseReportScreen,
+                      );
+                    },
+                  ),
+                  ReportTile(
+                    title: 'Cash Report',
+                    icon: Icons.account_balance_wallet,
+                    color: Colors.teal,
+                    onTap: () {
+                      NavigationService().pushNavigation(
+                        Screenroutes.cashReportScreen,
+                      );
+                    },
+                  ),
+                ],
+              ),
 
-            // Statements Section
-            const SizedBox(height: 40),
-            const Text(
-              'Statements',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
+              // Statements Section
+              const SizedBox(height: 40),
+              const Text(
+                'Statements',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Generate customer and supplier statements',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 24),
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 1.2,
-              children: [
-                ReportTile(
-                  title: 'Customer Statement',
-                  icon: Icons.person_outline,
-                  color: Colors.indigo,
-                  onTap: () {
-                    NavigationService().pushNavigation(
-                      Screenroutes.customerStatementScreen,
-                    );
-                  },
-                ),
-                ReportTile(
-                  title: 'Supplier Statement',
-                  icon: Icons.business_outlined,
-                  color: Colors.red,
-                  onTap: () {
-                    NavigationService().pushNavigation(
-                      Screenroutes.supplierStatementScreen,
-                    );
-                  },
-                ),
-              ],
-            ),
+              const SizedBox(height: 8),
+              Text(
+                'Generate customer and supplier statements',
+                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 24),
+              GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 1.2,
+                children: [
+                  ReportTile(
+                    title: 'Customer Statement',
+                    icon: Icons.person_outline,
+                    color: Colors.indigo,
+                    onTap: () {
+                      NavigationService().pushNavigation(
+                        Screenroutes.customerStatementScreen,
+                      );
+                    },
+                  ),
+                  ReportTile(
+                    title: 'Supplier Statement',
+                    icon: Icons.business_outlined,
+                    color: Colors.red,
+                    onTap: () {
+                      NavigationService().pushNavigation(
+                        Screenroutes.supplierStatementScreen,
+                      );
+                    },
+                  ),
+                ],
+              ),
 
-            // Summaries Section
-            const SizedBox(height: 40),
-            const Text(
-              'Summaries',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'View customer receivable summaries',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 24),
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 1.2,
-              children: [
-                ReportTile(
-                  title: 'Customer Receivable Summary',
-                  icon: Icons.account_balance,
-                  color: Colors.cyan,
-                  onTap: () {
-                    // NavigationService().pushNavigation(
-                    //   Screenroutes.customerReceivableSummaryScreen,
-                    // );
-                  },
+              // Summaries Section
+              const SizedBox(height: 40),
+              const Text(
+                'Summaries',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'View customer receivable summaries',
+                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 24),
+              GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 1.2,
+                children: [
+                  ReportTile(
+                    title: 'Customer Receivable Summary',
+                    icon: Icons.account_balance,
+                    color: Colors.cyan,
+                    onTap: () {
+                      // NavigationService().pushNavigation(
+                      //   Screenroutes.customerReceivableSummaryScreen,
+                      // );
+                    },
+                  ),
+                ],
+              ),
 
-            // Available Stocks Section
-            const SizedBox(height: 40),
-            const Text(
-              'Available Stocks',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'View stock availability and current stock reports',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 24),
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 1.2,
-              children: [
-                ReportTile(
-                  title: 'Current Stock Report',
-                  icon: Icons.inventory_outlined,
-                  color: Colors.deepOrange,
-                  onTap: () {
-                    NavigationService().pushNavigation(
-                      Screenroutes.currentStockReportScreen,
-                    );
-                  },
+              // Available Stocks Section
+              const SizedBox(height: 40),
+              const Text(
+                'Available Stocks',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
                 ),
-              ],
-            ),
-            const SizedBox(height: 20),
-          ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'View stock availability and current stock reports',
+                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 24),
+              GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 1.2,
+                children: [
+                  ReportTile(
+                    title: 'Current Stock Report',
+                    icon: Icons.inventory_outlined,
+                    color: Colors.deepOrange,
+                    onTap: () {
+                      NavigationService().pushNavigation(
+                        Screenroutes.currentStockReportScreen,
+                      );
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
@@ -285,12 +287,12 @@ class ReportTile extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, size: 32, color: color),
+                child: Icon(icon, size: 28, color: color),
               ),
               const SizedBox(height: 10),
               Flexible(
@@ -300,7 +302,7 @@ class ReportTile extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
                     height: 1.2,
