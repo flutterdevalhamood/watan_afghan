@@ -163,82 +163,94 @@ class _SalesListScreenState extends State<SalesListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        title:
-            _showPdfViewer
-                ? const Text('Sales PDF', style: TextStyle(color: Colors.white))
-                : const Text(
-                  'Sales',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+    return WillPopScope(
+      onWillPop: () async {
+        NavigationService().pushAndRemoveUntilNavigation(
+          Screenroutes.dashboard,
+          removeUntilPageName: Screenroutes.dashboard,
+        );
+        return false;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.grey[50],
+        appBar: AppBar(
+          title:
+              _showPdfViewer
+                  ? const Text(
+                    'Sales PDF',
+                    style: TextStyle(color: Colors.white),
+                  )
+                  : const Text(
+                    'Sales',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        elevation: 0,
-        centerTitle: true,
-        leading:
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          elevation: 0,
+          centerTitle: true,
+          leading:
+              _showPdfViewer
+                  ? IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    onPressed: _hidePdfViewer,
+                  )
+                  : IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    onPressed: () {
+                      NavigationService().pushAndRemoveUntilNavigation(
+                        Screenroutes.dashboard,
+                        removeUntilPageName: Screenroutes.dashboard,
+                      );
+                    },
+                  ),
+        ),
+
+        body:
             _showPdfViewer
-                ? IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  onPressed: _hidePdfViewer,
-                )
-                : IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  onPressed: () {
-                    NavigationService().pushAndRemoveUntilNavigation(
-                      Screenroutes.dashboard,
-                      removeUntilPageName: Screenroutes.dashboard,
+                ? _buildPdfViewer()
+                : Consumer<SalesController>(
+                  builder: (context, controller, child) {
+                    return Column(
+                      children: [
+                        // Search Bar - Fixed at top
+                        _buildSearchBar(controller),
+
+                        // Main Content with RefreshIndicator
+                        Expanded(
+                          child: RefreshIndicator(
+                            onRefresh: controller.refresh,
+                            color: Colors.indigo[600],
+                            child: _buildContent(controller),
+                          ),
+                        ),
+                      ],
                     );
                   },
                 ),
-      ),
-
-      body:
-          _showPdfViewer
-              ? _buildPdfViewer()
-              : Consumer<SalesController>(
-                builder: (context, controller, child) {
-                  return Column(
-                    children: [
-                      // Search Bar - Fixed at top
-                      _buildSearchBar(controller),
-
-                      // Main Content with RefreshIndicator
-                      Expanded(
-                        child: RefreshIndicator(
-                          onRefresh: controller.refresh,
-                          color: Colors.indigo[600],
-                          child: _buildContent(controller),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-      floatingActionButton:
-          _showPdfViewer
-              ? null
-              : FloatingActionButton(
-                onPressed: () async {
-                  final result = NavigationService().pushNavigation(
-                    Screenroutes.salesRegistration,
-                  );
-                  if (result == true && mounted) {
-                    final controller = Provider.of<SalesController>(
-                      context,
-                      listen: false,
+        floatingActionButton:
+            _showPdfViewer
+                ? null
+                : FloatingActionButton(
+                  onPressed: () async {
+                    final result = NavigationService().pushNavigation(
+                      Screenroutes.salesRegistration,
                     );
+                    if (result == true && mounted) {
+                      final controller = Provider.of<SalesController>(
+                        context,
+                        listen: false,
+                      );
 
-                    await controller.refresh();
-                  }
-                  _controller.refresh();
-                  _searchController.clear();
-                },
-                child: const Icon(Icons.add),
-              ),
+                      await controller.refresh();
+                    }
+                    _controller.refresh();
+                    _searchController.clear();
+                  },
+                  child: const Icon(Icons.add),
+                ),
+      ),
     );
   }
 

@@ -42,6 +42,9 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
       _authController = Provider.of<AuthController>(context, listen: false);
       _nameController.text = AuthRepo.user ?? '';
       _contactController.text = AuthRepo.contact ?? '';
+      if (AuthRepo.imageUrl != null && AuthRepo.imageUrl!.isNotEmpty) {
+        setState(() {});
+      }
     });
   }
 

@@ -49,76 +49,85 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        title: const Text(
-          'Expenses',
-          style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+    return WillPopScope(
+      onWillPop: () async {
+        NavigationService().pushAndRemoveUntilNavigation(
+          Screenroutes.dashboard,
+          removeUntilPageName: Screenroutes.dashboard,
+        );
+        return false;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.grey[50],
+        appBar: AppBar(
+          title: const Text(
+            'Expenses',
+            style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+          ),
+          leading: IconButton(
+            onPressed: () {
+              NavigationService().pushAndRemoveUntilNavigation(
+                Screenroutes.dashboard,
+                removeUntilPageName: Screenroutes.dashboard,
+              );
+            },
+            icon: const Icon(Icons.arrow_back),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          elevation: 0,
         ),
-        leading: IconButton(
-          onPressed: () {
-            NavigationService().pushAndRemoveUntilNavigation(
-              Screenroutes.dashboard,
-              removeUntilPageName: Screenroutes.dashboard,
+        body: Consumer<ExpenseController>(
+          builder: (context, controller, child) {
+            return Column(
+              children: [
+                // Search Bar
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  color: Colors.white,
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search by reference, supplier, or amount...',
+                      prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                      suffixIcon:
+                          _searchController.text.isNotEmpty
+                              ? IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  controller.searchExpenses('');
+                                },
+                              )
+                              : null,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      contentPadding: const EdgeInsets.all(16),
+                    ),
+                    onChanged: controller.searchExpenses,
+                  ),
+                ),
+
+                // Main Content
+                Expanded(child: _buildMainContent(controller)),
+              ],
             );
           },
-          icon: const Icon(Icons.arrow_back),
         ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        elevation: 0,
-      ),
-      body: Consumer<ExpenseController>(
-        builder: (context, controller, child) {
-          return Column(
-            children: [
-              // Search Bar
-              Container(
-                padding: const EdgeInsets.all(16),
-                color: Colors.white,
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search by reference, supplier, or amount...',
-                    prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                    suffixIcon:
-                        _searchController.text.isNotEmpty
-                            ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () {
-                                _searchController.clear();
-                                controller.searchExpenses('');
-                              },
-                            )
-                            : null,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                    contentPadding: const EdgeInsets.all(16),
-                  ),
-                  onChanged: controller.searchExpenses,
-                ),
-              ),
-
-              // Main Content
-              Expanded(child: _buildMainContent(controller)),
-            ],
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          NavigationService().pushNavigation(Screenroutes.expenseDataScreen);
-          _searchController.clear();
-          _controller.clearSearch();
-          _controller.refresh();
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Create New'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () {
+            NavigationService().pushNavigation(Screenroutes.expenseDataScreen);
+            _searchController.clear();
+            _controller.clearSearch();
+            _controller.refresh();
+          },
+          icon: const Icon(Icons.add),
+          label: const Text('Create New'),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+        ),
       ),
     );
   }

@@ -46,135 +46,147 @@ class _MasterScreenState extends State<MasterScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        leading: IconButton(
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+    return WillPopScope(
+      onWillPop: () async {
+        NavigationService().pushAndRemoveUntilNavigation(
+          Screenroutes.dashboard,
+          removeUntilPageName: Screenroutes.dashboard,
+        );
+        return false;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.grey[50],
+        appBar: AppBar(
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          leading: IconButton(
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.arrow_back_ios_new,
+                color: primaryColor,
+                size: 18,
+              ),
             ),
-            child: Icon(
-              Icons.arrow_back_ios_new,
-              color: primaryColor,
-              size: 18,
+            onPressed: () {
+              NavigationService().pushAndRemoveUntilNavigation(
+                Screenroutes.dashboard,
+                removeUntilPageName: Screenroutes.dashboard,
+              );
+            },
+          ),
+          title: Text(
+            'Master',
+            style: TextStyle(
+              color: Colors.grey[800],
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
             ),
           ),
-          onPressed: () {
-            NavigationService().pushAndRemoveUntilNavigation(
-              Screenroutes.dashboard,
-              removeUntilPageName: Screenroutes.dashboard,
-            );
-          },
+          centerTitle: true,
         ),
-        title: Text(
-          'Master',
-          style: TextStyle(
-            color: Colors.grey[800],
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: SlideTransition(
-          position: _slideAnimation,
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header Section
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Manage Your',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w300,
-                          color: Colors.grey[600],
+        body: FadeTransition(
+          opacity: _fadeAnimation,
+          child: SlideTransition(
+            position: _slideAnimation,
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header Section
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Manage Your',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w300,
+                            color: Colors.grey[600],
+                          ),
                         ),
-                      ),
-                      Text(
-                        'Product and Unit',
-                        style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[800],
+                        Text(
+                          'Product and Unit',
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[800],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Choose a category to view and manage product and unit',
-                        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                      ),
-                    ],
+                        const SizedBox(height: 8),
+                        Text(
+                          'Choose a category to view and manage product and unit',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
 
-                const SizedBox(height: 30),
+                  const SizedBox(height: 30),
 
-                // Contact Categories
-                Expanded(
-                  child: ListView(
-                    children: [
-                      _buildContactCard(
-                        title: 'Product',
-                        subtitle: 'Manage your product database',
-                        icon: Icons.people_rounded,
-                        color: const Color(0xFF10B981),
-                        gradient: [
-                          const Color(0xFF10B981),
-                          const Color(0xFF059669),
-                        ],
-                        onTap: () {
-                          NavigationService().pushNavigation(
-                            Screenroutes.productList,
-                          );
-                        },
-                        delay: 0,
-                      ),
+                  // Contact Categories
+                  Expanded(
+                    child: ListView(
+                      children: [
+                        _buildContactCard(
+                          title: 'Product',
+                          subtitle: 'Manage your product database',
+                          icon: Icons.people_rounded,
+                          color: const Color(0xFF10B981),
+                          gradient: [
+                            const Color(0xFF10B981),
+                            const Color(0xFF059669),
+                          ],
+                          onTap: () {
+                            NavigationService().pushNavigation(
+                              Screenroutes.productList,
+                            );
+                          },
+                          delay: 0,
+                        ),
 
-                      const SizedBox(height: 20),
+                        const SizedBox(height: 20),
 
-                      _buildContactCard(
-                        title: 'Unit',
-                        subtitle: 'View and manage unit database',
-                        icon: Icons.local_shipping_rounded,
-                        color: const Color(0xFF3B82F6),
-                        gradient: [
-                          const Color(0xFF3B82F6),
-                          const Color(0xFF1D4ED8),
-                        ],
-                        onTap: () {
-                          NavigationService().pushNavigation(
-                            Screenroutes.unitList,
-                          );
-                        },
-                        delay: 200,
-                      ),
+                        _buildContactCard(
+                          title: 'Unit',
+                          subtitle: 'View and manage unit database',
+                          icon: Icons.local_shipping_rounded,
+                          color: const Color(0xFF3B82F6),
+                          gradient: [
+                            const Color(0xFF3B82F6),
+                            const Color(0xFF1D4ED8),
+                          ],
+                          onTap: () {
+                            NavigationService().pushNavigation(
+                              Screenroutes.unitList,
+                            );
+                          },
+                          delay: 200,
+                        ),
 
-                      const SizedBox(height: 20),
-                    ],
+                        const SizedBox(height: 20),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

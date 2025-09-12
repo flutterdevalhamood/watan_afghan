@@ -54,82 +54,96 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        title: const Text(
-          'Purchase List',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
+    return WillPopScope(
+      onWillPop: () async {
+        NavigationService().pushAndRemoveUntilNavigation(
+          Screenroutes.dashboard,
+          removeUntilPageName: Screenroutes.dashboard,
+        );
+        return false;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.grey[50],
+        appBar: AppBar(
+          elevation: 0,
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          title: const Text(
+            'Purchase List',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
+          ),
+          leading: IconButton(
+            onPressed: () {
+              NavigationService().pushAndRemoveUntilNavigation(
+                Screenroutes.dashboard,
+                removeUntilPageName: Screenroutes.dashboard,
+              );
+            },
+            icon: const Icon(Icons.arrow_back),
+          ),
         ),
-        leading: IconButton(
-          onPressed: () {
-            NavigationService().pushAndRemoveUntilNavigation(
-              Screenroutes.dashboard,
-              removeUntilPageName: Screenroutes.dashboard,
-            );
-          },
-          icon: const Icon(Icons.arrow_back),
-        ),
-      ),
-      body: Consumer<PurchaseController>(
-        builder: (context, controller, child) {
-          return Column(
-            children: [
-              // Search Bar - Fixed at top
-              Container(
-                color: Colors.white,
-                padding: const EdgeInsets.all(16),
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: controller.searchExpenses,
-                  decoration: InputDecoration(
-                    hintText: 'Search by invoice number...',
-                    prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                    suffixIcon:
-                        controller.searchQuery.isNotEmpty
-                            ? IconButton(
-                              icon: const Icon(Icons.clear, color: Colors.grey),
-                              onPressed: () {
-                                _searchController.clear();
-                                controller.clearSearch();
-                              },
-                            )
-                            : null,
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+        body: Consumer<PurchaseController>(
+          builder: (context, controller, child) {
+            return Column(
+              children: [
+                // Search Bar - Fixed at top
+                Container(
+                  color: Colors.white,
+                  padding: const EdgeInsets.all(16),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: controller.searchExpenses,
+                    decoration: InputDecoration(
+                      hintText: 'Search by invoice number...',
+                      prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                      suffixIcon:
+                          controller.searchQuery.isNotEmpty
+                              ? IconButton(
+                                icon: const Icon(
+                                  Icons.clear,
+                                  color: Colors.grey,
+                                ),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  controller.clearSearch();
+                                },
+                              )
+                              : null,
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
                   ),
                 ),
-              ),
 
-              // Content - Wrapped in Expanded with RefreshIndicator
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: controller.refresh,
-                  child: _buildContent(controller),
+                // Content - Wrapped in Expanded with RefreshIndicator
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: controller.refresh,
+                    child: _buildContent(controller),
+                  ),
                 ),
-              ),
-            ],
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          NavigationService().pushNavigation(Screenroutes.purchaseRegistration);
-          _searchController.clear();
-          _controller.clearSearch();
-          _controller.refresh();
-        },
-        child: const Icon(Icons.add),
+              ],
+            );
+          },
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            NavigationService().pushNavigation(
+              Screenroutes.purchaseRegistration,
+            );
+            _searchController.clear();
+            _controller.clearSearch();
+            _controller.refresh();
+          },
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }

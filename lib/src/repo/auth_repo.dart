@@ -106,6 +106,7 @@ class AuthRepo {
   static const _prefLoginIdKey = "Id";
   static const _prefContactKey = "contact";
   static const _prefTokenExpiryKey = "tokenExpiry";
+  static const _prefImageUrlKey = "imageUrl";
 
   // Token setters and getters
   static set token(String? token) {
@@ -160,6 +161,18 @@ class AuthRepo {
       "Token refresh check: ${currentToken != null && currentToken.isNotEmpty}",
     );
     return currentToken != null && currentToken.isNotEmpty;
+  }
+
+  static set imageUrl(String? url) {
+    if (url == null) {
+      prefs?.remove(_prefImageUrlKey);
+    } else {
+      prefs?.setString(_prefImageUrlKey, url);
+    }
+  }
+
+  static String? get imageUrl {
+    return prefs?.getString(_prefImageUrlKey);
   }
 
   // Role setters and getters

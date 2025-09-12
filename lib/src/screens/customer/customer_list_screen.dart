@@ -15,7 +15,12 @@ class CustomerListScreen extends StatefulWidget {
   State<CustomerListScreen> createState() => _CustomerListScreenState();
 }
 
-class _CustomerListScreenState extends State<CustomerListScreen> {
+class _CustomerListScreenState extends State<CustomerListScreen>
+    with AutomaticKeepAliveClientMixin {
+  // FIXED: Keep this screen alive to prevent data loss
+  @override
+  bool get wantKeepAlive => true;
+
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   late CustomerController _controller;
@@ -24,14 +29,33 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
   @override
   void initState() {
     super.initState();
-    _controller = context.read<CustomerController>();
+    // FIXED: Access controller in a safer way
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeController();
+    });
+  }
 
-    _searchController.text = '';
-    _controller.refresh();
-    if (!_controller.hasData) {
-      _controller.getCustomerData();
+  // FIXED: Separate initialization method
+  void _initializeController() {
+    try {
+      _controller = context.read<CustomerController>();
+
+      _searchController.text = '';
+      _controller.refresh();
+
+      // Only load data if not already loaded
+      if (!_controller.hasData && !_controller.isLoading) {
+        _controller.getCustomerData();
+      }
+
+      _scrollController.addListener(_onScroll);
+
+      debugPrint(
+        "Controller initialized successfully. Has data: ${_controller.hasData}",
+      );
+    } catch (e) {
+      debugPrint("Error initializing controller: $e");
     }
-    _scrollController.addListener(_onScroll);
   }
 
   void _onScroll() {
@@ -44,12 +68,16 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _deleteReasonController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
@@ -63,17 +91,16 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
       ),
       body: Consumer<CustomerController>(
         builder: (context, controller, child) {
+          // FIXED: Initialize controller if not done yet
+          if (!mounted) return const SizedBox.shrink();
+
           return RefreshIndicator(
             onRefresh: () async {
               HapticFeedback.lightImpact();
-              controller.refresh();
+              await controller.refresh();
             },
             color: Theme.of(context).colorScheme.primary,
             backgroundColor: Colors.white,
-            // Add some displacement for better visual feedback
-            // displacement: 40.0,
-            // Stroke width for the refresh indicator
-            // strokeWidth: 2.0,
             child: Column(
               children: [
                 // Search Bar - Fixed at top
@@ -94,7 +121,9 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                           icon: const Icon(Icons.clear),
                         ),
                     ],
-                    onChanged: (value) => controller.searchCustomers(value),
+                    onChanged: (value) {
+                      controller.searchCustomers(value);
+                    },
                     backgroundColor: WidgetStateProperty.all(Colors.grey[100]),
                     elevation: WidgetStateProperty.all(0),
                   ),
@@ -104,7 +133,6 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                 Expanded(
                   child: CustomScrollView(
                     controller: _scrollController,
-                    // This is important for pull-to-refresh to work properly
                     physics: const AlwaysScrollableScrollPhysics(),
                     slivers: [_buildContentSliver(controller)],
                   ),
@@ -115,11 +143,20 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          NavigationService().pushNavigation(Screenroutes.customerDataScreen);
+        onPressed: () async {
+          // FIXED: Properly handle navigation and refresh
+          final result = await NavigationService().pushNavigation(
+            Screenroutes.customerDataScreen,
+          );
+
+          // Clear search and refresh after returning
           _searchController.clear();
           _controller.clearSearch();
-          _controller.refresh();
+
+          // Only refresh if a customer was actually added
+          if (result != null) {
+            await _controller.refresh();
+          }
         },
         icon: const Icon(Icons.add),
         label: const Text('Create New'),
@@ -129,13 +166,23 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
   }
 
   Widget _buildContentSliver(CustomerController controller) {
+    // FIXED: Better loading state management
     if (controller.isLoading && controller.customers.isEmpty) {
       return const SliverFillRemaining(
-        child: Center(child: CircularProgressIndicator()),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Loading customers...'),
+            ],
+          ),
+        ),
       );
     }
 
-    if (controller.errorMessage != null) {
+    if (controller.errorMessage != null && controller.customers.isEmpty) {
       return SliverFillRemaining(
         child: Center(
           child: Column(
@@ -143,10 +190,13 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
             children: [
               Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
               const SizedBox(height: 16),
-              Text(
-                controller.errorMessage!,
-                style: TextStyle(color: Colors.red[600], fontSize: 16),
-                textAlign: TextAlign.center,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Text(
+                  controller.errorMessage!,
+                  style: TextStyle(color: Colors.red[600], fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
               ),
               const SizedBox(height: 16),
               ElevatedButton(
@@ -174,14 +224,14 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                 style: TextStyle(color: Colors.grey[600], fontSize: 16),
                 textAlign: TextAlign.center,
               ),
-              if (controller.searchQuery.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 16),
-                  child: Text(
-                    'Pull down to refresh',
-                    style: TextStyle(color: Colors.grey[500], fontSize: 14),
-                  ),
+              if (controller.searchQuery.isEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Pull down to refresh or tap + to add a customer',
+                  style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                  textAlign: TextAlign.center,
                 ),
+              ],
             ],
           ),
         ),
@@ -193,11 +243,29 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate(
           (context, index) {
+            // FIXED: Show loading indicator for load more
             if (index == controller.customers.length) {
-              return const Padding(
-                padding: EdgeInsets.all(16),
-                child: Center(child: CircularProgressIndicator()),
-              );
+              if (controller.hasMore && controller.isLoadingMore) {
+                return const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              } else if (!controller.hasMore) {
+                return Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Center(
+                    child: Text(
+                      'No more customers to load',
+                      style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                    ),
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            }
+
+            if (index >= controller.customers.length) {
+              return const SizedBox.shrink();
             }
 
             final customer = controller.customers[index];
@@ -208,7 +276,8 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
             );
           },
           childCount:
-              controller.customers.length + (controller.hasMore ? 1 : 0),
+              controller.customers.length +
+              (controller.hasMore || controller.isLoadingMore ? 1 : 0),
         ),
       ),
     );
@@ -223,58 +292,114 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
     );
   }
 
-  void _showDeleteConfirmation(Customer customer) async {
+  Future<void> _showDeleteConfirmation(Customer customer) async {
     _deleteReasonController.clear();
+
     final bool? result = await showDialog<bool>(
       context: context,
-      builder: (BuildContext context) {
+      barrierDismissible: false, // FIXED: Prevent accidental dismissal
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('Delete Customer'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Are you sure you want to delete this customer?'),
+              Text('Are you sure you want to delete "${customer.name}"?'),
               const SizedBox(height: 16),
               TextField(
                 controller: _deleteReasonController,
                 decoration: const InputDecoration(
-                  labelText: 'Reason for deletion',
+                  labelText: 'Reason for deletion (optional)',
                   border: OutlineInputBorder(),
+                  hintText: 'Enter reason for deletion...',
                 ),
                 maxLines: 3,
+                textCapitalization: TextCapitalization.sentences,
               ),
             ],
           ),
           actions: <Widget>[
             TextButton(
-              onPressed:
-                  () => NavigationService().popNavigation(arguments: false),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed:
-                  () => NavigationService().popNavigation(arguments: true),
-              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Delete'),
             ),
           ],
         );
       },
     );
 
-    if (result == true) {
-      _controller.deleteCustomer(customer.id, _deleteReasonController.text);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Customer deleted successfully'),
-          backgroundColor: Colors.green,
-        ),
+    if (result == true && mounted) {
+      // FIXED: Show loading indicator during delete
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder:
+            (context) => const AlertDialog(
+              content: Row(
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(width: 16),
+                  Text('Deleting customer...'),
+                ],
+              ),
+            ),
       );
+
+      try {
+        await _controller.deleteCustomer(
+          customer.id,
+          _deleteReasonController.text.trim().isEmpty
+              ? null
+              : _deleteReasonController.text.trim(),
+        );
+
+        if (mounted) {
+          Navigator.of(context).pop(); // Close loading dialog
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${customer.name} deleted successfully'),
+              backgroundColor: Colors.green,
+              action: SnackBarAction(
+                label: 'OK',
+                textColor: Colors.white,
+                onPressed: () {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                },
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          Navigator.of(context).pop(); // Close loading dialog
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to delete customer: ${e.toString()}'),
+              backgroundColor: Colors.red,
+              action: SnackBarAction(
+                label: 'OK',
+                textColor: Colors.white,
+                onPressed: () {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                },
+              ),
+            ),
+          );
+        }
+      }
     }
   }
 }
 
-// Customer Card Widget with Delete Functionality
+// FIXED: Enhanced Customer Card with better error handling
 class CustomerCard extends StatelessWidget {
   final Customer customer;
   final VoidCallback? onTap;
@@ -301,14 +426,12 @@ class CustomerCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              // Avatar
+              // Avatar with better fallback
               CircleAvatar(
                 radius: 24,
                 backgroundColor: Colors.blue[100],
                 child: Text(
-                  customer.name.isNotEmpty
-                      ? customer.name[0].toUpperCase()
-                      : 'C',
+                  _getInitial(customer.name),
                   style: TextStyle(
                     color: Colors.blue[700],
                     fontWeight: FontWeight.bold,
@@ -324,7 +447,9 @@ class CustomerCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      customer.name,
+                      customer.name.isEmpty
+                          ? 'Unknown Customer'
+                          : customer.name,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -332,20 +457,25 @@ class CustomerCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.phone, size: 16, color: Colors.grey[600]),
-                        const SizedBox(width: 4),
-                        Text(
-                          customer.mobile,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
+                    if (customer.mobile.isNotEmpty) ...[
+                      Row(
+                        children: [
+                          Icon(Icons.phone, size: 16, color: Colors.grey[600]),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              customer.mobile,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                    ],
                     Row(
                       children: [
                         Icon(
@@ -371,7 +501,7 @@ class CustomerCard extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Delete Button
+                  // Delete Button with confirmation
                   IconButton(
                     onPressed: onDelete,
                     icon: const Icon(Icons.delete_outline),
@@ -394,16 +524,23 @@ class CustomerCard extends StatelessWidget {
     );
   }
 
+  String _getInitial(String name) {
+    if (name.isEmpty) return 'C';
+    return name.trim()[0].toUpperCase();
+  }
+
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date);
 
-    if (difference.inDays > 0) {
-      return '${difference.inDays} days ago';
+    if (difference.inDays > 7) {
+      return _formatFullDate(date);
+    } else if (difference.inDays > 0) {
+      return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'} ago';
     } else if (difference.inHours > 0) {
-      return '${difference.inHours} hours ago';
+      return '${difference.inHours} hour${difference.inHours == 1 ? '' : 's'} ago';
     } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} minutes ago';
+      return '${difference.inMinutes} minute${difference.inMinutes == 1 ? '' : 's'} ago';
     } else {
       return 'Just now';
     }
@@ -426,5 +563,5 @@ String _formatFullDate(DateTime date) {
     'Dec',
   ];
 
-  return '${date.day} ${months[date.month - 1]} ${date.year}, ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  return '${date.day} ${months[date.month - 1]} ${date.year}';
 }

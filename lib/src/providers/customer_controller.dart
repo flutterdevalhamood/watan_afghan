@@ -7,6 +7,7 @@ import '../screens/customer/customer_model.dart';
 
 class CustomerController with ChangeNotifier {
   bool isLoading = false;
+  bool isLoadingMore = false; // Separate loading state for pagination
   int currentPage = 1;
   final int totalPages = 10;
   bool hasMore = true;
@@ -17,11 +18,10 @@ class CustomerController with ChangeNotifier {
   List<Map<String, dynamic>>? companyType;
   List<Map<String, dynamic>>? paymentType;
   List<Map<String, dynamic>>? countries;
-  List<Customer> _allCustomers = [];
-  List<Customer> _filteredCustomers = [];
+  List<Customer> _customers = []; // Single source of truth
   String _searchQuery = '';
 
-  bool get hasData => _allCustomers.isNotEmpty;
+  bool get hasData => _customers.isNotEmpty;
 
   // Registration form state variables
   int? selectedCompanyTypeId;
@@ -36,9 +36,19 @@ class CustomerController with ChangeNotifier {
   List<Map<String, dynamic>> cities = [];
   List<Map<String, dynamic>> regions = [];
 
-  List<Customer> get customers => _filteredCustomers;
+  // Computed property for filtered customers
+  List<Customer> get customers {
+    if (_searchQuery.isEmpty) {
+      return _customers;
+    }
+    return _customers.where((customer) {
+      return customer.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          customer.mobile.toLowerCase().contains(_searchQuery.toLowerCase());
+    }).toList();
+  }
+
   String get searchQuery => _searchQuery;
-  bool get isEmpty => _filteredCustomers.isEmpty && !isLoading;
+  bool get isEmpty => customers.isEmpty && !isLoading;
 
   List<Map<String, dynamic>>? _customerDetail;
   bool _isDetailLoading = false;
@@ -48,7 +58,7 @@ class CustomerController with ChangeNotifier {
   bool get isDetailLoading => _isDetailLoading;
   String? get detailErrorMessage => _detailErrorMessage;
 
-  // Registration form methods
+  // Registration form methods remain the same...
   void onCountryChanged(int? countryId) {
     selectedCountryId = countryId;
     selectedStateId = null;
@@ -106,7 +116,6 @@ class CustomerController with ChangeNotifier {
     notifyListeners();
   }
 
-  // Method to handle region selection and autofill parent locations
   void onRegionChanged(int? regionId) {
     if (regionId == null) {
       selectedRegionId = null;
@@ -114,13 +123,11 @@ class CustomerController with ChangeNotifier {
       return;
     }
 
-    // Find the region and its parent city/state/country
     Map<String, dynamic>? foundRegion;
     Map<String, dynamic>? parentCity;
     Map<String, dynamic>? parentState;
     Map<String, dynamic>? parentCountry;
 
-    // Search through all countries to find the region
     if (countries != null) {
       for (var country in countries!) {
         final countryStates = List<Map<String, dynamic>>.from(
@@ -155,24 +162,20 @@ class CustomerController with ChangeNotifier {
         parentCity != null &&
         parentState != null &&
         parentCountry != null) {
-      // Set the selected values
       selectedRegionId = regionId;
       selectedCityId = parentCity!['id'];
       selectedStateId = parentState!['id'];
       selectedCountryId = parentCountry!['id'];
 
-      // Populate the dropdown lists
       states = List<Map<String, dynamic>>.from(parentCountry['states'] ?? []);
       cities = List<Map<String, dynamic>>.from(parentState['cities'] ?? []);
       regions = List<Map<String, dynamic>>.from(parentCity['region'] ?? []);
     } else {
-      // If region not found, just set the region ID
       selectedRegionId = regionId;
     }
     notifyListeners();
   }
 
-  // Method to get all regions from all locations for the region dropdown
   List<Map<String, dynamic>> getAllRegions() {
     List<Map<String, dynamic>> allRegions = [];
 
@@ -195,7 +198,6 @@ class CustomerController with ChangeNotifier {
       }
     }
 
-    // Remove duplicates based on ID
     final uniqueRegions = <int, Map<String, dynamic>>{};
     for (var region in allRegions) {
       uniqueRegions[region['id']] = region;
@@ -204,19 +206,16 @@ class CustomerController with ChangeNotifier {
     return uniqueRegions.values.toList();
   }
 
-  // Method to set company type
   void setCompanyType(int? companyTypeId) {
     selectedCompanyTypeId = companyTypeId;
     notifyListeners();
   }
 
-  // Method to set payment type
   void setPaymentType(int? paymentTypeId) {
     selectedPaymentTypeId = paymentTypeId;
     notifyListeners();
   }
 
-  // Method to reset form state
   void resetFormState() {
     selectedCompanyTypeId = null;
     selectedPaymentTypeId = null;
@@ -230,44 +229,28 @@ class CustomerController with ChangeNotifier {
     notifyListeners();
   }
 
-  // Search functionality
+  // FIXED: Simplified search functionality
   void searchCustomers(String query) {
-    _searchQuery = query.toLowerCase();
-
-    if (_searchQuery.isEmpty) {
-      _filteredCustomers = List.from(_allCustomers);
-    } else {
-      _filteredCustomers =
-          _allCustomers.where((customer) {
-            return customer.name.toLowerCase().contains(_searchQuery) ||
-                customer.mobile.toLowerCase().contains(_searchQuery);
-          }).toList();
-    }
-
-    notifyListeners();
+    _searchQuery = query;
+    notifyListeners(); // This will trigger a rebuild with the filtered customers
   }
 
   void clearSearch() {
     _searchQuery = '';
-    _filteredCustomers = List.from(_allCustomers);
     notifyListeners();
   }
 
   Future<bool> _checkToken() async {
     final token = AuthRepo.token;
 
-    // Check if token is valid
     if (token == null || token.isEmpty) {
       debugPrint("No token available - auth failed");
-      // Handle missing token
       AuthRepo.handleAuthError();
       return false;
     }
 
-    // Check if token is expired (if implementation supports it)
     if (AuthRepo.isTokenExpired()) {
       debugPrint("Token expired - auth failed");
-      // Handle expired token
       AuthRepo.handleAuthError();
       return false;
     }
@@ -275,16 +258,27 @@ class CustomerController with ChangeNotifier {
     return true;
   }
 
-  // Format the token with Bearer prefix
   String _getAuthHeader() {
     return 'Bearer ${AuthRepo.token}';
   }
 
+  // FIXED: Improved data loading logic
   Future<void> getCustomerData({bool loadMore = false}) async {
     if (!await _checkToken()) return;
 
-    isLoading = true;
-    errorMessage = null; // Clear previous errors
+    // Prevent duplicate loading operations
+    if (isLoading || (loadMore && isLoadingMore)) {
+      debugPrint("Already loading, skipping request");
+      return;
+    }
+
+    if (loadMore) {
+      isLoadingMore = true;
+    } else {
+      isLoading = true;
+      errorMessage = null;
+    }
+
     notifyListeners();
 
     try {
@@ -296,13 +290,11 @@ class CustomerController with ChangeNotifier {
 
       debugPrint("API Response: $response");
 
-      // Check if response is null
       if (response == null) {
         errorMessage = 'No response received from server';
         return;
       }
 
-      // Ensure response is a Map
       if (response is! Map<String, dynamic>) {
         errorMessage = 'Invalid response format received';
         debugPrint('Response is not a Map: ${response.runtimeType}');
@@ -311,7 +303,6 @@ class CustomerController with ChangeNotifier {
 
       final customer = response;
 
-      // Check if the response indicates success
       if (customer['IsSuccess'] == true) {
         final data = customer['Data'];
 
@@ -325,49 +316,62 @@ class CustomerController with ChangeNotifier {
                   .toList();
 
           if (loadMore) {
-            _allCustomers.addAll(newCustomerData);
+            _customers.addAll(newCustomerData);
+            debugPrint(
+              'Loaded ${newCustomerData.length} more customers. Total: ${_customers.length}',
+            );
           } else {
-            _allCustomers = newCustomerData;
+            _customers = newCustomerData;
+            debugPrint('Loaded ${newCustomerData.length} customers');
           }
 
-          searchCustomers(_searchQuery);
           hasMore = data.length == totalPages;
-
-          debugPrint('Successfully loaded ${newCustomerData.length} customers');
         } else {
-          errorMessage = 'No customer data received';
+          if (!loadMore) {
+            errorMessage = 'No customer data received';
+          }
           debugPrint('Data is null or not a List: $data');
         }
       } else {
-        // Handle API error response
         errorMessage =
             customer['Message'] as String? ?? 'Unknown error occurred';
         debugPrint('API call failed: $errorMessage');
       }
     } catch (e) {
       debugPrint('Exception in getCustomerData: $e');
-      _handleApiError(e);
+      if (!loadMore) {
+        _handleApiError(e);
+      }
     } finally {
-      isLoading = false;
+      if (loadMore) {
+        isLoadingMore = false;
+      } else {
+        isLoading = false;
+      }
       notifyListeners();
     }
   }
 
   void loadMore() {
-    if (hasMore && !isLoading) {
+    if (hasMore && !isLoading && !isLoadingMore) {
       currentPage++;
       getCustomerData(loadMore: true);
     }
   }
 
-  void refresh() {
+  // FIXED: Improved refresh logic - don't clear data immediately
+  Future<void> refresh() async {
+    debugPrint("Refreshing customer data...");
+
     currentPage = 1;
     hasMore = true;
     errorMessage = null;
-    _allCustomers.clear();
-    _filteredCustomers.clear();
     _searchQuery = '';
-    getCustomerData();
+
+    // Don't clear data immediately - let the new data replace it
+    await getCustomerData();
+
+    debugPrint("Refresh completed. Total customers: ${_customers.length}");
   }
 
   Future<void> getCustomerDetail(int customerId) async {
@@ -458,13 +462,11 @@ class CustomerController with ChangeNotifier {
 
   void _setDefaultCompanyType() {
     if (companyType != null && companyType!.isNotEmpty) {
-      // Find Customer type in the list (case-insensitive search)
       var customerType = companyType!.firstWhere(
         (item) => (item['Name'] as String?)?.toLowerCase() == 'customer',
         orElse: () => <String, dynamic>{},
       );
 
-      // If not found with exact name, try partial match
       if (customerType.isEmpty) {
         customerType = companyType!.firstWhere(
           (item) =>
@@ -474,7 +476,6 @@ class CustomerController with ChangeNotifier {
         );
       }
 
-      // If still not found, use the first item as fallback
       if (customerType.isEmpty && companyType!.isNotEmpty) {
         customerType = companyType!.first;
       }
@@ -530,27 +531,23 @@ class CustomerController with ChangeNotifier {
         postCode: postCode,
       );
 
-      // Check response
       if (response != null && response is Map<String, dynamic>) {
         if (response['IsSuccess'] == true) {
           debugPrint("Customer registration posted successfully!");
-          await getCustomerData();
+          // FIXED: Use refresh instead of getCustomerData to properly reload
+          await refresh();
           return CustomerRegistrationResult(success: true);
         } else {
           final errorMessage =
               response['Message'] as String? ?? 'Unknown error';
           debugPrint("Registration failed: $errorMessage");
 
-          // Check if it's a duplicate name error
-          // Adjust this condition based on your API's actual response for duplicate names
           bool isDuplicate =
               errorMessage.toLowerCase().contains('duplicate') ||
               errorMessage.toLowerCase().contains('already exists') ||
               errorMessage.toLowerCase().contains('name already') ||
-              response['ErrorCode'] ==
-                  'DUPLICATE_NAME' || // if your API returns error codes
-              response['StatusCode'] ==
-                  409; // if your API returns 409 for conflicts
+              response['ErrorCode'] == 'DUPLICATE_NAME' ||
+              response['StatusCode'] == 409;
 
           return CustomerRegistrationResult(
             success: false,
@@ -575,23 +572,16 @@ class CustomerController with ChangeNotifier {
   }
 
   Future<void> deleteCustomer(int? id, String? descriptionText) async {
-    // Enhanced debugging for delete API
     debugPrint("=== DELETE CUSTOMER DEBUG INFO ===");
     debugPrint("Customer ID: $id");
     debugPrint("Description: $descriptionText");
-    debugPrint("Token available: ${AuthRepo.token != null}");
-    debugPrint("Auth header: ${_getAuthHeader()}");
 
     if (!await _checkToken()) {
       debugPrint("Token check failed");
       return;
     }
 
-    // Show loading state
-    isLoading = true;
-    errorMessage = null;
-    notifyListeners();
-
+    // FIXED: Don't show global loading for delete operations
     try {
       debugPrint("Calling restApi.deleteCustomer...");
 
@@ -603,11 +593,15 @@ class CustomerController with ChangeNotifier {
 
       debugPrint("Delete API Response: $response");
 
-      // Handle response based on your API structure
       if (response != null && response is Map<String, dynamic>) {
         if (response['IsSuccess'] == true) {
           debugPrint("Delete successful, refreshing customer list...");
-          await getCustomerData();
+          // FIXED: Remove the customer locally first for immediate UI update
+          _customers.removeWhere((customer) => customer.id == id);
+          notifyListeners();
+
+          // Then refresh from server to ensure consistency
+          await refresh();
           debugPrint("Customer list refreshed successfully");
         } else {
           errorMessage =
@@ -616,61 +610,31 @@ class CustomerController with ChangeNotifier {
         }
       } else {
         debugPrint("Delete completed, refreshing customer list...");
-        await getCustomerData();
+        // Remove locally and refresh
+        _customers.removeWhere((customer) => customer.id == id);
+        notifyListeners();
+        await refresh();
       }
     } catch (e) {
       debugPrint("Delete API Exception: $e");
-
-      // Enhanced error handling for delete specifically
-      if (e is DioException) {
-        debugPrint("=== DELETE API DETAILED ERROR INFO ===");
-        debugPrint("Status Code: ${e.response?.statusCode}");
-        debugPrint("Request URL: ${e.requestOptions.uri}");
-        debugPrint("Request Method: ${e.requestOptions.method}");
-        debugPrint("Request Headers: ${e.requestOptions.headers}");
-        debugPrint("Request Data: ${e.requestOptions.data}");
-        debugPrint("Response Headers: ${e.response?.headers}");
-        debugPrint("Response Data: ${e.response?.data}");
-        debugPrint("=====================================");
-
-        // Check for common 404 causes
-        if (e.response?.statusCode == 404) {
-          String detailedError = "404 Error - Possible causes:\n";
-          detailedError += "1. Incorrect endpoint URL\n";
-          detailedError += "2. Customer ID ($id) doesn't exist\n";
-          detailedError += "3. Wrong HTTP method\n";
-          detailedError += "4. Missing route parameters\n";
-          detailedError += "5. Server endpoint not implemented\n";
-          detailedError += "\nActual URL called: ${e.requestOptions.uri}";
-
-          errorMessage = detailedError;
-          debugPrint(detailedError);
-        }
-      }
-
       _handleApiError(e);
-    } finally {
-      isLoading = false;
-      notifyListeners();
     }
   }
 
-  // Standardized error handling
-  dynamic _handleApiError(dynamic e) {
+  // Enhanced error handling
+  void _handleApiError(dynamic e) {
     if (e is DioException) {
       debugPrint("Dio Exception: ${e.message}");
 
-      // Handle redirect to login (authentication failure)
       if (e.response?.statusCode == 302 ||
           (e.response?.data is String &&
               (e.response?.data as String).contains('login'))) {
         debugPrint("Authentication failed - redirected to login page");
         errorMessage = 'Authentication failed. Please log in again.';
         AuthRepo.handleAuthError();
-        return false;
+        return;
       }
 
-      // Log detailed response information
       if (e.response != null) {
         debugPrint('Response status: ${e.response?.statusCode}');
         debugPrint('Response data: ${e.response?.data}');
@@ -681,7 +645,12 @@ class CustomerController with ChangeNotifier {
       debugPrint("Error: $e");
       errorMessage = 'Error: ${e.toString()}';
     }
-    return false;
+  }
+
+  @override
+  void dispose() {
+    debugPrint("CustomerController disposed");
+    super.dispose();
   }
 }
 

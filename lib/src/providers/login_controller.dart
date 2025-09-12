@@ -121,6 +121,9 @@ class AuthController with ChangeNotifier {
       );
       AuthRepo.user = name;
       AuthRepo.contact = contactNumber;
+
+      AuthRepo.imageUrl = imageFile.toString();
+
       notifyListeners();
       return true;
     } catch (e) {
