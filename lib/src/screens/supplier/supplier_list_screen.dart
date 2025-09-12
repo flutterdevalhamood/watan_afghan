@@ -23,7 +23,8 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
   void initState() {
     super.initState();
     _controller = context.read<SupplierController>();
-    _searchController.text = _controller.searchQuery;
+    _searchController.text = '';
+    _controller.refresh();
     if (!_controller.hasData) {
       _controller.getSupplierData();
     }
@@ -193,6 +194,9 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           NavigationService().pushNavigation(Screenroutes.supplierDataScreen);
+          _searchController.clear();
+          _controller.clearSearch();
+          _controller.refresh();
         },
         icon: const Icon(Icons.add),
         label: const Text('Create New'),

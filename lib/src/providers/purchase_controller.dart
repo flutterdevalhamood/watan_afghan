@@ -227,6 +227,7 @@ class PurchaseController with ChangeNotifier {
     errorMessage = null; // Clear errors on refresh
     _allPurchases.clear();
     _filteredPurchases.clear();
+    _searchQuery = '';
     await getPurchaseData(loadMore: false);
   }
 

@@ -186,6 +186,7 @@ class SupplierController with ChangeNotifier {
     errorMessage = null; // Clear errors on refresh
     _allSuppliers.clear();
     _filteredSuppliers.clear();
+    _searchQuery = '';
     getSupplierData();
   }
 

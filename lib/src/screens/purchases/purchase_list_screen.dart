@@ -27,7 +27,8 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
     // Load initial data
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _controller = context.read<PurchaseController>();
-      _searchController.text = _controller.searchQuery;
+      _searchController.text = '';
+      _controller.refresh();
       if (!_controller.hasData) {
         _controller.getPurchaseData();
       }
@@ -124,6 +125,9 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           NavigationService().pushNavigation(Screenroutes.purchaseRegistration);
+          _searchController.clear();
+          _controller.clearSearch();
+          _controller.refresh();
         },
         child: const Icon(Icons.add),
       ),

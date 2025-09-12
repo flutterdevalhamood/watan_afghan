@@ -30,6 +30,8 @@ class _CurrencyConversionListScreenState
       listen: false,
     );
     _loadData();
+    _searchQuery = '';
+    _searchController.text = '';
 
     // Setup scroll listener for pagination
     _scrollController.addListener(_scrollListener);
@@ -486,6 +488,9 @@ class _CurrencyConversionListScreenState
           NavigationService().pushNavigation(
             Screenroutes.currencyConversionDataScreen,
           );
+          _searchController.clear();
+          _searchQuery = '';
+          _controller.getCurrencyConversion();
         },
         backgroundColor: Colors.blue,
         child: const Icon(Icons.add, color: Colors.white),

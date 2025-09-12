@@ -29,7 +29,8 @@ class _SalesListScreenState extends State<SalesListScreen> {
     // Initialize data loading
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _controller = context.read<SalesController>();
-      _searchController.text = _controller.searchQuery;
+      _searchController.text = '';
+      _controller.refresh();
       if (!_controller.hasData) {
         _controller.getSalesData();
       }
@@ -230,9 +231,11 @@ class _SalesListScreenState extends State<SalesListScreen> {
                       context,
                       listen: false,
                     );
-                    await controller
-                        .refresh(); // This will reload the sales data
+
+                    await controller.refresh();
                   }
+                  _controller.refresh();
+                  _searchController.clear();
                 },
                 child: const Icon(Icons.add),
               ),

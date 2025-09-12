@@ -32,6 +32,8 @@ class _SupplierAdvanceListScreenState extends State<SupplierAdvanceListScreen>
     _setupBlinkAnimation();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadInitialData();
+      _searchController.text = '';
+      _controller.refresh();
     });
   }
 
@@ -208,6 +210,9 @@ class _SupplierAdvanceListScreenState extends State<SupplierAdvanceListScreen>
           NavigationService().pushNavigation(
             Screenroutes.supplierAdvanceDataScreen,
           );
+          _searchController.clear();
+          _controller.clearSearch();
+          _controller.refresh();
         },
         child: const Icon(Icons.add),
       ),

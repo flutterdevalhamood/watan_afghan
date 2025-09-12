@@ -250,6 +250,7 @@ class ExpenseController with ChangeNotifier {
     errorMessage = null; // Clear errors on refresh
     _allExpenses.clear();
     _filteredExpenses.clear();
+    _searchQuery = '';
     await getExpenseData(loadMore: false);
   }
 

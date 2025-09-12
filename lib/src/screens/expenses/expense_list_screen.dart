@@ -25,7 +25,8 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
     _scrollController.addListener(_scrollListener);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _controller = context.read<ExpenseController>();
-      _searchController.text = _controller.searchQuery;
+      _searchController.text = '';
+      _controller.refresh();
       if (!_controller.hasData) {
         _controller.getExpenseData();
       }
@@ -111,6 +112,9 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           NavigationService().pushNavigation(Screenroutes.expenseDataScreen);
+          _searchController.clear();
+          _controller.clearSearch();
+          _controller.refresh();
         },
         icon: const Icon(Icons.add),
         label: const Text('Create New'),

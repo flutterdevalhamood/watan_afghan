@@ -366,6 +366,7 @@ class CustomerController with ChangeNotifier {
     errorMessage = null;
     _allCustomers.clear();
     _filteredCustomers.clear();
+    _searchQuery = '';
     getCustomerData();
   }
 

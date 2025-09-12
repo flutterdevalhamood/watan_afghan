@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sample/src/providers/unit_controller.dart';
-import 'package:sample/src/screens/units/unit_registration_screen.dart';
 import 'package:sample/src/util/app_colors.dart';
 import 'package:sample/src/util/app_navigation.dart';
 import 'package:sample/src/util/app_routes.dart';
@@ -32,6 +31,9 @@ class _UnitListScreenState extends State<UnitListScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _setupScrollController();
       _unitListController = Provider.of<UnitController>(context, listen: false);
+      _searchController.text = '';
+      _searchQuery = '';
+      _unitListController.refresh();
       _unitListController.getUnitData().then((_) {
         setState(() {
           _isInitialLoad = false;
@@ -234,12 +236,16 @@ class _UnitListScreenState extends State<UnitListScreen> {
 
           floatingActionButton: FloatingActionButton(
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => UnitRegistrationScreen(),
-                ),
-              );
+              NavigationService().pushNavigation(Screenroutes.unitRegistration);
+              _searchController.clear();
+              _searchQuery = '';
+              _unitListController.refresh();
+              // Navigator.push(
+              //   context,
+              //   MaterialPageRoute(
+              //     builder: (context) => UnitRegistrationScreen(),
+              //   ),
+              // );
             },
             child: Icon(Icons.add),
           ),

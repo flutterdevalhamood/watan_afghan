@@ -26,7 +26,8 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
     super.initState();
     _controller = context.read<CustomerController>();
 
-    _searchController.text = _controller.searchQuery;
+    _searchController.text = '';
+    _controller.refresh();
     if (!_controller.hasData) {
       _controller.getCustomerData();
     }
@@ -116,6 +117,9 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           NavigationService().pushNavigation(Screenroutes.customerDataScreen);
+          _searchController.clear();
+          _controller.clearSearch();
+          _controller.refresh();
         },
         icon: const Icon(Icons.add),
         label: const Text('Create New'),

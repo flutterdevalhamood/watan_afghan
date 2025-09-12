@@ -29,6 +29,8 @@ class _InvestorTransactionScreenState extends State<InvestorTransactionScreen> {
         context,
         listen: false,
       );
+      _searchQuery = '';
+      _searchController.text = '';
       _controller.getInvestorTransaction();
     });
 
@@ -245,6 +247,9 @@ class _InvestorTransactionScreenState extends State<InvestorTransactionScreen> {
           NavigationService().pushNavigation(
             Screenroutes.investorTransactionDataScreen,
           );
+          _searchController.clear();
+          _searchQuery = '';
+          _controller.getInvestorTransaction();
         },
         icon: const Icon(Icons.add),
         label: const Text('Create New'),

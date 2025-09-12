@@ -254,6 +254,7 @@ class SupplierAdvanceController with ChangeNotifier {
     errorMessage = null; // Clear errors on refresh
     _allSupplierAdvances.clear();
     _filteredSupplierAdvances.clear();
+    _searchQuery = '';
     await getSupplierAdvance(loadMore: false);
   }
 

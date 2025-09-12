@@ -31,6 +31,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _productController.getProductData();
     });
+    _searchController.text = '';
+    _productController.searchQuery = '';
   }
 
   void _setupScrollListener() {
@@ -60,6 +62,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           NavigationService().pushNavigation(Screenroutes.productRegistration);
+          _searchController.clear();
+          _productController.searchQuery = '';
+          _productController.getProductData();
         },
         icon: const Icon(Icons.add),
         label: const Text('Create New'),

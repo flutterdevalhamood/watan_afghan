@@ -257,6 +257,7 @@ class SalesController with ChangeNotifier {
     errorMessage = null; // Clear errors on refresh
     _allSales.clear();
     _filteredSales.clear();
+    _searchQuery = '';
     await getSalesData(loadMore: false);
   }
 
