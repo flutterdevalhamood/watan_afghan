@@ -310,7 +310,7 @@ class _CustomerListScreenState extends State<CustomerListScreen>
               TextField(
                 controller: _deleteReasonController,
                 decoration: const InputDecoration(
-                  labelText: 'Reason for deletion (optional)',
+                  labelText: 'Reason for deletion ',
                   border: OutlineInputBorder(),
                   hintText: 'Enter reason for deletion...',
                 ),

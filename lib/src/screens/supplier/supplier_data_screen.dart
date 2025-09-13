@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sample/src/providers/supplier_controller.dart';
+import 'package:sample/src/util/country_phone_validation.dart';
 
 class SupplierDataScreen extends StatefulWidget {
   const SupplierDataScreen({super.key});
@@ -339,33 +340,102 @@ class _SupplierDataScreenState extends State<SupplierDataScreen> {
     }
   }
 
-  String? _validateMobileNumber(String? value) {
-    if (value == null || value.trim().isEmpty) {
+  String? _validateMobileNumber(String value) {
+    if (value.trim().isEmpty) {
       return 'Mobile number is required';
     }
 
-    // Remove any spaces, hyphens, or other non-digit characters for validation
-    String cleanedValue = value.replaceAll(RegExp(r'[^\d+]'), '');
+    // Remove any spaces, dashes, or parentheses for validation
+    String cleanedValue = value.replaceAll(RegExp(r'[\s\-\(\)]'), '');
 
-    // Check if it starts with + and has country code
-    if (cleanedValue.startsWith('+')) {
-      // Remove the + sign for length checking
-      String withoutPlus = cleanedValue.substring(1);
+    // Check if it starts with + (country code required)
+    if (!cleanedValue.startsWith('+')) {
+      return 'Mobile number must include country code (e.g., +971xxxxxxxxx)';
+    }
 
-      // International format: should be 10-15 digits after country code
-      if (withoutPlus.length < 10 || withoutPlus.length > 15) {
-        return 'Please enter a valid mobile number (10-15 digits)';
-      }
-    } else {
-      // Local format: should be 10 digits
-      if (cleanedValue.length != 10) {
-        return 'Please enter a valid 10-digit mobile number';
+    // Extract country code and number
+    String? countryCode;
+    String numberPart = '';
+
+    // Try to match country codes (longest first to avoid conflicts)
+    List<String> sortedCodes =
+        countryPhoneValidation.keys.toList()
+          ..sort((a, b) => b.length.compareTo(a.length));
+
+    for (String code in sortedCodes) {
+      if (cleanedValue.startsWith(code)) {
+        countryCode = code;
+        numberPart = cleanedValue.substring(code.length);
+        break;
       }
     }
 
-    // Check if it contains only digits (and + at the beginning if international)
+    if (countryCode == null) {
+      return 'Invalid country code. Please use a valid country code (e.g., +971, +1, +44)';
+    }
+
+    // Check if number part contains only digits
+    if (!RegExp(r'^[0-9]+$').hasMatch(numberPart)) {
+      return 'Phone number can only contain digits after country code';
+    }
+
+    // Get validation rules for the country
+    Map<String, dynamic> rules = countryPhoneValidation[countryCode]!;
+    int minLength = rules['minLength'];
+    int maxLength = rules['maxLength'];
+    String countryName = rules['name'];
+
+    // Validate length
+    if (numberPart.length < minLength) {
+      return 'Invalid ${countryName} number. Must be at least $minLength digits after $countryCode';
+    }
+
+    if (numberPart.length > maxLength) {
+      return 'Invalid ${countryName} number. Cannot exceed $maxLength digits after $countryCode';
+    }
+
+    return null; // Valid
+  }
+
+  // Add this new method for phone validation:
+  String? _validatePhoneNumber(String value) {
+    if (value.trim().isEmpty) {
+      return null; // Phone is optional
+    }
+
+    // Remove any spaces, dashes, or parentheses for validation
+    String cleanedValue = value.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+
+    // Check basic format
     if (!RegExp(r'^\+?[0-9]+$').hasMatch(cleanedValue)) {
-      return 'Mobile number can only contain digits and + sign';
+      return 'Phone number can only contain digits and optional country code (+)';
+    }
+
+    // Remove + for length check
+    String digitsOnly = cleanedValue.replaceAll('+', '');
+
+    // Check minimum and maximum length
+    if (digitsOnly.length < 7) {
+      return 'Phone number must be at least 7 digits';
+    }
+
+    if (digitsOnly.length > 15) {
+      return 'Phone number cannot exceed 15 digits';
+    }
+
+    return null; // Valid
+  }
+
+  // New method for email validation
+  String? _validateEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null; // Email is not required, so return null if empty
+    }
+
+    if (!RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    ).hasMatch(value.trim())) {
+      return 'Please enter a valid email address';
     }
 
     return null;
@@ -510,87 +580,19 @@ class _SupplierDataScreenState extends State<SupplierDataScreen> {
                       children: [
                         Column(
                           children: [
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: RichText(
-                                text: const TextSpan(
-                                  text: 'Mobile',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: Color(0xFF374151),
-                                  ),
-                                  children: [
-                                    TextSpan(
-                                      text: ' *',
-                                      style: TextStyle(
-                                        color: Color(0xFFEF4444),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            TextFormField(
+                            _buildTextField(
                               controller: _mobileController,
+                              label: 'Mobile',
+                              isRequired: true,
                               keyboardType: TextInputType.phone,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Color(0xFF1F2937),
-                              ),
-                              decoration: InputDecoration(
-                                hintText: 'Enter mobile number',
-                                hintStyle: const TextStyle(
-                                  color: Color(0xFF9CA3AF),
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFFE5E7EB),
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFFE5E7EB),
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFF2563EB),
-                                    width: 2,
-                                  ),
-                                ),
-                                errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFFEF4444),
-                                    width: 2,
-                                  ),
-                                ),
-                                focusedErrorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFFEF4444),
-                                    width: 2,
-                                  ),
-                                ),
-                                filled: true,
-                                fillColor: const Color(0xFFFAFAFA),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 16,
-                                ),
-                              ),
-                              validator: _validateMobileNumber,
+                              isMobile: true,
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 16),
                             _buildTextField(
                               controller: _phoneController,
                               label: 'Phone',
                               keyboardType: TextInputType.phone,
+                              isPhone: true,
                             ),
                           ],
                         ),
@@ -599,10 +601,113 @@ class _SupplierDataScreenState extends State<SupplierDataScreen> {
                           controller: _emailController,
                           label: 'Email',
                           keyboardType: TextInputType.emailAddress,
+                          validator: _validateEmail,
                         ),
                       ],
                     ),
 
+                    // Contact Information Card
+                    // _buildCard(
+                    //   title: 'Contact Information',
+                    //   icon: Icons.contact_phone_outlined,
+                    //   children: [
+                    //     Column(
+                    //       children: [
+                    //         Align(
+                    //           alignment: Alignment.centerLeft,
+                    //           child: RichText(
+                    //             text: const TextSpan(
+                    //               text: 'Mobile',
+                    //               style: TextStyle(
+                    //                 fontSize: 14,
+                    //                 fontWeight: FontWeight.w500,
+                    //                 color: Color(0xFF374151),
+                    //               ),
+                    //               children: [
+                    //                 TextSpan(
+                    //                   text: ' *',
+                    //                   style: TextStyle(
+                    //                     color: Color(0xFFEF4444),
+                    //                   ),
+                    //                 ),
+                    //               ],
+                    //             ),
+                    //           ),
+                    //         ),
+                    //         const SizedBox(height: 8),
+                    //         TextFormField(
+                    //           controller: _mobileController,
+                    //           keyboardType: TextInputType.phone,
+                    //           style: const TextStyle(
+                    //             fontSize: 16,
+                    //             color: Color(0xFF1F2937),
+                    //           ),
+                    //           decoration: InputDecoration(
+                    //             hintText: 'Enter mobile number',
+                    //             hintStyle: const TextStyle(
+                    //               color: Color(0xFF9CA3AF),
+                    //             ),
+                    //             border: OutlineInputBorder(
+                    //               borderRadius: BorderRadius.circular(12),
+                    //               borderSide: const BorderSide(
+                    //                 color: Color(0xFFE5E7EB),
+                    //               ),
+                    //             ),
+                    //             enabledBorder: OutlineInputBorder(
+                    //               borderRadius: BorderRadius.circular(12),
+                    //               borderSide: const BorderSide(
+                    //                 color: Color(0xFFE5E7EB),
+                    //               ),
+                    //             ),
+                    //             focusedBorder: OutlineInputBorder(
+                    //               borderRadius: BorderRadius.circular(12),
+                    //               borderSide: const BorderSide(
+                    //                 color: Color(0xFF2563EB),
+                    //                 width: 2,
+                    //               ),
+                    //             ),
+                    //             errorBorder: OutlineInputBorder(
+                    //               borderRadius: BorderRadius.circular(12),
+                    //               borderSide: const BorderSide(
+                    //                 color: Color(0xFFEF4444),
+                    //                 width: 2,
+                    //               ),
+                    //             ),
+                    //             focusedErrorBorder: OutlineInputBorder(
+                    //               borderRadius: BorderRadius.circular(12),
+                    //               borderSide: const BorderSide(
+                    //                 color: Color(0xFFEF4444),
+                    //                 width: 2,
+                    //               ),
+                    //             ),
+                    //             filled: true,
+                    //             fillColor: const Color(0xFFFAFAFA),
+                    //             contentPadding: const EdgeInsets.symmetric(
+                    //               horizontal: 16,
+                    //               vertical: 16,
+                    //             ),
+                    //           ),
+                    //           validator: _validateMobileNumber,
+                    //         ),
+                    //         const SizedBox(height: 20),
+                    //         _buildTextField(
+                    //           controller: _phoneController,
+                    //           label: 'Phone',
+                    //           keyboardType: TextInputType.phone,
+                    //         ),
+                    //       ],
+                    //     ),
+                    //     const SizedBox(height: 20),
+                    //     // Updated email field with validation
+                    //     _buildTextField(
+                    //       controller: _emailController,
+                    //       label: 'Email',
+                    //       keyboardType: TextInputType.emailAddress,
+                    //       validator:
+                    //           _validateEmail, // Add custom email validator
+                    //     ),
+                    //   ],
+                    // ),
                     const SizedBox(height: 20),
 
                     // Address Information Card
@@ -833,6 +938,9 @@ class _SupplierDataScreenState extends State<SupplierDataScreen> {
     bool isRequired = false,
     TextInputType? keyboardType,
     int maxLines = 1,
+    String? Function(String?)? validator,
+    bool isMobile = false,
+    bool isPhone = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -861,10 +969,26 @@ class _SupplierDataScreenState extends State<SupplierDataScreen> {
           controller: controller,
           keyboardType: keyboardType,
           maxLines: maxLines,
+          maxLength: (isMobile || isPhone) ? (isMobile ? 20 : 18) : null,
           style: const TextStyle(fontSize: 16, color: Color(0xFF1F2937)),
           decoration: InputDecoration(
-            hintText: 'Enter ${label.toLowerCase()}',
+            hintText:
+                isMobile
+                    ? 'e.g., +971501234567'
+                    : isPhone
+                    ? 'e.g., +97145551234 or 045551234'
+                    : 'Enter ${label.toLowerCase()}',
             hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+            helperText:
+                isMobile
+                    ? 'Include country code (e.g., +971 for UAE)'
+                    : isPhone
+                    ? 'Country code optional for landline'
+                    : null,
+            helperStyle: const TextStyle(
+              color: Color(0xFF6B7280),
+              fontSize: 12,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
@@ -891,20 +1015,123 @@ class _SupplierDataScreenState extends State<SupplierDataScreen> {
               horizontal: 16,
               vertical: 16,
             ),
+            counterText: '',
           ),
           validator:
-              isRequired
-                  ? (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return '$label is required';
-                    }
-                    return null;
+              validator ??
+              (value) {
+                if (isMobile) {
+                  return _validateMobileNumber(value ?? '');
+                }
+
+                if (isPhone) {
+                  return _validatePhoneNumber(value ?? '');
+                }
+
+                if (isRequired && (value == null || value.trim().isEmpty)) {
+                  return '$label is required';
+                }
+
+                if (value == null || value.trim().isEmpty) {
+                  return null;
+                }
+
+                if (keyboardType == TextInputType.emailAddress &&
+                    value.isNotEmpty) {
+                  if (!RegExp(
+                    r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+                  ).hasMatch(value.trim())) {
+                    return 'Please enter a valid email address';
                   }
-                  : null,
+                }
+
+                return null;
+              },
         ),
       ],
     );
   }
+
+  // Widget _buildTextField({
+  //   required TextEditingController controller,
+  //   required String label,
+  //   bool isRequired = false,
+  //   TextInputType? keyboardType,
+  //   int maxLines = 1,
+  //   String? Function(String?)? validator, // Add validator parameter
+  // }) {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       RichText(
+  //         text: TextSpan(
+  //           text: label,
+  //           style: const TextStyle(
+  //             fontSize: 14,
+  //             fontWeight: FontWeight.w500,
+  //             color: Color(0xFF374151),
+  //           ),
+  //           children:
+  //               isRequired
+  //                   ? [
+  //                     const TextSpan(
+  //                       text: ' *',
+  //                       style: TextStyle(color: Color(0xFFEF4444)),
+  //                     ),
+  //                   ]
+  //                   : [],
+  //         ),
+  //       ),
+  //       const SizedBox(height: 8),
+  //       TextFormField(
+  //         controller: controller,
+  //         keyboardType: keyboardType,
+  //         maxLines: maxLines,
+  //         style: const TextStyle(fontSize: 16, color: Color(0xFF1F2937)),
+  //         decoration: InputDecoration(
+  //           hintText: 'Enter ${label.toLowerCase()}',
+  //           hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+  //           border: OutlineInputBorder(
+  //             borderRadius: BorderRadius.circular(12),
+  //             borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+  //           ),
+  //           enabledBorder: OutlineInputBorder(
+  //             borderRadius: BorderRadius.circular(12),
+  //             borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+  //           ),
+  //           focusedBorder: OutlineInputBorder(
+  //             borderRadius: BorderRadius.circular(12),
+  //             borderSide: const BorderSide(color: Color(0xFF2563EB), width: 2),
+  //           ),
+  //           errorBorder: OutlineInputBorder(
+  //             borderRadius: BorderRadius.circular(12),
+  //             borderSide: const BorderSide(color: Color(0xFFEF4444), width: 2),
+  //           ),
+  //           focusedErrorBorder: OutlineInputBorder(
+  //             borderRadius: BorderRadius.circular(12),
+  //             borderSide: const BorderSide(color: Color(0xFFEF4444), width: 2),
+  //           ),
+  //           filled: true,
+  //           fillColor: const Color(0xFFFAFAFA),
+  //           contentPadding: const EdgeInsets.symmetric(
+  //             horizontal: 16,
+  //             vertical: 16,
+  //           ),
+  //         ),
+  //         validator:
+  //             validator ?? // Use provided validator if available
+  //             (isRequired
+  //                 ? (value) {
+  //                   if (value == null || value.trim().isEmpty) {
+  //                     return '$label is required';
+  //                   }
+  //                   return null;
+  //                 }
+  //                 : null),
+  //       ),
+  //     ],
+  //   );
+  // }
 
   Widget _buildDropdown({
     required int? value,

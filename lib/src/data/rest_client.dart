@@ -35,12 +35,10 @@ abstract class RestClient {
 
   @POST('/api/UserUpdate')
   @MultiPart()
-  Future<dynamic> userUpdate({
+  Future<dynamic> userUpdate(
     @Header("Authorization") String? token,
-    @Part(name: "name") String? name,
-    @Part(name: "contactNumber") String? contactNumber,
-    @Part(name: "imageUrl") File? file,
-  });
+    @Part() Map<String, dynamic> body,
+  );
 
   @GET('/api/InvestorTransaction/paginate/{page}/{limit}')
   Future<dynamic> getInvestorTransaction(

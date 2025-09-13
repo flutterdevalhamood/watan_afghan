@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sample/src/providers/customer_controller.dart';
+import 'package:sample/src/util/country_phone_validation.dart';
 
 class CustomerDataScreen extends StatefulWidget {
   const CustomerDataScreen({super.key});
@@ -61,35 +62,6 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
     controller.resetFormState();
     controller.getCustomerBaseData();
   }
-
-  static const Map<String, Map<String, dynamic>> countryPhoneValidation = {
-    '+1': {'minLength': 10, 'maxLength': 10, 'name': 'US/Canada'}, // US/Canada
-    '+44': {'minLength': 10, 'maxLength': 10, 'name': 'UK'},
-    '+91': {'minLength': 10, 'maxLength': 10, 'name': 'India'},
-    '+86': {'minLength': 11, 'maxLength': 11, 'name': 'China'},
-    '+81': {'minLength': 10, 'maxLength': 11, 'name': 'Japan'},
-    '+49': {'minLength': 10, 'maxLength': 12, 'name': 'Germany'},
-    '+33': {'minLength': 9, 'maxLength': 9, 'name': 'France'},
-    '+39': {'minLength': 9, 'maxLength': 10, 'name': 'Italy'},
-    '+34': {'minLength': 9, 'maxLength': 9, 'name': 'Spain'},
-    '+61': {'minLength': 9, 'maxLength': 9, 'name': 'Australia'},
-    '+55': {'minLength': 10, 'maxLength': 11, 'name': 'Brazil'},
-    '+52': {'minLength': 10, 'maxLength': 10, 'name': 'Mexico'},
-    '+7': {'minLength': 10, 'maxLength': 10, 'name': 'Russia'},
-    '+82': {'minLength': 9, 'maxLength': 9, 'name': 'South Korea'},
-    '+65': {'minLength': 8, 'maxLength': 8, 'name': 'Singapore'},
-    '+60': {'minLength': 9, 'maxLength': 10, 'name': 'Malaysia'},
-    '+66': {'minLength': 9, 'maxLength': 9, 'name': 'Thailand'},
-    '+84': {'minLength': 9, 'maxLength': 10, 'name': 'Vietnam'},
-    '+62': {'minLength': 9, 'maxLength': 12, 'name': 'Indonesia'},
-    '+63': {'minLength': 10, 'maxLength': 10, 'name': 'Philippines'},
-    '+971': {'minLength': 9, 'maxLength': 9, 'name': 'UAE'},
-    '+966': {'minLength': 9, 'maxLength': 9, 'name': 'Saudi Arabia'},
-    '+974': {'minLength': 8, 'maxLength': 8, 'name': 'Qatar'},
-    '+965': {'minLength': 8, 'maxLength': 8, 'name': 'Kuwait'},
-    '+973': {'minLength': 8, 'maxLength': 8, 'name': 'Bahrain'},
-    '+968': {'minLength': 8, 'maxLength': 8, 'name': 'Oman'},
-  };
 
   // Add method to validate mobile number with country code
   String? _validateMobileNumber(String value) {

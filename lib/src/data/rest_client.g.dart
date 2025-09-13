@@ -101,37 +101,13 @@ class _RestClient implements RestClient {
   }
 
   @override
-  Future<dynamic> userUpdate({
-    String? token,
-    String? name,
-    String? contactNumber,
-    File? file,
-  }) async {
+  Future<dynamic> userUpdate(String? token, Map<String, dynamic> body) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{r'Authorization': token};
     _headers.removeWhere((k, v) => v == null);
-    final _data = FormData();
-    if (name != null) {
-      _data.fields.add(MapEntry('name', name));
-    }
-    if (contactNumber != null) {
-      _data.fields.add(MapEntry('contactNumber', contactNumber));
-    }
-    if (file != null) {
-      if (file != null) {
-        _data.files.add(
-          MapEntry(
-            'imageUrl',
-            MultipartFile.fromFileSync(
-              file.path,
-              filename: file.path.split(Platform.pathSeparator).last,
-            ),
-          ),
-        );
-      }
-    }
+    final _data = FormData.fromMap(body);
     final _options = _setStreamType<dynamic>(
       Options(
             method: 'POST',

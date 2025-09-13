@@ -33,6 +33,13 @@ class AuthController with ChangeNotifier {
         AuthRepo.loginId = loginResponse.Data?.id;
         AuthRepo.user = loginResponse.Data?.name;
         AuthRepo.contact = loginResponse.Data?.contactNumber;
+        if (loginResponse.Data?.imageUrl != null &&
+            loginResponse.Data!.imageUrl!.isNotEmpty) {
+          AuthRepo.imageUrl =
+              "${loginResponse.Data!.imageUrl}?t=${DateTime.now().millisecondsSinceEpoch}";
+        } else {
+          AuthRepo.imageUrl = null;
+        }
         String? roleName;
         if (userData?.roles != null) {
           roleName = userData?.roles?.Name;
@@ -102,31 +109,55 @@ class AuthController with ChangeNotifier {
     }
   }
 
-  Future<bool> userUpdate(
-    String? name,
-    String? contactNumber,
+  Future<bool> updateUserProfile({
+    required String token,
+    required String name,
+    required String contactNumber,
     File? imageFile,
-  ) async {
-    showCircle();
-
+  }) async {
     try {
-      if (token == null) {
-        throw Exception("No Token Found");
+      MultipartFile? multipartFile;
+
+      if (imageFile != null) {
+        multipartFile = await MultipartFile.fromFile(
+          imageFile.path,
+          filename: imageFile.path.split('/').last,
+        );
       }
-      await restApi.userUpdate(
-        token: 'Bearer $token',
-        name: name,
-        contactNumber: contactNumber,
-        file: imageFile,
-      );
+
+      // Build form-data map
+      final formData = {
+        "name": name,
+        "contactNumber": contactNumber,
+        if (multipartFile != null)
+          "imageUrl": multipartFile, // backend expects "imageUrl"
+      };
+
+      final response = await restApi.userUpdate("Bearer $token", formData);
+
+      // Update local cache
       AuthRepo.user = name;
       AuthRepo.contact = contactNumber;
 
-      AuthRepo.imageUrl = imageFile.toString();
+      // Handle image URL from API response
+      if (response != null && response is Map<String, dynamic>) {
+        final data = response["Data"];
+        if (data != null &&
+            data["imageUrl"] != null &&
+            data["imageUrl"].toString().isNotEmpty) {
+          final rawUrl = data["imageUrl"].toString();
+          AuthRepo.imageUrl =
+              "$rawUrl?t=${DateTime.now().millisecondsSinceEpoch}";
+        } else if (imageFile == null) {
+          AuthRepo.imageUrl = null;
+        }
+      }
 
       notifyListeners();
+      removeCircle();
       return true;
     } catch (e) {
+      removeCircle();
       if (e is DioException) {
         print("Dio Exception $e");
       }

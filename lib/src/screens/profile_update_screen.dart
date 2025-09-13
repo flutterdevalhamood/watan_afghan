@@ -38,18 +38,34 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
   @override
   void initState() {
     super.initState();
+    // get controller and listen for updates so UI refreshes when AuthController notifies
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _authController = Provider.of<AuthController>(context, listen: false);
+      // add listener to refresh UI when auth state (imageUrl, name, etc.) changes
+      _authController.addListener(_onAuthChanged);
+
       _nameController.text = AuthRepo.user ?? '';
       _contactController.text = AuthRepo.contact ?? '';
-      if (AuthRepo.imageUrl != null && AuthRepo.imageUrl!.isNotEmpty) {
-        setState(() {});
-      }
+      // no explicit setState here; listener will handle updates if needed
     });
+  }
+
+  void _onAuthChanged() {
+    // called when AuthController.notifyListeners() is invoked
+    if (mounted) {
+      setState(() {
+        // refresh to pick up AuthRepo.imageUrl / other auth changes
+        // we keep no heavy logic here; widget build will read AuthRepo.*
+      });
+    }
   }
 
   @override
   void dispose() {
+    // remove listener to avoid memory leaks
+    try {
+      _authController.removeListener(_onAuthChanged);
+    } catch (_) {}
     _nameController.dispose();
     _contactController.dispose();
     super.dispose();
@@ -96,7 +112,9 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
                     _pickImage(ImageSource.camera);
                   },
                 ),
-                if (_user?.imageUrl != null || _imageFile != null)
+                if ((AuthRepo.imageUrl != null &&
+                        AuthRepo.imageUrl!.isNotEmpty) ||
+                    _imageFile != null)
                   ListTile(
                     leading: Icon(Icons.delete, color: Colors.red),
                     title: Text('Remove Photo'),
@@ -105,6 +123,7 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
                       setState(() {
                         _imageFile = null;
                         _imageChanged = true;
+                        AuthRepo.imageUrl = null; // Clear the stored image URL
                       });
                     },
                   ),
@@ -124,10 +143,11 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
     });
 
     try {
-      bool isSuccess = await _authController.userUpdate(
-        _nameController.text,
-        _contactController.text,
-        _imageFile,
+      bool isSuccess = await _authController.updateUserProfile(
+        token: AuthRepo.token ?? "", // 👈 make sure you pass the token
+        name: _nameController.text,
+        contactNumber: _contactController.text,
+        imageFile: _imageFile,
       );
 
       setState(() {
@@ -211,24 +231,22 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
                                         image: FileImage(_imageFile!),
                                         fit: BoxFit.cover,
                                       )
-                                      : _user?.imageUrl != null &&
-                                          _user!.imageUrl!.isNotEmpty
+                                      : AuthRepo.imageUrl != null &&
+                                          AuthRepo.imageUrl!.isNotEmpty &&
+                                          AuthRepo.imageUrl!.startsWith('http')
                                       ? DecorationImage(
-                                        image:
-                                            _user!.imageUrl!.startsWith('http')
-                                                ? NetworkImage(_user!.imageUrl!)
-                                                    as ImageProvider
-                                                : FileImage(
-                                                  File(_user!.imageUrl!),
-                                                ),
+                                        image: NetworkImage(AuthRepo.imageUrl!),
                                         fit: BoxFit.cover,
                                       )
                                       : null,
                             ),
                             child:
                                 (_imageFile == null &&
-                                        (_user?.imageUrl == null ||
-                                            _user!.imageUrl!.isEmpty))
+                                        (AuthRepo.imageUrl == null ||
+                                            AuthRepo.imageUrl!.isEmpty ||
+                                            !AuthRepo.imageUrl!.startsWith(
+                                              'http',
+                                            )))
                                     ? Icon(
                                       Icons.person,
                                       size: 60,
