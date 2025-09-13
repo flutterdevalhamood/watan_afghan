@@ -133,13 +133,6 @@ class _InvestorTransactionScreenState extends State<InvestorTransactionScreen> {
 
     if (result == true) {
       _controller.deleteInvestorTransaction(id, _deleteReasonController.text);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Transaction deleted successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
     }
   }
 

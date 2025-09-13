@@ -335,22 +335,6 @@ class _CustomerListScreenState extends State<CustomerListScreen>
     );
 
     if (result == true && mounted) {
-      // FIXED: Show loading indicator during delete
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder:
-            (context) => const AlertDialog(
-              content: Row(
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(width: 16),
-                  Text('Deleting customer...'),
-                ],
-              ),
-            ),
-      );
-
       try {
         await _controller.deleteCustomer(
           customer.id,
@@ -358,24 +342,6 @@ class _CustomerListScreenState extends State<CustomerListScreen>
               ? null
               : _deleteReasonController.text.trim(),
         );
-
-        if (mounted) {
-          Navigator.of(context).pop(); // Close loading dialog
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${customer.name} deleted successfully'),
-              backgroundColor: Colors.green,
-              action: SnackBarAction(
-                label: 'OK',
-                textColor: Colors.white,
-                onPressed: () {
-                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                },
-              ),
-            ),
-          );
-        }
       } catch (e) {
         if (mounted) {
           Navigator.of(context).pop(); // Close loading dialog

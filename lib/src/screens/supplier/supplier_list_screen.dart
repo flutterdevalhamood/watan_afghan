@@ -95,40 +95,40 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
                     return const Center(child: CircularProgressIndicator());
                   }
 
-                  if (controller.errorMessage != null) {
-                    return SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      child: SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.6,
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.error_outline,
-                                size: 64,
-                                color: Colors.red[300],
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                controller.errorMessage!,
-                                style: TextStyle(
-                                  color: Colors.red[600],
-                                  fontSize: 16,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: () => controller.refresh(),
-                                child: const Text('Try Again'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  }
+                  // if (controller.errorMessage != null) {
+                  //   return SingleChildScrollView(
+                  //     physics: const AlwaysScrollableScrollPhysics(),
+                  //     child: SizedBox(
+                  //       height: MediaQuery.of(context).size.height * 0.6,
+                  //       child: Center(
+                  //         child: Column(
+                  //           mainAxisAlignment: MainAxisAlignment.center,
+                  //           children: [
+                  //             Icon(
+                  //               Icons.error_outline,
+                  //               size: 64,
+                  //               color: Colors.red[300],
+                  //             ),
+                  //             const SizedBox(height: 16),
+                  //             Text(
+                  //               controller.errorMessage!,
+                  //               style: TextStyle(
+                  //                 color: Colors.red[600],
+                  //                 fontSize: 16,
+                  //               ),
+                  //               textAlign: TextAlign.center,
+                  //             ),
+                  //             const SizedBox(height: 16),
+                  //             ElevatedButton(
+                  //               onPressed: () => controller.refresh(),
+                  //               child: const Text('Try Again'),
+                  //             ),
+                  //           ],
+                  //         ),
+                  //       ),
+                  //     ),
+                  //   );
+                  // }
 
                   if (controller.isEmpty) {
                     return SingleChildScrollView(
@@ -255,12 +255,12 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
     if (result == true) {
       _controller.deleteSupplier(supplier.id, _deleteReasonController.text);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Transaction deleted successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   const SnackBar(
+      //     content: Text('Transaction deleted successfully'),
+      //     backgroundColor: Colors.green,
+      //   ),
+      // );
     }
   }
 }

@@ -510,13 +510,6 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
 
     if (result == true) {
       _controller.deletePurchases(purchase.id, _deleteReasonController.text);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Transaction deleted successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
     }
   }
 

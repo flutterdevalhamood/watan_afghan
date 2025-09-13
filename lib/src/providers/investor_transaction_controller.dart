@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:sample/src/util/snack.dart';
 
 import '../data/rest_client.dart';
 import '../repo/auth_repo.dart';
@@ -237,14 +238,64 @@ class InvestorTransactionController with ChangeNotifier {
     if (!await _checkToken()) return;
 
     try {
-      await restApi.deleteInvestorTransaction(
+      final response = await restApi.deleteInvestorTransaction(
         token: _getAuthHeader(),
         id: id,
         description: descriptionText,
       );
-      await getInvestorTransaction();
+      if (response is Map<String, dynamic>) {
+        if (response['IsSuccess'] == true) {
+          debugPrint(
+            "Delete successful, refreshing investor transaction list...",
+          );
+          await getInvestorTransaction();
+          showSuccessSnack('Transaction deleted successfully');
+        } else {
+          // Handle different types of errors
+          String errorMsg = 'Failed to delete investor transaction data';
+
+          // Check if it's a validation error with specific field messages
+          if (response['Data'] != null &&
+              response['Data'] is Map<String, dynamic>) {
+            final data = response['Data'] as Map<String, dynamic>;
+
+            // Check for deleteDescription validation error
+            if (data['deleteDescription'] != null &&
+                data['deleteDescription'] is List) {
+              final deleteDescriptionErrors = data['deleteDescription'] as List;
+              if (deleteDescriptionErrors.isNotEmpty) {
+                errorMsg = deleteDescriptionErrors.first.toString();
+              }
+            } else if (data.isNotEmpty) {
+              // Handle other validation errors if needed
+              final firstError = data.values.first;
+              if (firstError is List && firstError.isNotEmpty) {
+                errorMsg = firstError.first.toString();
+              }
+            }
+          } else {
+            // Fallback to general message
+            errorMsg =
+                response['Message'] as String? ??
+                'Failed to delete investor transaction data';
+          }
+
+          errorMessage = errorMsg;
+          debugPrint("Delete failed: $errorMessage");
+          showErrorSnack(errorMessage.toString());
+        }
+      } else {
+        debugPrint("Delete completed, refreshing investor transaction list...");
+        await getInvestorTransaction();
+        showErrorSnack(errorMessage.toString());
+      }
     } catch (e) {
+      debugPrint("Delete API Exception: $e");
       _handleApiError(e);
+      showErrorSnack('Failed to delete investor transaction: ${e.toString()}');
+    } finally {
+      isLoading = false;
+      notifyListeners();
     }
   }
 

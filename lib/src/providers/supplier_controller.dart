@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:sample/src/screens/supplier/supplier_model.dart';
+import 'package:sample/src/util/snack.dart';
 
 import '../data/rest_client.dart';
 import '../repo/auth_repo.dart';
@@ -369,22 +370,99 @@ class SupplierController with ChangeNotifier {
         if (response['IsSuccess'] == true) {
           debugPrint("Delete successful, refreshing supplier list...");
           await getSupplierData();
+          showSuccessSnack('Supplier deleted successfully');
         } else {
-          errorMessage = response['Message'] ?? 'Failed to delete supplier';
+          // Handle different types of errors
+          String errorMsg = 'Failed to delete supplier';
+
+          // Check if it's a validation error with specific field messages
+          if (response['Data'] != null &&
+              response['Data'] is Map<String, dynamic>) {
+            final data = response['Data'] as Map<String, dynamic>;
+
+            // Check for deleteDescription validation error
+            if (data['deleteDescription'] != null &&
+                data['deleteDescription'] is List) {
+              final deleteDescriptionErrors = data['deleteDescription'] as List;
+              if (deleteDescriptionErrors.isNotEmpty) {
+                errorMsg = deleteDescriptionErrors.first.toString();
+              }
+            } else if (data.isNotEmpty) {
+              // Handle other validation errors if needed
+              final firstError = data.values.first;
+              if (firstError is List && firstError.isNotEmpty) {
+                errorMsg = firstError.first.toString();
+              }
+            }
+          } else {
+            // Fallback to general message
+            errorMsg =
+                response['Message'] as String? ?? 'Failed to delete supplier';
+          }
+
+          errorMessage = errorMsg;
           debugPrint("Delete failed: $errorMessage");
+          showErrorSnack(errorMessage.toString());
         }
       } else {
         debugPrint("Delete completed, refreshing supplier list...");
         await getSupplierData();
+        showErrorSnack(errorMessage.toString());
       }
     } catch (e) {
       debugPrint("Delete API Exception: $e");
       _handleApiError(e);
+      showErrorSnack(errorMessage.toString());
     } finally {
       isLoading = false;
       notifyListeners();
     }
   }
+
+  // Future<void> deleteSupplier(int? id, String? descriptionText) async {
+  //   if (!await _checkToken()) {
+  //     debugPrint("Token check failed");
+  //     return;
+  //   }
+  //
+  //   // Show loading state
+  //   isLoading = true;
+  //   errorMessage = null;
+  //   notifyListeners();
+  //
+  //   try {
+  //     debugPrint("Calling restApi.deleteSupplier...");
+  //
+  //     final response = await restApi.deleteSupplier(
+  //       token: _getAuthHeader(),
+  //       id: id,
+  //       description: descriptionText,
+  //     );
+  //
+  //     if (response is Map<String, dynamic>) {
+  //       if (response['IsSuccess'] == true) {
+  //         debugPrint("Delete successful, refreshing supplier list...");
+  //         await getSupplierData();
+  //         showSuccessSnack('Supplier deleted successfully');
+  //       } else {
+  //         errorMessage = response['Message'] ?? 'Failed to delete supplier';
+  //         debugPrint("Delete failed: $errorMessage");
+  //         showErrorSnack(errorMessage.toString());
+  //       }
+  //     } else {
+  //       debugPrint("Delete completed, refreshing supplier list...");
+  //       await getSupplierData();
+  //       showErrorSnack(errorMessage.toString());
+  //     }
+  //   } catch (e) {
+  //     debugPrint("Delete API Exception: $e");
+  //     _handleApiError(e);
+  //     showErrorSnack(errorMessage.toString());
+  //   } finally {
+  //     isLoading = false;
+  //     notifyListeners();
+  //   }
+  // }
 
   // Get user-friendly error message
   String _getErrorMessage(dynamic e) {

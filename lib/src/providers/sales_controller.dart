@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:sample/src/models/Sales_detail_model.dart';
 import 'package:sample/src/models/sales_model.dart';
+import 'package:sample/src/util/snack.dart';
 
 import '../data/rest_client.dart';
 import '../repo/auth_repo.dart';
@@ -548,7 +549,7 @@ class SalesController with ChangeNotifier {
     notifyListeners();
 
     try {
-      debugPrint("Calling restApi.deleteSupplier...");
+      debugPrint("Calling restApi.deleteSales...");
 
       final response = await restApi.deleteSales(
         token: _getAuthHeader(),
@@ -558,20 +559,51 @@ class SalesController with ChangeNotifier {
 
       if (response is Map<String, dynamic>) {
         if (response['IsSuccess'] == true) {
-          debugPrint("Delete successful, refreshing purchase list...");
+          debugPrint("Delete successful, refreshing sales list...");
           await getSalesData();
+          showSuccessSnack('Sales data deleted successfully');
         } else {
-          errorMessage =
-              response['Message'] ?? 'Failed to delete purchase data';
+          // Handle different types of errors
+          String errorMsg = 'Failed to delete sales data';
+
+          // Check if it's a validation error with specific field messages
+          if (response['Data'] != null &&
+              response['Data'] is Map<String, dynamic>) {
+            final data = response['Data'] as Map<String, dynamic>;
+
+            // Check for deleteDescription validation error
+            if (data['deleteDescription'] != null &&
+                data['deleteDescription'] is List) {
+              final deleteDescriptionErrors = data['deleteDescription'] as List;
+              if (deleteDescriptionErrors.isNotEmpty) {
+                errorMsg = deleteDescriptionErrors.first.toString();
+              }
+            } else if (data.isNotEmpty) {
+              // Handle other validation errors if needed
+              final firstError = data.values.first;
+              if (firstError is List && firstError.isNotEmpty) {
+                errorMsg = firstError.first.toString();
+              }
+            }
+          } else {
+            // Fallback to general message
+            errorMsg =
+                response['Message'] as String? ?? 'Failed to delete sales data';
+          }
+
+          errorMessage = errorMsg;
           debugPrint("Delete failed: $errorMessage");
+          showErrorSnack(errorMessage.toString());
         }
       } else {
-        debugPrint("Delete completed, refreshing purchase list...");
+        debugPrint("Delete completed, refreshing sales list...");
         await getSalesData();
+        showErrorSnack(errorMessage.toString());
       }
     } catch (e) {
       debugPrint("Delete API Exception: $e");
       _handleApiError(e);
+      showErrorSnack('Failed to delete sales: ${e.toString()}');
     } finally {
       isLoading = false;
       notifyListeners();

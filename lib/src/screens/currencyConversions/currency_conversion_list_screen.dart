@@ -370,13 +370,6 @@ class _CurrencyConversionListScreenState
 
     if (result == true) {
       _controller.deleteCurrencyConversion(id, _deleteReasonController.text);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Conversion data deleted successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
     }
   }
 

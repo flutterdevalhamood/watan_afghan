@@ -94,13 +94,6 @@ class _SalesListScreenState extends State<SalesListScreen> {
 
     if (result == true) {
       _controller.deleteSales(sale.id, _deleteReasonController.text);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Sale Data deleted successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
     }
   }
 

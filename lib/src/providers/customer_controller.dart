@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:sample/src/util/snack.dart';
 
 import '../data/rest_client.dart';
 import '../repo/auth_repo.dart';
@@ -595,18 +596,42 @@ class CustomerController with ChangeNotifier {
 
       if (response != null && response is Map<String, dynamic>) {
         if (response['IsSuccess'] == true) {
-          debugPrint("Delete successful, refreshing customer list...");
-          // FIXED: Remove the customer locally first for immediate UI update
           _customers.removeWhere((customer) => customer.id == id);
           notifyListeners();
-
-          // Then refresh from server to ensure consistency
           await refresh();
-          debugPrint("Customer list refreshed successfully");
+          showSuccessSnack('Customer deleted successfully');
         } else {
-          errorMessage =
-              response['Message'] as String? ?? 'Failed to delete customer';
+          // Handle different types of errors
+          String errorMsg = 'Failed to delete customer';
+
+          // Check if it's a validation error with specific field messages
+          if (response['Data'] != null &&
+              response['Data'] is Map<String, dynamic>) {
+            final data = response['Data'] as Map<String, dynamic>;
+
+            // Check for deleteDescription validation error
+            if (data['deleteDescription'] != null &&
+                data['deleteDescription'] is List) {
+              final deleteDescriptionErrors = data['deleteDescription'] as List;
+              if (deleteDescriptionErrors.isNotEmpty) {
+                errorMsg = deleteDescriptionErrors.first.toString();
+              }
+            } else if (data.isNotEmpty) {
+              // Handle other validation errors if needed
+              final firstError = data.values.first;
+              if (firstError is List && firstError.isNotEmpty) {
+                errorMsg = firstError.first.toString();
+              }
+            }
+          } else {
+            // Fallback to general message
+            errorMsg =
+                response['Message'] as String? ?? 'Failed to delete customer';
+          }
+
+          errorMessage = errorMsg;
           debugPrint("Delete failed: $errorMessage");
+          showErrorSnack(errorMessage.toString());
         }
       } else {
         debugPrint("Delete completed, refreshing customer list...");
@@ -614,12 +639,63 @@ class CustomerController with ChangeNotifier {
         _customers.removeWhere((customer) => customer.id == id);
         notifyListeners();
         await refresh();
+        showErrorSnack(errorMessage.toString());
       }
     } catch (e) {
       debugPrint("Delete API Exception: $e");
       _handleApiError(e);
+      showErrorSnack('Failed to delete customer: ${e.toString()}');
     }
   }
+
+  // Future<void> deleteCustomer(int? id, String? descriptionText) async {
+  //   debugPrint("=== DELETE CUSTOMER DEBUG INFO ===");
+  //   debugPrint("Customer ID: $id");
+  //   debugPrint("Description: $descriptionText");
+  //
+  //   if (!await _checkToken()) {
+  //     debugPrint("Token check failed");
+  //     return;
+  //   }
+  //
+  //   // FIXED: Don't show global loading for delete operations
+  //   try {
+  //     debugPrint("Calling restApi.deleteCustomer...");
+  //
+  //     final response = await restApi.deleteCustomer(
+  //       token: _getAuthHeader(),
+  //       id: id,
+  //       description: descriptionText,
+  //     );
+  //
+  //     debugPrint("Delete API Response: $response");
+  //
+  //     if (response != null && response is Map<String, dynamic>) {
+  //       if (response['IsSuccess'] == true) {
+  //         _customers.removeWhere((customer) => customer.id == id);
+  //         notifyListeners();
+  //         await refresh();
+  //         showSuccessSnack('Customer deleted successfully');
+  //       } else {
+  //         errorMessage =
+  //             response['Message'] as String? ?? 'Failed to delete customer';
+  //         debugPrint("Delete failed: $errorMessage");
+  //         showErrorSnack(errorMessage.toString());
+  //       }
+  //     } else {
+  //       debugPrint("Delete completed, refreshing customer list...");
+  //       // Remove locally and refresh
+  //       _customers.removeWhere((customer) => customer.id == id);
+  //       notifyListeners();
+  //       await refresh();
+  //       showErrorSnack(errorMessage.toString());
+  //     }
+  //   } catch (e) {
+  //     debugPrint("Delete API Exception: $e");
+  //     _handleApiError(e);
+  //     showErrorSnack('Failed to delete expense ${e.toString()}');
+  //   }
+  // }
 
   // Enhanced error handling
   void _handleApiError(dynamic e) {
