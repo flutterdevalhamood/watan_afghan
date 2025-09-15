@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:sample/src/providers/investor_transaction_controller.dart';
+import 'package:sample/src/widgets/pdf_download_widget.dart';
 
 class InvestorTransactionReportScreen extends StatefulWidget {
   const InvestorTransactionReportScreen({super.key});
@@ -133,7 +134,17 @@ class _InvestorTransactionReportScreenState
       );
 
       if (success && _controller.reportUrl != null) {
-        await _downloadAndOpenPdf(_controller.reportUrl!);
+        final pdfPath = await PdfDownloadHelper.downloadAndOpenPdf(
+          url: _controller.reportUrl!,
+          reportType: 'investor_transaction',
+          context: context,
+        );
+
+        if (pdfPath != null && mounted) {
+          setState(() {
+            _pdfPath = pdfPath;
+          });
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
