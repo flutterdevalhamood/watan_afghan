@@ -238,8 +238,8 @@ class _SalesListScreenState extends State<SalesListScreen> {
 
                       await controller.refresh();
                     }
-                    _controller.refresh();
-                    _searchController.clear();
+                    // _controller.refresh();
+                    // _searchController.clear();
                   },
                   child: const Icon(Icons.add),
                 ),
