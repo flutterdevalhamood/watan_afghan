@@ -151,7 +151,7 @@ class _DrawerWidgetState extends State<DrawerWidget> {
   Widget build(BuildContext context) {
     return Consumer<AuthController>(
       builder: (context, authController, child) {
-        final imageUrl = authController.userData?.imageUrl;
+        final imageUrl = AuthRepo.imageUrl ?? authController.userData?.imageUrl;
         return Drawer(
           elevation: 10,
           shape: RoundedRectangleBorder(
@@ -343,17 +343,6 @@ class _DrawerWidgetState extends State<DrawerWidget> {
                   onTap: () {
                     NavigationService().pushNavigation(
                       Screenroutes.reportsHomeScreen,
-                    );
-                  },
-                ),
-                _buildMenuItem(
-                  context: context,
-                  icon: Icons.person,
-                  title: 'My Profile',
-                  onTap: () {
-                    Navigator.pop(context);
-                    NavigationService().pushNavigation(
-                      Screenroutes.profileUpdateScreen,
                     );
                   },
                 ),

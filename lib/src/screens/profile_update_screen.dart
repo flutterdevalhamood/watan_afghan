@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 import 'package:sample/src/models/user_model.dart';
 import 'package:sample/src/providers/login_controller.dart';
 import 'package:sample/src/repo/auth_repo.dart';
+import 'package:sample/src/util/app_navigation.dart';
+import 'package:sample/src/util/app_routes.dart';
 import 'package:sample/src/util/snack.dart';
 
 class ProfileUpdateScreen extends StatefulWidget {
@@ -101,14 +103,14 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
                     _pickImage(ImageSource.gallery);
                   },
                 ),
-                ListTile(
-                  leading: Icon(Icons.photo_camera, color: primaryColor),
-                  title: Text('Camera'),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    _pickImage(ImageSource.camera);
-                  },
-                ),
+                // ListTile(
+                //   leading: Icon(Icons.photo_camera, color: primaryColor),
+                //   title: Text('Camera'),
+                //   onTap: () {
+                //     Navigator.of(context).pop();
+                //     _pickImage(ImageSource.camera);
+                //   },
+                // ),
                 if ((AuthRepo.imageUrl != null &&
                         AuthRepo.imageUrl!.isNotEmpty) ||
                     _imageFile != null)
@@ -158,6 +160,22 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
         setState(() {
           _imageChanged = false;
         });
+
+        // Log out the user after successful profile update
+        bool logoutSuccess = await _authController.logout(AuthRepo.loginId);
+
+        if (logoutSuccess) {
+          // Navigate to login screen or wherever you want after logout
+          NavigationService().pushAndRemoveUntilNavigation(
+            Screenroutes.login, // or your login route
+            removeUntilPageName: Screenroutes.login,
+          );
+        } else {
+          NavigationService().pushAndRemoveUntilNavigation(
+            Screenroutes.login,
+            removeUntilPageName: Screenroutes.login,
+          );
+        }
       } else {
         showErrorSnack("Failed to update profile. Please try again.");
       }
@@ -168,6 +186,45 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
       showErrorSnack("An error occurred. Please try again later.");
     }
   }
+
+  // Future<void> _saveProfile() async {
+  //   if (!_formKey.currentState!.validate()) {
+  //     return;
+  //   }
+  //
+  //   setState(() {
+  //     _isSaving = true;
+  //   });
+  //
+  //   try {
+  //     bool isSuccess = await _authController.updateUserProfile(
+  //       token: AuthRepo.token ?? "", // 👈 make sure you pass the token
+  //       name: _nameController.text,
+  //       contactNumber: _contactController.text,
+  //       imageFile: _imageFile,
+  //     );
+  //
+  //     setState(() {
+  //       _isSaving = false;
+  //     });
+  //
+  //     if (isSuccess) {
+  //       AuthRepo.user = _nameController.text;
+  //
+  //       showSuccessSnack("Profile updated successfully!");
+  //       setState(() {
+  //         _imageChanged = false;
+  //       });
+  //     } else {
+  //       showErrorSnack("Failed to update profile. Please try again.");
+  //     }
+  //   } catch (e) {
+  //     setState(() {
+  //       _isSaving = false;
+  //     });
+  //     showErrorSnack("An error occurred. Please try again later.");
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
