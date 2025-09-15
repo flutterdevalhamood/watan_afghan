@@ -244,6 +244,70 @@ class _ProductListScreenState extends State<ProductListScreen> {
     );
   }
 
+  // Widget _buildProductCard(Map<String, dynamic> product, int index) {
+  //   return Card(
+  //     margin: const EdgeInsets.only(bottom: 16),
+  //     elevation: 2,
+  //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  //     child: InkWell(
+  //       onTap: () => _showProductDetails(product),
+  //       borderRadius: BorderRadius.circular(12),
+  //       child: Padding(
+  //         padding: const EdgeInsets.all(16),
+  //         child: Row(
+  //           children: [
+  //             _buildProductImage(product['image']),
+  //             const SizedBox(width: 16),
+  //             Expanded(
+  //               child: Row(
+  //                 children: [
+  //                   Column(
+  //                     crossAxisAlignment: CrossAxisAlignment.start,
+  //                     children: [
+  //                       Text(
+  //                         product['Name'] ?? 'Unknown Product',
+  //                         style: const TextStyle(
+  //                           fontSize: 18,
+  //                           fontWeight: FontWeight.bold,
+  //                           color: Colors.black87,
+  //                         ),
+  //                       ),
+  //                     ],
+  //                   ),
+  //                   SizedBox(width: 24),
+  //                   Row(
+  //                     // mainAxisSize: MainAxisSize.min,
+  //                     children: [
+  //                       IconButton(
+  //                         onPressed: () {
+  //                           NavigationService().pushNavigation(
+  //                             Screenroutes.productEdit,
+  //                             arguments: product,
+  //                           );
+  //                         },
+  //
+  //                         icon: Icon(Icons.edit, color: Colors.blue),
+  //                       ),
+  //
+  //                       // IconButton(
+  //                       //   onPressed: () async {
+  //                       //     _deleteProduct(index);
+  //                       //   },
+  //                       //   icon: Icon(Icons.delete, color: Colors.red),
+  //                       // ),
+  //                     ],
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //             Icon(Icons.arrow_forward_ios, color: Colors.grey[400], size: 16),
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
+
   Widget _buildProductCard(Map<String, dynamic> product, int index) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -259,47 +323,31 @@ class _ProductListScreenState extends State<ProductListScreen> {
               _buildProductImage(product['image']),
               const SizedBox(width: 16),
               Expanded(
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          product['Name'] ?? 'Unknown Product',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(width: 24),
-                    Row(
-                      // mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          onPressed: () {
-                            NavigationService().pushNavigation(
-                              Screenroutes.productEdit,
-                              arguments: product,
-                            );
-                          },
-
-                          icon: Icon(Icons.edit, color: Colors.blue),
-                        ),
-
-                        // IconButton(
-                        //   onPressed: () async {
-                        //     _deleteProduct(index);
-                        //   },
-                        //   icon: Icon(Icons.delete, color: Colors.red),
-                        // ),
-                      ],
+                    Text(
+                      product['Name'] ?? 'Unknown Product',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
                     ),
                   ],
                 ),
               ),
+              // Fixed position for edit icon
+              IconButton(
+                onPressed: () {
+                  NavigationService().pushNavigation(
+                    Screenroutes.productEdit,
+                    arguments: product,
+                  );
+                },
+                icon: Icon(Icons.edit, color: Colors.blue),
+              ),
+              const SizedBox(width: 8),
               Icon(Icons.arrow_forward_ios, color: Colors.grey[400], size: 16),
             ],
           ),
