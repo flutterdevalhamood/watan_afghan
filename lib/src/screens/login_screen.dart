@@ -168,13 +168,13 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               const SizedBox(height: 20),
                               // Forgot Password
-                              TextButton(
-                                onPressed: () {},
-                                child: const Text(
-                                  'Forgot Password?',
-                                  style: TextStyle(color: Colors.white70),
-                                ),
-                              ),
+                              // TextButton(
+                              //   onPressed: () {},
+                              //   child: const Text(
+                              //     'Forgot Password?',
+                              //     style: TextStyle(color: Colors.white70),
+                              //   ),
+                              // ),
                             ],
                           ),
                         ),
