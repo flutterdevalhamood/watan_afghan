@@ -38,15 +38,12 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
   @override
   void initState() {
     super.initState();
-    // get controller and listen for updates so UI refreshes when AuthController notifies
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _authController = Provider.of<AuthController>(context, listen: false);
-      // add listener to refresh UI when auth state (imageUrl, name, etc.) changes
       _authController.addListener(_onAuthChanged);
 
       _nameController.text = AuthRepo.user ?? '';
       _contactController.text = AuthRepo.contact ?? '';
-      // no explicit setState here; listener will handle updates if needed
     });
   }
 
@@ -329,7 +326,9 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
                       },
                     ),
                     SizedBox(height: 20),
+
                     // Contact field
+                    // Contact field - Updated with validation
                     TextFormField(
                       controller: _contactController,
                       decoration: InputDecoration(
@@ -348,13 +347,23 @@ class _ProfileUpdateScreenState extends State<ProfileUpdateScreen> {
                         ),
                       ),
                       keyboardType: TextInputType.phone,
-                      // validator: (value) {
-                      //   if (value == null || value.trim().isEmpty) {
-                      //     return 'Please enter your contact number';
-                      //   }
-                      //   // You can add phone number validation here
-                      //   return null;
-                      // },
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter your contact number';
+                        }
+                        // Remove any non-digit characters for validation
+                        String digitsOnly = value.replaceAll(
+                          RegExp(r'[^0-9]'),
+                          '',
+                        );
+                        if (digitsOnly.length > 15) {
+                          return 'Contact number cannot exceed 15 digits';
+                        }
+                        if (digitsOnly.length < 7) {
+                          return 'Contact number must be at least 7 digits';
+                        }
+                        return null;
+                      },
                     ),
                     SizedBox(height: 30),
                     // Save button
