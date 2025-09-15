@@ -95,19 +95,51 @@ class AuthController with ChangeNotifier {
       if (token == null) {
         throw Exception("No Token Found");
       }
-      await restApi.changePassword(
+      final response = await restApi.changePassword(
         token: 'Bearer $token',
         currentPassword: currentPassword,
         password: newPassword,
       );
-      return true;
+
+      removeCircle();
+
+      // Check the API response structure
+      if (response != null && response is Map<String, dynamic>) {
+        return response['IsSuccess'] == true;
+      }
+      return false;
     } catch (e) {
+      removeCircle();
       if (e is DioException) {
         print("Dio Exception $e");
       }
       return false;
     }
   }
+
+  // Future<bool> changePassword(
+  //   String? currentPassword,
+  //   String? newPassword,
+  // ) async {
+  //   showCircle();
+  //
+  //   try {
+  //     if (token == null) {
+  //       throw Exception("No Token Found");
+  //     }
+  //     await restApi.changePassword(
+  //       token: 'Bearer $token',
+  //       currentPassword: currentPassword,
+  //       password: newPassword,
+  //     );
+  //     return true;
+  //   } catch (e) {
+  //     if (e is DioException) {
+  //       print("Dio Exception $e");
+  //     }
+  //     return false;
+  //   }
+  // }
 
   Future<bool> updateUserProfile({
     required String token,

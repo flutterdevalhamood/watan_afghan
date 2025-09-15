@@ -54,9 +54,25 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
           _currentPasswordController.clear();
           _newPasswordController.clear();
+          _confirmPasswordController.clear();
 
-          Future.delayed(const Duration(milliseconds: 800), () {
-            Navigator.pop(context);
+          // Logout user after successful password change
+          Future.delayed(const Duration(milliseconds: 800), () async {
+            final logoutSuccess = await _authController.logout(
+              AuthController().userData?.id,
+            );
+            if (logoutSuccess) {
+              NavigationService().pushAndRemoveUntilNavigation(
+                Screenroutes.login, // or your login route
+                removeUntilPageName: Screenroutes.login,
+              );
+            } else {
+              // If logout fails, still redirect to login for security
+              NavigationService().pushAndRemoveUntilNavigation(
+                Screenroutes.login,
+                removeUntilPageName: Screenroutes.login,
+              );
+            }
           });
         } else {
           showErrorSnack("Failed to change password. Please try again.");
@@ -248,8 +264,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                                 if (value?.isEmpty ?? true) {
                                   return 'Please enter a new password';
                                 }
-                                if (value!.length < 6) {
-                                  return 'Password must be at least 6 characters';
+                                if (value!.length < 8) {
+                                  return 'Password must be at least 8 characters';
                                 }
                                 return null;
                               },
@@ -279,13 +295,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                                   ),
                                   const SizedBox(height: 8),
                                   _buildRequirementRow(
-                                    'At least 6 characters long',
-                                  ),
-                                  _buildRequirementRow(
-                                    'Include numbers and letters',
-                                  ),
-                                  _buildRequirementRow(
-                                    'Include at least one special character',
+                                    'At least 8 characters long',
                                   ),
                                 ],
                               ),
