@@ -17,6 +17,7 @@ import 'package:sample/src/providers/unit_controller.dart';
 import 'package:sample/src/util/shared_pref.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'src/providers/customer_advance_controller.dart';
 import 'src/repo/auth_repo.dart';
 
 final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
@@ -46,6 +47,9 @@ void main() async {
         ChangeNotifierProvider(create: (context) => SalesController()),
         ChangeNotifierProvider(
           create: (context) => SupplierAdvanceController(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => CustomerAdvanceController(),
         ),
         ChangeNotifierProvider(create: (context) => ReportsController()),
       ],

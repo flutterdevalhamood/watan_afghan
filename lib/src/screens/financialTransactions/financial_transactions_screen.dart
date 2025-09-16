@@ -72,18 +72,17 @@ class FinancialTransactionsScreen extends StatelessWidget {
                         );
                       },
                     ),
-                    // _buildTransactionCard(
-                    //   context,
-                    //   'Customer Advance',
-                    //   Icons.account_balance_wallet,
-                    //   Colors.blue,
-                    //   () => Navigator.push(
-                    //     context,
-                    //     MaterialPageRoute(
-                    //       builder: (context) => CustomerAdvanceListPage(),
-                    //     ),
-                    //   ),
-                    // ),
+                    _buildTransactionCard(
+                      context,
+                      'Customer Advance',
+                      Icons.account_balance_wallet,
+                      Colors.blue,
+                      () {
+                        NavigationService().pushNavigation(
+                          Screenroutes.customerAdvanceListScreen,
+                        );
+                      },
+                    ),
                     // _buildTransactionCard(
                     //   context,
                     //   'Customer Payment',

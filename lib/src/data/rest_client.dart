@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 import 'package:sample/src/constants/api_constants.dart';
@@ -599,6 +597,81 @@ abstract class RestClient {
 
   @POST('/api/CheckSupplierAdvanceReferenceExist')
   Future<dynamic> postCheckSupplierAdvanceReferenceExist({
+    @Header("Authorization") String? token,
+    @Field("receiptNumber") String? receiptNumber,
+  });
+
+  //customeradvance
+  @GET('/api/CustomerAdvance/paginate/{page}/{limit}')
+  Future<dynamic> getCustomerAdvance(
+    @Path("page") int page,
+    @Path("limit") int limit,
+    @Header("Authorization") String? token,
+  );
+
+  @POST('/api/CustomerAdvance')
+  Future<dynamic> postCustomerAdvance({
+    @Header("Authorization") String? token,
+    @Part(name: "customer_id") int? customerId,
+    @Part(name: "receiptNumber") String? receiptNumber,
+    @Part(name: "paymentType") String? paymentType,
+    @Part(name: "bank_id") int? bankId,
+    @Part(name: "accountNumber") String? accountNumber,
+    @Part(name: "ChequeNumber") String? chequeNumber,
+    @Part(name: "TransferDate") String? transferDate,
+    @Part(name: "Amount") String? amount,
+    @Part(name: "currency_id") int? currencyId,
+    @Part(name: "sumOf") String? sumOf,
+    @Part(name: "receiverName") String? receiverName,
+    @Part(name: "Description") String? description,
+    @Part(name: 'supplier_advance_image') List<MultipartFile>? files,
+  });
+
+  @POST('/api/CustomerAdvanceUpdate')
+  Future<dynamic> postCustomerAdvanceUpdate({
+    @Header("Authorization") String? token,
+    @Part(name: "customer_id") int? customerId,
+    @Part(name: "receiptNumber") String? receiptNumber,
+    @Part(name: "paymentType") String? paymentType,
+    @Part(name: "bank_id") int? bankId,
+    @Part(name: "accountNumber") String? accountNumber,
+    @Part(name: "ChequeNumber") String? chequeNumber,
+    @Part(name: "TransferDate") String? transferDate,
+    @Part(name: "Amount") String? amount,
+    @Part(name: "currency_id") int? currencyId,
+    @Part(name: "sumOf") String? sumOf,
+    @Part(name: "receiverName") String? receiverName,
+    @Part(name: "Description") String? description,
+    @Part(name: "id") int? id,
+    @Part(name: 'supplier_advance_image') List<MultipartFile>? files,
+  });
+
+  @GET('/api/getCustomerAdvanceBaseList')
+  Future<dynamic> getCustomerAdvanceBaseList({
+    @Header("Authorization") String? token,
+  });
+
+  @GET('/api/CustomerAdvanceDetail/{id}')
+  Future<dynamic> getCustomerAdvanceDetail({
+    @Path("id") int? id,
+    @Header("Authorization") String? token,
+  });
+
+  @GET('/api/CustomerAdvancePush/{id}')
+  Future<dynamic> getCustomerAdvancePush({
+    @Path("id") int? id,
+    @Header("Authorization") String? token,
+  });
+
+  @POST('/api/CustomerAdvanceDelete')
+  Future<dynamic> deleteCustomerAdvance({
+    @Header("Authorization") String? token,
+    @Field("id") int? id,
+    @Field("deleteDescription") String? deleteDescription,
+  });
+
+  @POST('/api/CheckCustomerAdvanceReferenceExist')
+  Future<dynamic> postCheckCustomerAdvanceReferenceExist({
     @Header("Authorization") String? token,
     @Field("receiptNumber") String? receiptNumber,
   });

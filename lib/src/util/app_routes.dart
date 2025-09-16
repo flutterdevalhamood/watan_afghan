@@ -6,6 +6,7 @@ import 'package:sample/src/screens/currencyConversions/currency_conversion_detai
 import 'package:sample/src/screens/currencyConversions/currency_conversion_list_screen.dart';
 import 'package:sample/src/screens/customer/customer_data_screen.dart';
 import 'package:sample/src/screens/customer/customer_list_screen.dart';
+import 'package:sample/src/screens/customerAdvance/customer_advance_list_screen.dart';
 import 'package:sample/src/screens/expenses/expense_data_screen.dart';
 import 'package:sample/src/screens/expenses/expense_list_screen.dart';
 import 'package:sample/src/screens/financialTransactions/financial_transactions_screen.dart';
@@ -131,6 +132,12 @@ class Screenroutes {
   static const String supplierAdvanceDataScreen = "supplierAdvanceDataScreen";
   static const String supplierAdvanceUpdateScreen =
       "supplierAdvanceUpdateScreen";
+
+  //customeradvance
+  static const String customerAdvanceListScreen = "customerAdvanceListScreen";
+  static const String customerAdvanceDataScreen = "customerAdvanceDataScreen";
+  static const String customerAdvanceUpdateScreen =
+      "customerAdvanceUpdateScreen";
 
   static Route<dynamic>? routes(RouteSettings settings) {
     StringConstants.currentRoute = settings.name ?? "";
@@ -542,6 +549,36 @@ class Screenroutes {
             return SupplierAdvanceUpdateScreen();
           },
         );
+
+      case Screenroutes.customerAdvanceListScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(
+            name: Screenroutes.customerAdvanceListScreen,
+          ),
+          builder: (BuildContext context) {
+            return CustomerAdvanceListScreen();
+          },
+        );
+
+      case Screenroutes.customerAdvanceDataScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(
+            name: Screenroutes.customerAdvanceDataScreen,
+          ),
+          builder: (BuildContext context) {
+            return SupplierAdvanceDataScreen();
+          },
+        );
+
+      // case Screenroutes.customerAdvanceUpdateScreen:
+      //   return MaterialPageRoute(
+      //     settings: const RouteSettings(
+      //       name: Screenroutes.customerAdvanceUpdateScreen,
+      //     ),
+      //     builder: (BuildContext context) {
+      //       return customerAdvanceUpdateScreen();
+      //     },
+      //   );
     }
     return null;
   }
