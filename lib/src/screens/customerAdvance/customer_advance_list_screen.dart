@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sample/src/models/customer_advance_model.dart';
 import 'package:sample/src/providers/customer_advance_controller.dart';
+import 'package:sample/src/screens/customerAdvance/customer_advance_bottom_sheet.dart';
 import 'package:sample/src/util/app_navigation.dart';
 import 'package:sample/src/util/app_routes.dart';
 
@@ -348,7 +349,7 @@ class _CustomerAdvanceListScreenState extends State<CustomerAdvanceListScreen>
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () {
-          // _showAdvanceDetails(advance);
+          _showAdvanceDetails(advance);
         },
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -607,22 +608,22 @@ class _CustomerAdvanceListScreenState extends State<CustomerAdvanceListScreen>
     );
   }
 
-  // void _showAdvanceDetails(CustomerAdvance advance) {
-  //   showModalBottomSheet(
-  //     context: context,
-  //     isScrollControlled: true,
-  //     backgroundColor: Colors.transparent,
-  //     builder:
-  //         (context) => DraggableScrollableSheet(
-  //           initialChildSize: 0.7,
-  //           minChildSize: 0.5,
-  //           maxChildSize: 0.95,
-  //           builder:
-  //               (context, scrollController) =>
-  //                   CustomerAdvanceBottomSheet(id: advance.id),
-  //         ),
-  //   );
-  // }
+  void _showAdvanceDetails(CustomerAdvance advance) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder:
+          (context) => DraggableScrollableSheet(
+            initialChildSize: 0.7,
+            minChildSize: 0.5,
+            maxChildSize: 0.95,
+            builder:
+                (context, scrollController) =>
+                    CustomerAdvanceBottomSheet(id: advance.id),
+          ),
+    );
+  }
 
   Widget _buildDetailRow(String label, String value) {
     return Padding(

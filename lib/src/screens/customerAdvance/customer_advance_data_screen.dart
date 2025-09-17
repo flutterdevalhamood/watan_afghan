@@ -5,7 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sample/src/providers/supplier_advance_controller.dart';
+import 'package:sample/src/providers/customer_advance_controller.dart';
 import 'package:sample/src/util/app_navigation.dart';
 import 'package:sample/src/util/app_routes.dart';
 import 'package:sample/src/util/number_to_words_convertor.dart';
@@ -33,7 +33,7 @@ class _CustomerAdvanceDataScreenState extends State<CustomerAdvanceDataScreen> {
   final _chequeNumberController = TextEditingController();
 
   // Dropdown values
-  int? selectedSupplierId;
+  int? selectedCustomerId;
   String? selectedPaymentType;
   int? selectedCurrencyId;
   int? selectedBankId;
@@ -66,17 +66,17 @@ class _CustomerAdvanceDataScreenState extends State<CustomerAdvanceDataScreen> {
   }
 
   void _loadBaseData() {
-    final controller = Provider.of<SupplierAdvanceController>(
+    final controller = Provider.of<CustomerAdvanceController>(
       context,
       listen: false,
     );
-    controller.getSupplierAdvanceBaseData().then((_) {
-      // _prefillPvNumber();
+    controller.getCustomerAdvanceBaseData().then((_) {
+      _prefillPvNumber();
     });
   }
 
   void _prefillPvNumber() {
-    final controller = Provider.of<SupplierAdvanceController>(
+    final controller = Provider.of<CustomerAdvanceController>(
       context,
       listen: false,
     );
@@ -107,16 +107,16 @@ class _CustomerAdvanceDataScreenState extends State<CustomerAdvanceDataScreen> {
   Future<void> _validateReceiptNumber() async {
     final receiptNumber = _pvNumberController.text.trim();
     if (receiptNumber.isNotEmpty) {
-      final controller = Provider.of<SupplierAdvanceController>(
+      final controller = Provider.of<CustomerAdvanceController>(
         context,
         listen: false,
       );
-      await controller.checkSupplierAdvanceReferenceExist(receiptNumber);
+      await controller.checkCustomerAdvanceReferenceExist(receiptNumber);
     }
   }
 
   Widget _buildReceiptValidationWidget() {
-    return Consumer<SupplierAdvanceController>(
+    return Consumer<CustomerAdvanceController>(
       builder: (context, controller, child) {
         if (!_isPvNumberUserModified) {
           return const SizedBox.shrink();
@@ -219,7 +219,7 @@ class _CustomerAdvanceDataScreenState extends State<CustomerAdvanceDataScreen> {
       return;
     }
 
-    final controller = Provider.of<SupplierAdvanceController>(
+    final controller = Provider.of<CustomerAdvanceController>(
       context,
       listen: false,
     );
@@ -247,8 +247,8 @@ class _CustomerAdvanceDataScreenState extends State<CustomerAdvanceDataScreen> {
       }
     }
 
-    final success = await controller.postSupplierAdvanceRegistration(
-      supplierId: selectedSupplierId,
+    final success = await controller.postCustomerAdvanceRegistration(
+      customerId: selectedCustomerId,
       receiptNumber: _pvNumberController.text.trim(),
       paymentType: selectedPaymentType,
       bankId: selectedBankId,
@@ -260,18 +260,18 @@ class _CustomerAdvanceDataScreenState extends State<CustomerAdvanceDataScreen> {
       sumOf: _sumOfController.text.trim(),
       receiverName: _receivedByController.text.trim(),
       description: _noteController.text.trim(),
-      supplierAdvanceImage: multipartFiles,
+      customerAdvanceImage: multipartFiles,
     );
 
     if (success) {
-      showSuccessSnack('Supplier advance saved successfully!');
+      showSuccessSnack('Customer advance saved successfully!');
       NavigationService().pushNavigation(
-        Screenroutes.supplierAdvanceListScreen,
+        Screenroutes.customerAdvanceListScreen,
       );
       _clearForm();
     } else {
       controller.errorMessage ??
-          showErrorSnack('Failed to save supplier advance');
+          showErrorSnack('Failed to save customer advance');
     }
   }
 
@@ -303,7 +303,7 @@ class _CustomerAdvanceDataScreenState extends State<CustomerAdvanceDataScreen> {
   void _clearForm() {
     _formKey.currentState?.reset();
     setState(() {
-      selectedSupplierId = null;
+      selectedCustomerId = null;
       selectedPaymentType = null;
       selectedCurrencyId = null;
       selectedBankId = null;
@@ -322,12 +322,11 @@ class _CustomerAdvanceDataScreenState extends State<CustomerAdvanceDataScreen> {
     _chequeNumberController.clear();
 
     // Clear receipt validation state
-    final controller = Provider.of<SupplierAdvanceController>(
+    final controller = Provider.of<CustomerAdvanceController>(
       context,
       listen: false,
     );
-    controller
-        .clearReceiptCheck(); // You'll need to add this method to the controller
+    controller.clearReceiptCheck();
 
     _prefillPvNumber();
   }
@@ -366,11 +365,11 @@ class _CustomerAdvanceDataScreenState extends State<CustomerAdvanceDataScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Supplier Advance'),
+        title: const Text('Customer Advance'),
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
       ),
-      body: Consumer<SupplierAdvanceController>(
+      body: Consumer<CustomerAdvanceController>(
         builder: (context, controller, child) {
           if (controller.isLoading) {
             return const Center(child: CircularProgressIndicator());
@@ -383,7 +382,7 @@ class _CustomerAdvanceDataScreenState extends State<CustomerAdvanceDataScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Supplier Dropdown
+                  // Customer Dropdown
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
@@ -391,7 +390,7 @@ class _CustomerAdvanceDataScreenState extends State<CustomerAdvanceDataScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Supplier Information',
+                            'Customer Information',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -399,26 +398,26 @@ class _CustomerAdvanceDataScreenState extends State<CustomerAdvanceDataScreen> {
                           ),
                           const SizedBox(height: 16),
                           DropdownButtonFormField<int>(
-                            value: selectedSupplierId,
+                            value: selectedCustomerId,
                             decoration: const InputDecoration(
-                              labelText: 'Supplier *',
+                              labelText: 'Customer *',
                               border: OutlineInputBorder(),
                             ),
                             items:
-                                controller.supplierName?.map((supplier) {
+                                controller.customerName?.map((customer) {
                                   return DropdownMenuItem<int>(
-                                    value: supplier['id'],
-                                    child: Text(supplier['Name'] ?? ''),
+                                    value: customer['id'],
+                                    child: Text(customer['Name'] ?? ''),
                                   );
                                 }).toList(),
                             onChanged: (value) {
                               setState(() {
-                                selectedSupplierId = value;
+                                selectedCustomerId = value;
                               });
                             },
                             validator: (value) {
                               if (value == null) {
-                                return 'Please select a supplier';
+                                return 'Please select a customer';
                               }
                               return null;
                             },
@@ -453,7 +452,7 @@ class _CustomerAdvanceDataScreenState extends State<CustomerAdvanceDataScreen> {
                               TextFormField(
                                 controller: _pvNumberController,
                                 decoration: InputDecoration(
-                                  labelText: 'PV Number *',
+                                  labelText: 'RV Number *',
                                   border: const OutlineInputBorder(),
                                   errorBorder:
                                       controller.receiptExists == true
@@ -747,7 +746,7 @@ class _CustomerAdvanceDataScreenState extends State<CustomerAdvanceDataScreen> {
                           ElevatedButton.icon(
                             onPressed: _pickFiles,
                             icon: const Icon(Icons.attach_file),
-                            label: const Text('Choose PV File(s)'),
+                            label: const Text('Choose RV File(s)'),
                             style: ElevatedButton.styleFrom(
                               minimumSize: const Size(double.infinity, 50),
                             ),

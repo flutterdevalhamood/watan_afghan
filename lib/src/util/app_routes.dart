@@ -6,6 +6,7 @@ import 'package:sample/src/screens/currencyConversions/currency_conversion_detai
 import 'package:sample/src/screens/currencyConversions/currency_conversion_list_screen.dart';
 import 'package:sample/src/screens/customer/customer_data_screen.dart';
 import 'package:sample/src/screens/customer/customer_list_screen.dart';
+import 'package:sample/src/screens/customerAdvance/customer_advance_data_screen.dart';
 import 'package:sample/src/screens/customerAdvance/customer_advance_list_screen.dart';
 import 'package:sample/src/screens/expenses/expense_data_screen.dart';
 import 'package:sample/src/screens/expenses/expense_list_screen.dart';
@@ -566,7 +567,7 @@ class Screenroutes {
             name: Screenroutes.customerAdvanceDataScreen,
           ),
           builder: (BuildContext context) {
-            return SupplierAdvanceDataScreen();
+            return CustomerAdvanceDataScreen();
           },
         );
 

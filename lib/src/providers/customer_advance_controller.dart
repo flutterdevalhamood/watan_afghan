@@ -36,8 +36,8 @@ class CustomerAdvanceController with ChangeNotifier {
   bool get hasExpenses => _filteredCustomerAdvances.isNotEmpty;
 
   // Detail getters
-  // CustomerAdvanceWithDetails? get customerAdvanceDetail =>
-  // _customerAdvanceDetail;
+  CustomerAdvanceWithDetails? get customerAdvanceDetail =>
+      _customerAdvanceDetail;
   bool get isDetailLoading => _isDetailLoading;
   String? get detailErrorMessage => _detailErrorMessage;
 
@@ -274,8 +274,40 @@ class CustomerAdvanceController with ChangeNotifier {
 
       if (CustomerDetailData['IsSuccess'] == true) {
         final data = CustomerDetailData['Data'] as Map<String, dynamic>;
-        final customerId = CustomerDetailData['Data']['id'];
-        _customerAdvanceDetail = CustomerAdvanceWithDetails.fromJson(data);
+
+        // Handle the API response structure properly
+        if (data.containsKey('customer_advance')) {
+          final customerAdvanceData =
+              data['customer_advance'] as Map<String, dynamic>;
+
+          // Create the CustomerAdvanceWithDetails object
+          final customerAdvance = CustomerAdvance.fromJson(customerAdvanceData);
+
+          // Create details list - empty if not provided in response
+          final List<CustomerAdvanceDetail> details = [];
+
+          // If there's a details field in the response, parse it
+          if (data.containsKey('details') && data['details'] is List) {
+            final detailsList = data['details'] as List;
+            details.addAll(
+              detailsList
+                  .map((detail) => CustomerAdvanceDetail.fromJson(detail))
+                  .toList(),
+            );
+          }
+
+          // Create the wrapper object
+          _customerAdvanceDetail = CustomerAdvanceWithDetails(
+            customerAdvance: customerAdvance,
+            details: details,
+          );
+
+          debugPrint('Customer advance detail loaded successfully');
+        } else {
+          _detailErrorMessage =
+              'Invalid response format: customer_advance not found';
+          debugPrint('API response missing customer_advance field');
+        }
       } else {
         _detailErrorMessage =
             CustomerDetailData['Message'] ?? 'Failed to fetch Customer detail';
@@ -284,6 +316,7 @@ class CustomerAdvanceController with ChangeNotifier {
     } catch (e) {
       _detailErrorMessage = _getErrorMessage(e);
       debugPrint('Customer detail error: $_detailErrorMessage');
+      debugPrint('Exception details: $e');
     } finally {
       _isDetailLoading = false;
       notifyListeners();
@@ -304,29 +337,29 @@ class CustomerAdvanceController with ChangeNotifier {
     notifyListeners();
 
     try {
-      final CustomerAdvanceBaseData = await restApi.getCustomerAdvanceBaseList(
+      final customerAdvanceBaseData = await restApi.getCustomerAdvanceBaseList(
         token: _getAuthHeader(),
       );
 
-      if (CustomerAdvanceBaseData['IsSuccess'] == true) {
+      if (customerAdvanceBaseData['IsSuccess'] == true) {
         customerName = List<Map<String, dynamic>>.from(
-          CustomerAdvanceBaseData['Data']['suppliers'] ?? [],
+          customerAdvanceBaseData['Data']['customers'] ?? [],
         );
 
         bankName = List<Map<String, dynamic>>.from(
-          CustomerAdvanceBaseData['Data']['banks'] ?? [],
+          customerAdvanceBaseData['Data']['banks'] ?? [],
         );
         currencyName = List<Map<String, dynamic>>.from(
-          CustomerAdvanceBaseData['Data']['currencies'],
+          customerAdvanceBaseData['Data']['currencies'],
         );
         nextPaymentVoucher =
-            CustomerAdvanceBaseData['Data']['next_payment_voucher'];
+            customerAdvanceBaseData['Data']['next_payment_voucher'];
 
         debugPrint('Base data fetched successfully');
       } else {
-        print('API call failed: ${CustomerAdvanceBaseData['Message']}');
+        print('API call failed: ${customerAdvanceBaseData['Message']}');
         errorMessage =
-            CustomerAdvanceBaseData['Message'] ?? 'Failed to fetch base data';
+            customerAdvanceBaseData['Message'] ?? 'Failed to fetch base data';
       }
     } catch (e) {
       _handleApiError(e);
@@ -354,7 +387,7 @@ class CustomerAdvanceController with ChangeNotifier {
     String? sumOf,
     String? receiverName,
     String? description,
-    List<MultipartFile>? supplierAdvanceImage,
+    List<MultipartFile>? customerAdvanceImage,
   }) async {
     if (!await _checkToken()) return false;
 
@@ -373,7 +406,7 @@ class CustomerAdvanceController with ChangeNotifier {
         sumOf: sumOf,
         receiverName: receiverName,
         description: description,
-        files: supplierAdvanceImage,
+        files: customerAdvanceImage,
       );
 
       if (response != null && response is Map<String, dynamic>) {
