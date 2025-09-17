@@ -5,6 +5,7 @@ import 'package:sample/src/providers/customer_controller.dart';
 import 'package:sample/src/screens/customer/customer_detail_sheet.dart';
 import 'package:sample/src/util/app_navigation.dart';
 import 'package:sample/src/util/app_routes.dart';
+import 'package:sample/src/util/delete_confirmation_dialog.dart';
 
 import 'customer_model.dart';
 
@@ -292,77 +293,90 @@ class _CustomerListScreenState extends State<CustomerListScreen>
     );
   }
 
-  Future<void> _showDeleteConfirmation(Customer customer) async {
-    _deleteReasonController.clear();
-
-    final bool? result = await showDialog<bool>(
+  void _showDeleteConfirmation(Customer customer) async {
+    await DeleteConfirmationDialog.show(
       context: context,
-      barrierDismissible: false, // FIXED: Prevent accidental dismissal
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('Delete Customer'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Are you sure you want to delete "${customer.name}"?'),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _deleteReasonController,
-                decoration: const InputDecoration(
-                  labelText: 'Reason for deletion ',
-                  border: OutlineInputBorder(),
-                  hintText: 'Enter reason for deletion...',
-                ),
-                maxLines: 3,
-                textCapitalization: TextCapitalization.sentences,
-              ),
-            ],
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Delete'),
-            ),
-          ],
-        );
+      title: 'Delete Customer Data',
+      message: 'Are you sure you want to delete this customer data?',
+      reasonLabel: 'Reason for deletion *',
+      onDelete: (reason) async {
+        await _controller.deleteCustomer(customer.id, reason);
       },
+      getErrorMessage: () => _controller.errorMessage,
     );
-
-    if (result == true && mounted) {
-      try {
-        await _controller.deleteCustomer(
-          customer.id,
-          _deleteReasonController.text.trim().isEmpty
-              ? null
-              : _deleteReasonController.text.trim(),
-        );
-      } catch (e) {
-        if (mounted) {
-          Navigator.of(context).pop(); // Close loading dialog
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to delete customer: ${e.toString()}'),
-              backgroundColor: Colors.red,
-              action: SnackBarAction(
-                label: 'OK',
-                textColor: Colors.white,
-                onPressed: () {
-                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                },
-              ),
-            ),
-          );
-        }
-      }
-    }
   }
+
+  //   Future<void> _showDeleteConfirmation(Customer customer) async {
+  //     _deleteReasonController.clear();
+  //
+  //     final bool? result = await showDialog<bool>(
+  //       context: context,
+  //       barrierDismissible: false, // FIXED: Prevent accidental dismissal
+  //       builder: (BuildContext dialogContext) {
+  //         return AlertDialog(
+  //           title: const Text('Delete Customer'),
+  //           content: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               Text('Are you sure you want to delete "${customer.name}"?'),
+  //               const SizedBox(height: 16),
+  //               TextField(
+  //                 controller: _deleteReasonController,
+  //                 decoration: const InputDecoration(
+  //                   labelText: 'Reason for deletion ',
+  //                   border: OutlineInputBorder(),
+  //                   hintText: 'Enter reason for deletion...',
+  //                 ),
+  //                 maxLines: 3,
+  //                 textCapitalization: TextCapitalization.sentences,
+  //               ),
+  //             ],
+  //           ),
+  //           actions: <Widget>[
+  //             TextButton(
+  //               onPressed: () => Navigator.of(dialogContext).pop(false),
+  //               child: const Text('Cancel'),
+  //             ),
+  //             TextButton(
+  //               onPressed: () => Navigator.of(dialogContext).pop(true),
+  //               style: TextButton.styleFrom(foregroundColor: Colors.red),
+  //               child: const Text('Delete'),
+  //             ),
+  //           ],
+  //         );
+  //       },
+  //     );
+  //
+  //     if (result == true && mounted) {
+  //       try {
+  //         await _controller.deleteCustomer(
+  //           customer.id,
+  //           _deleteReasonController.text.trim().isEmpty
+  //               ? null
+  //               : _deleteReasonController.text.trim(),
+  //         );
+  //       } catch (e) {
+  //         if (mounted) {
+  //           Navigator.of(context).pop(); // Close loading dialog
+  //
+  //           ScaffoldMessenger.of(context).showSnackBar(
+  //             SnackBar(
+  //               content: Text('Failed to delete customer: ${e.toString()}'),
+  //               backgroundColor: Colors.red,
+  //               action: SnackBarAction(
+  //                 label: 'OK',
+  //                 textColor: Colors.white,
+  //                 onPressed: () {
+  //                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
+  //                 },
+  //               ),
+  //             ),
+  //           );
+  //         }
+  //       }
+  //     }
+  //   }
 }
 
 // FIXED: Enhanced Customer Card with better error handling

@@ -5,6 +5,7 @@ import 'package:sample/src/providers/expense_controller.dart';
 import 'package:sample/src/screens/expenses/expense_detail_sheet.dart';
 import 'package:sample/src/util/app_navigation.dart';
 import 'package:sample/src/util/app_routes.dart';
+import 'package:sample/src/util/delete_confirmation_dialog.dart';
 
 class ExpenseListScreen extends StatefulWidget {
   const ExpenseListScreen({super.key});
@@ -257,53 +258,16 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
   }
 
   void _showDeleteConfirmation(Expense expense) async {
-    _deleteReasonController.clear();
-    final bool? result = await showDialog<bool>(
+    await DeleteConfirmationDialog.show(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Delete Expense Data'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Are you sure you want to delete this expense data?'),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _deleteReasonController,
-                decoration: const InputDecoration(
-                  labelText: 'Reason for deletion',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-              ),
-            ],
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed:
-                  () => NavigationService().popNavigation(arguments: false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed:
-                  () => NavigationService().popNavigation(arguments: true),
-              child: const Text('Delete', style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
+      title: 'Delete Expense Data',
+      message: 'Are you sure you want to delete this expense data?',
+      reasonLabel: 'Reason for deletion *',
+      onDelete: (reason) async {
+        await _controller.deleteExpenses(expense.id, reason);
       },
+      getErrorMessage: () => _controller.errorMessage,
     );
-
-    if (result == true) {
-      _controller.deleteExpenses(expense.id, _deleteReasonController.text);
-
-      // ScaffoldMessenger.of(context).showSnackBar(
-      //   const SnackBar(
-      //     content: Text('Transaction deleted successfully'),
-      //     backgroundColor: Colors.green,
-      //   ),
-      // );
-    }
   }
 }
 

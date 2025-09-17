@@ -5,6 +5,7 @@ import 'package:sample/src/providers/supplier_advance_controller.dart';
 import 'package:sample/src/screens/supplierAdvance/supplier_advance_bottom_sheet.dart';
 import 'package:sample/src/util/app_navigation.dart';
 import 'package:sample/src/util/app_routes.dart';
+import 'package:sample/src/util/delete_confirmation_dialog.dart';
 
 class SupplierAdvanceListScreen extends StatefulWidget {
   const SupplierAdvanceListScreen({super.key});
@@ -583,51 +584,16 @@ class _SupplierAdvanceListScreenState extends State<SupplierAdvanceListScreen>
   }
 
   void _showDeleteConfirmation(SupplierAdvance advance) async {
-    _deleteReasonController.clear();
-    final bool? result = await showDialog<bool>(
+    await DeleteConfirmationDialog.show(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Delete Supplier Advance Data'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Are you sure you want to delete this supplier advance data?',
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _deleteReasonController,
-                decoration: const InputDecoration(
-                  labelText: 'Reason for deletion',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-              ),
-            ],
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed:
-                  () => NavigationService().popNavigation(arguments: false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed:
-                  () => NavigationService().popNavigation(arguments: true),
-              child: const Text('Delete', style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
+      title: 'Delete Supplier Advance Data',
+      message: 'Are you sure you want to delete this supplier advance data?',
+      reasonLabel: 'Reason for deletion *',
+      onDelete: (reason) async {
+        await _controller.deleteSupplierAdvance(advance.id, reason);
       },
+      getErrorMessage: () => _controller.errorMessage,
     );
-
-    if (result == true) {
-      _controller.deleteSupplierAdvance(
-        advance.id,
-        _deleteReasonController.text,
-      );
-    }
   }
 
   Widget _buildLoadMoreIndicator(SupplierAdvanceController provider) {

@@ -4,6 +4,7 @@ import 'package:sample/src/models/purchase_model.dart';
 import 'package:sample/src/providers/purchase_controller.dart';
 import 'package:sample/src/util/app_navigation.dart';
 import 'package:sample/src/util/app_routes.dart';
+import 'package:sample/src/util/delete_confirmation_dialog.dart';
 
 import 'purchase_detail_bottom_sheet.dart';
 
@@ -471,160 +472,17 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
   }
 
   void _showDeleteConfirmation(Purchase purchase) async {
-    _deleteReasonController.clear();
-    String? errorMessage;
-    bool isLoading = false;
-
-    await showDialog<void>(
+    await DeleteConfirmationDialog.show(
       context: context,
-      barrierDismissible: false, // Prevent dismissing by tapping outside
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Delete Purchase Data'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Are you sure you want to delete this purchase data?',
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _deleteReasonController,
-                    decoration: InputDecoration(
-                      labelText: 'Reason for deletion *',
-                      border: const OutlineInputBorder(),
-                      errorText: errorMessage,
-                    ),
-                    maxLines: 3,
-                    enabled: !isLoading,
-                  ),
-                  if (isLoading) ...[
-                    const SizedBox(height: 16),
-                    const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                        SizedBox(width: 12),
-                        Text('Deleting...'),
-                      ],
-                    ),
-                  ],
-                ],
-              ),
-              actions: <Widget>[
-                TextButton(
-                  onPressed:
-                      isLoading ? null : () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed:
-                      isLoading
-                          ? null
-                          : () async {
-                            // Validate input
-                            if (_deleteReasonController.text.trim().isEmpty) {
-                              setState(() {
-                                errorMessage =
-                                    'Please provide a reason for deletion';
-                              });
-                              return;
-                            }
-
-                            // Clear previous error and show loading
-                            setState(() {
-                              errorMessage = null;
-                              isLoading = true;
-                            });
-
-                            try {
-                              // Call the delete function and wait for completion
-                              await _controller.deletePurchases(
-                                purchase.id,
-                                _deleteReasonController.text.trim(),
-                              );
-
-                              // Check if there was an error during deletion
-                              if (_controller.errorMessage != null) {
-                                setState(() {
-                                  errorMessage = _controller.errorMessage;
-                                  isLoading = false;
-                                });
-                              } else {
-                                // Success - close dialog
-                                Navigator.of(context).pop();
-                              }
-                            } catch (e) {
-                              setState(() {
-                                errorMessage =
-                                    'Failed to delete purchase: ${e.toString()}';
-                                isLoading = false;
-                              });
-                            }
-                          },
-                  child: Text(
-                    'Delete',
-                    style: TextStyle(
-                      color: isLoading ? Colors.grey : Colors.red,
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
-        );
+      title: 'Delete Purchase Data',
+      message: 'Are you sure you want to delete this purchase data?',
+      reasonLabel: 'Reason for deletion *',
+      onDelete: (reason) async {
+        await _controller.deletePurchases(purchase.id, reason);
       },
+      getErrorMessage: () => _controller.errorMessage,
     );
   }
-
-  // void _showDeleteConfirmation(Purchase purchase) async {
-  //   _deleteReasonController.clear();
-  //   final bool? result = await showDialog<bool>(
-  //     context: context,
-  //     builder: (BuildContext context) {
-  //       return AlertDialog(
-  //         title: const Text('Delete Purchase Data'),
-  //         content: Column(
-  //           mainAxisSize: MainAxisSize.min,
-  //           children: [
-  //             const Text('Are you sure you want to delete this purchase data?'),
-  //             const SizedBox(height: 16),
-  //             TextField(
-  //               controller: _deleteReasonController,
-  //               decoration: const InputDecoration(
-  //                 labelText: 'Reason for deletion',
-  //                 border: OutlineInputBorder(),
-  //               ),
-  //               maxLines: 3,
-  //             ),
-  //           ],
-  //         ),
-  //         actions: <Widget>[
-  //           TextButton(
-  //             onPressed:
-  //                 () => NavigationService().popNavigation(arguments: false),
-  //             child: const Text('Cancel'),
-  //           ),
-  //           TextButton(
-  //             onPressed:
-  //                 () => NavigationService().popNavigation(arguments: true),
-  //             child: const Text('Delete', style: TextStyle(color: Colors.red)),
-  //           ),
-  //         ],
-  //       );
-  //     },
-  //   );
-  //
-  //   if (result == true) {
-  //     _controller.deletePurchases(purchase.id, _deleteReasonController.text);
-  //   }
-  // }
 
   String _formatAmount(String amount) {
     try {

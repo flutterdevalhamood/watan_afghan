@@ -5,6 +5,7 @@ import 'package:sample/src/screens/supplier/supplier_detail_sheet.dart';
 import 'package:sample/src/screens/supplier/supplier_model.dart';
 import 'package:sample/src/util/app_navigation.dart';
 import 'package:sample/src/util/app_routes.dart';
+import 'package:sample/src/util/delete_confirmation_dialog.dart';
 
 class SupplierListScreen extends StatefulWidget {
   const SupplierListScreen({super.key});
@@ -215,53 +216,16 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
   }
 
   void _showDeleteConfirmation(Supplier supplier) async {
-    _deleteReasonController.clear();
-    final bool? result = await showDialog<bool>(
+    await DeleteConfirmationDialog.show(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Delete Transaction'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Are you sure you want to delete this transaction?'),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _deleteReasonController,
-                decoration: const InputDecoration(
-                  labelText: 'Reason for deletion',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-              ),
-            ],
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed:
-                  () => NavigationService().popNavigation(arguments: false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed:
-                  () => NavigationService().popNavigation(arguments: true),
-              child: const Text('Delete', style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
+      title: 'Delete Supplier Data',
+      message: 'Are you sure you want to delete this supplier data?',
+      reasonLabel: 'Reason for deletion *',
+      onDelete: (reason) async {
+        await _controller.deleteSupplier(supplier.id, reason);
       },
+      getErrorMessage: () => _controller.errorMessage,
     );
-
-    if (result == true) {
-      _controller.deleteSupplier(supplier.id, _deleteReasonController.text);
-
-      // ScaffoldMessenger.of(context).showSnackBar(
-      //   const SnackBar(
-      //     content: Text('Transaction deleted successfully'),
-      //     backgroundColor: Colors.green,
-      //   ),
-      // );
-    }
   }
 }
 

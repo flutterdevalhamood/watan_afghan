@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:sample/src/providers/currency_conversion_controller.dart';
 import 'package:sample/src/util/app_navigation.dart';
 import 'package:sample/src/util/app_routes.dart';
+import 'package:sample/src/util/delete_confirmation_dialog.dart';
 
 class CurrencyConversionListScreen extends StatefulWidget {
   const CurrencyConversionListScreen({super.key});
@@ -328,49 +329,17 @@ class _CurrencyConversionListScreenState
     );
   }
 
-  Future<void> _confirmDelete(int id) async {
-    _deleteReasonController.clear();
-    final bool? result = await showDialog<bool>(
+  void _confirmDelete(int id) async {
+    await DeleteConfirmationDialog.show(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Delete Currency Conversion Data'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Are you sure you want to delete this conversion data?',
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _deleteReasonController,
-                decoration: const InputDecoration(
-                  labelText: 'Reason for deletion',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-              ),
-            ],
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed:
-                  () => NavigationService().popNavigation(arguments: false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed:
-                  () => NavigationService().popNavigation(arguments: true),
-              child: const Text('Delete', style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
+      title: 'Delete Currency conversion Data',
+      message: 'Are you sure you want to delete this Currency conversion data?',
+      reasonLabel: 'Reason for deletion *',
+      onDelete: (reason) async {
+        await _controller.deleteCurrencyConversion(id, reason);
       },
+      getErrorMessage: () => _controller.errorMessage,
     );
-
-    if (result == true) {
-      _controller.deleteCurrencyConversion(id, _deleteReasonController.text);
-    }
   }
 
   @override

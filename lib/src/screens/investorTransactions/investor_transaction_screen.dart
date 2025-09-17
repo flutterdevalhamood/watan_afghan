@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:sample/src/providers/investor_transaction_controller.dart';
 import 'package:sample/src/util/app_navigation.dart';
 import 'package:sample/src/util/app_routes.dart';
+import 'package:sample/src/util/delete_confirmation_dialog.dart';
 
 class InvestorTransactionScreen extends StatefulWidget {
   const InvestorTransactionScreen({super.key});
@@ -93,48 +94,62 @@ class _InvestorTransactionScreenState extends State<InvestorTransactionScreen> {
     );
   }
 
-  Future<void> _confirmDelete(int id) async {
-    _deleteReasonController.clear();
-    final bool? result = await showDialog<bool>(
+  void _confirmDelete(int id) async {
+    await DeleteConfirmationDialog.show(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Delete Transaction'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Are you sure you want to delete this transaction?'),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _deleteReasonController,
-                decoration: const InputDecoration(
-                  labelText: 'Reason for deletion',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-              ),
-            ],
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed:
-                  () => NavigationService().popNavigation(arguments: false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed:
-                  () => NavigationService().popNavigation(arguments: true),
-              child: const Text('Delete', style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
+      title: 'Delete Investor transaction Data',
+      message:
+          'Are you sure you want to delete this Investor transaction data?',
+      reasonLabel: 'Reason for deletion *',
+      onDelete: (reason) async {
+        await _controller.deleteInvestorTransaction(id, reason);
       },
+      getErrorMessage: () => _controller.errorMessage,
     );
-
-    if (result == true) {
-      _controller.deleteInvestorTransaction(id, _deleteReasonController.text);
-    }
   }
+
+  // Future<void> _confirmDelete(int id) async {
+  //   _deleteReasonController.clear();
+  //   final bool? result = await showDialog<bool>(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         title: const Text('Delete Transaction'),
+  //         content: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           children: [
+  //             const Text('Are you sure you want to delete this transaction?'),
+  //             const SizedBox(height: 16),
+  //             TextField(
+  //               controller: _deleteReasonController,
+  //               decoration: const InputDecoration(
+  //                 labelText: 'Reason for deletion',
+  //                 border: OutlineInputBorder(),
+  //               ),
+  //               maxLines: 3,
+  //             ),
+  //           ],
+  //         ),
+  //         actions: <Widget>[
+  //           TextButton(
+  //             onPressed:
+  //                 () => NavigationService().popNavigation(arguments: false),
+  //             child: const Text('Cancel'),
+  //           ),
+  //           TextButton(
+  //             onPressed:
+  //                 () => NavigationService().popNavigation(arguments: true),
+  //             child: const Text('Delete', style: TextStyle(color: Colors.red)),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+
+  // if (result == true) {
+  //   _controller.deleteInvestorTransaction(id, _deleteReasonController.text);
+  // }
+  // }
 
   @override
   Widget build(BuildContext context) {

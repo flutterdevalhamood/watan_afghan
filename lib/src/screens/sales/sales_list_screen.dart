@@ -5,6 +5,7 @@ import 'package:sample/src/providers/sales_controller.dart';
 import 'package:sample/src/screens/sales/sales_detail_bottom_sheet.dart';
 import 'package:sample/src/util/app_navigation.dart';
 import 'package:sample/src/util/app_routes.dart';
+import 'package:sample/src/util/delete_confirmation_dialog.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class SalesListScreen extends StatefulWidget {
@@ -55,46 +56,16 @@ class _SalesListScreenState extends State<SalesListScreen> {
   }
 
   void _showDeleteConfirmation(Sales sale) async {
-    _deleteReasonController.clear();
-    final bool? result = await showDialog<bool>(
+    await DeleteConfirmationDialog.show(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Delete Purchase Data'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Are you sure you want to delete this purchase data?'),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _deleteReasonController,
-                decoration: const InputDecoration(
-                  labelText: 'Reason for deletion',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-              ),
-            ],
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed:
-                  () => NavigationService().popNavigation(arguments: false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed:
-                  () => NavigationService().popNavigation(arguments: true),
-              child: const Text('Delete', style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
+      title: 'Delete Sale Data',
+      message: 'Are you sure you want to delete this sale data?',
+      reasonLabel: 'Reason for deletion *',
+      onDelete: (reason) async {
+        await _controller.deleteSales(sale.id, reason);
       },
+      getErrorMessage: () => _controller.errorMessage,
     );
-
-    if (result == true) {
-      _controller.deleteSales(sale.id, _deleteReasonController.text);
-    }
   }
 
   void _viewSalesPdf(String salesId) async {
