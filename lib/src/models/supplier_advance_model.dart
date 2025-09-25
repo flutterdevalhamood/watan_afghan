@@ -123,27 +123,36 @@ class SupplierAdvanceDetail {
   final int id;
   final String supplierAdvanceId;
   final String amount;
+  final String purchaseId;
   final String description;
   final String createdAt;
   final String? referenceNumber;
+  final Purchase? purchase; // Added purchase object
 
   SupplierAdvanceDetail({
     required this.id,
     required this.supplierAdvanceId,
     required this.amount,
+    required this.purchaseId,
     required this.description,
     required this.createdAt,
     this.referenceNumber,
+    this.purchase, // Added purchase parameter
   });
 
   factory SupplierAdvanceDetail.fromJson(Map<String, dynamic> json) {
     return SupplierAdvanceDetail(
       id: json['id'] ?? 0,
-      supplierAdvanceId: json['supplier_advance_id']?.toString() ?? '',
-      amount: json['amount']?.toString() ?? '0.00',
+      supplierAdvanceId: json['supplier_advances_id']?.toString() ?? '',
+      amount: json['amountPaid']?.toString() ?? '0.00',
       description: json['description']?.toString() ?? '',
       createdAt: json['created_at']?.toString() ?? '',
       referenceNumber: json['referenceNumber']?.toString(),
+      purchaseId: json['purchase_id']?.toString() ?? '',
+      purchase:
+          json['purchase'] != null
+              ? Purchase.fromJson(json['purchase'])
+              : null, // Added purchase parsing
     );
   }
 
@@ -151,10 +160,12 @@ class SupplierAdvanceDetail {
     return {
       'id': id,
       'supplier_advance_id': supplierAdvanceId,
-      'amount': amount,
+      'amountPaid': amount,
       'description': description,
       'created_at': createdAt,
       'referenceNumber': referenceNumber,
+      'purchase_id': purchaseId,
+      'purchase': purchase?.toJson(), // Added purchase serialization
     };
   }
 }
@@ -227,4 +238,64 @@ class SupplierAdvanceWithDetails {
               .toList(),
     );
   }
+}
+
+class Purchase {
+  final int id;
+  final String purchaseDate;
+  final String invoiceNumber;
+  final String totalAmount;
+  final String paidBalance;
+  final String remainingBalance;
+
+  Purchase({
+    required this.id,
+    required this.purchaseDate,
+    required this.invoiceNumber,
+    required this.totalAmount,
+    required this.paidBalance,
+    required this.remainingBalance,
+  });
+
+  factory Purchase.fromJson(Map<String, dynamic> json) {
+    return Purchase(
+      id: json['id'] ?? 0,
+      purchaseDate: json['purchase_date']?.toString() ?? '',
+      invoiceNumber: json['InvoiceNumber']?.toString() ?? '',
+      totalAmount: json['total_amount']?.toString() ?? '0.00',
+      paidBalance: json['paidBalance']?.toString() ?? '0.00',
+      remainingBalance: json['remainingBalance']?.toString() ?? '0.00',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'purchase_date': purchaseDate,
+      'InvoiceNumber': invoiceNumber,
+      'total_amount': totalAmount,
+      'paidBalance': paidBalance,
+      'remainingBalance': remainingBalance,
+    };
+  }
+
+  // Helper methods
+  DateTime get purchaseDateParsed {
+    try {
+      return DateTime.parse(purchaseDate);
+    } catch (e) {
+      return DateTime.now();
+    }
+  }
+
+  String get formattedPurchaseDate {
+    try {
+      final date = purchaseDateParsed;
+      return '${date.day}/${date.month}/${date.year}';
+    } catch (e) {
+      return purchaseDate;
+    }
+  }
+
+  String get InvoiceNumber => invoiceNumber;
 }

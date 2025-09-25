@@ -675,4 +675,30 @@ abstract class RestClient {
     @Header("Authorization") String? token,
     @Field("receiptNumber") String? receiptNumber,
   });
+
+  @POST('/api/SupplierAdvanceGetDisbursementRecords')
+  Future<dynamic> postSupplierAdvanceDisburse({
+    @Header("Authorization") String? token,
+    @Field("supplier_id") int? supplierId,
+    @Field("currency_id") int? currencyId,
+  });
+
+  @POST('/api/SupplierAdvanceSaveDisbursementRecords')
+  Future<dynamic> postSupplierAdvanceSaveDisburse({
+    @Header("Authorization") String? token,
+    @Body() required Map<String, dynamic> body,
+  });
+
+  @POST('/api/CustomerAdvanceGetDisbursementRecords')
+  Future<dynamic> postCustomerAdvanceDisburse({
+    @Header("Authorization") String? token,
+    @Field("customer_id") int? customerId,
+    @Field("currency_id") int? currencyId,
+  });
+
+  @POST('/api/CustomerAdvanceSaveDisbursementRecords')
+  Future<dynamic> postCustomerAdvanceSaveDisburse({
+    @Header("Authorization") String? token,
+    @Body() required Map<String, dynamic> body,
+  });
 }

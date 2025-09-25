@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:sample/src/models/supplier_advance_disburse_model.dart';
 import 'package:sample/src/models/supplier_advance_model.dart';
 import 'package:sample/src/util/snack.dart';
 
@@ -72,6 +73,18 @@ class SupplierAdvanceController with ChangeNotifier {
 
   String? _receiptCheckMessage;
   String? get receiptCheckMessage => _receiptCheckMessage;
+
+  List<SupplierInvoiceForDistribution>? _supplierInvoicesForDistribution;
+  bool _isDistributionLoading = false;
+  String? _distributionErrorMessage;
+  bool _isDistributionSaving = false;
+
+  // Distribution getters
+  List<SupplierInvoiceForDistribution>? get supplierInvoicesForDistribution =>
+      _supplierInvoicesForDistribution;
+  bool get isDistributionLoading => _isDistributionLoading;
+  String? get distributionErrorMessage => _distributionErrorMessage;
+  bool get isDistributionSaving => _isDistributionSaving;
 
   // Search functionality
   void searchExpenses(String query) {
@@ -274,8 +287,13 @@ class SupplierAdvanceController with ChangeNotifier {
 
       if (supplierDetailData['IsSuccess'] == true) {
         final data = supplierDetailData['Data'] as Map<String, dynamic>;
-        final supplierId = supplierDetailData['Data']['id'];
+
+        // Create SupplierAdvanceWithDetails from the API response
         _supplierAdvanceDetail = SupplierAdvanceWithDetails.fromJson(data);
+
+        debugPrint(
+          'Successfully loaded supplier advance detail with ${_supplierAdvanceDetail?.supplierAdvance.details.length ?? 0} details',
+        );
       } else {
         _detailErrorMessage =
             supplierDetailData['Message'] ?? 'Failed to fetch supplier detail';
@@ -284,6 +302,7 @@ class SupplierAdvanceController with ChangeNotifier {
     } catch (e) {
       _detailErrorMessage = _getErrorMessage(e);
       debugPrint('Supplier detail error: $_detailErrorMessage');
+      debugPrint('Error details: $e');
     } finally {
       _isDetailLoading = false;
       notifyListeners();
@@ -332,6 +351,62 @@ class SupplierAdvanceController with ChangeNotifier {
       _handleApiError(e);
     } finally {
       isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> postSupplierAdvanceDistributionSave({
+    required int supplierAdvanceId,
+    required List<int> selectedInvoiceIds,
+  }) async {
+    if (!await _checkToken()) {
+      debugPrint('=== DEBUG: Token check failed ===');
+      return false;
+    }
+
+    _isDistributionSaving = true;
+    _distributionErrorMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await restApi.postSupplierAdvanceSaveDisburse(
+        token: _getAuthHeader(),
+        body: {
+          "supplier_advance_id": supplierAdvanceId,
+          "orders": selectedInvoiceIds,
+        },
+      );
+
+      if (response is Map<String, dynamic>) {
+        if (response['IsSuccess'] == true) {
+          final message =
+              response['Data'] as String? ?? 'Distribution completed.';
+          showSuccessSnack(message);
+          await Future.delayed(const Duration(seconds: 2));
+          await getSupplierAdvance();
+          return true;
+        } else {
+          _distributionErrorMessage =
+              response['Data'] as String? ??
+              response['Message'] as String? ??
+              'Failed to distribute advance';
+          debugPrint(
+            'Distribution API call failed: $_distributionErrorMessage',
+          );
+          return false;
+        }
+      } else {
+        _distributionErrorMessage = 'Unexpected response format';
+        debugPrint('Unexpected response format from distribution API');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('=== DEBUG: Exception caught: $e ===');
+      _distributionErrorMessage = _getErrorMessage(e);
+      debugPrint('Distribution error: $_distributionErrorMessage');
+      return false;
+    } finally {
+      _isDistributionSaving = false;
       notifyListeners();
     }
   }
@@ -634,6 +709,48 @@ class SupplierAdvanceController with ChangeNotifier {
       debugPrint('Supplier detail error: $_pushErrorMessage');
     } finally {
       _isPushLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> getSupplierInvoicesForDistribution(
+    int supplierId,
+    int currencyId,
+  ) async {
+    if (!await _checkToken()) return;
+
+    _isDistributionLoading = true;
+    _distributionErrorMessage = null;
+    _supplierInvoicesForDistribution = null;
+    notifyListeners();
+
+    try {
+      final response = await restApi.postSupplierAdvanceDisburse(
+        supplierId: supplierId,
+        currencyId: currencyId,
+        token: _getAuthHeader(),
+      );
+
+      if (response['IsSuccess'] == true) {
+        final data = response['Data'] as List<dynamic>?;
+        if (data != null) {
+          _supplierInvoicesForDistribution =
+              data
+                  .map((json) => SupplierInvoiceForDistribution.fromJson(json))
+                  .toList();
+        } else {
+          _supplierInvoicesForDistribution = [];
+        }
+      } else {
+        _distributionErrorMessage =
+            response['Message'] ?? 'Failed to fetch invoices for distribution';
+        debugPrint('API call failed: $_distributionErrorMessage');
+      }
+    } catch (e) {
+      _distributionErrorMessage = _getErrorMessage(e);
+      debugPrint('Distribution invoices error: $_distributionErrorMessage');
+    } finally {
+      _isDistributionLoading = false;
       notifyListeners();
     }
   }

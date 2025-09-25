@@ -133,6 +133,8 @@ class Screenroutes {
   static const String supplierAdvanceDataScreen = "supplierAdvanceDataScreen";
   static const String supplierAdvanceUpdateScreen =
       "supplierAdvanceUpdateScreen";
+  static const String supplierAdvanceDistributeScreen =
+      "supplierAdvanceDistributeScreen";
 
   //customeradvance
   static const String customerAdvanceListScreen = "customerAdvanceListScreen";
@@ -550,6 +552,18 @@ class Screenroutes {
             return SupplierAdvanceUpdateScreen();
           },
         );
+
+      // case Screenroutes.supplierAdvanceDistributeScreen:
+      //   return MaterialPageRoute(
+      //     settings: const RouteSettings(
+      //       name: Screenroutes.supplierAdvanceDistributeScreen,
+      //     ),
+      //     builder: (BuildContext context) {
+      //       return SupplierAdvanceDistributeScreen(
+      //         supplierAdvance: supplierAdvance,
+      //       );
+      //     },
+      //   );
 
       case Screenroutes.customerAdvanceListScreen:
         return MaterialPageRoute(
