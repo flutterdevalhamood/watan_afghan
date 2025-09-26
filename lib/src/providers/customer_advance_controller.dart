@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:sample/src/models/customer_advance_disburse_model.dart';
 import 'package:sample/src/models/customer_advance_model.dart';
 import 'package:sample/src/util/snack.dart';
 
@@ -72,6 +73,21 @@ class CustomerAdvanceController with ChangeNotifier {
 
   String? _receiptCheckMessage;
   String? get receiptCheckMessage => _receiptCheckMessage;
+
+  List<CustomerInvoiceForDistribution>? _customerInvoicesForDistribution;
+  bool _isDistributionLoading = false;
+  String? _distributionErrorMessage;
+  bool _isDistributionSaving = false;
+
+  // Distribution getters
+  List<CustomerInvoiceForDistribution>? get customerInvoicesForDistribution =>
+      _customerInvoicesForDistribution;
+  bool get isDistributionLoading => _isDistributionLoading;
+  String? get distributionErrorMessage => _distributionErrorMessage;
+  bool get isDistributionSaving => _isDistributionSaving;
+
+  String? _accountClosing;
+  String? get accountClosing => _accountClosing;
 
   // Search functionality
   void searchExpenses(String query) {
@@ -286,9 +302,10 @@ class CustomerAdvanceController with ChangeNotifier {
           // Create details list - empty if not provided in response
           final List<CustomerAdvanceDetail> details = [];
 
-          // If there's a details field in the response, parse it
-          if (data.containsKey('details') && data['details'] is List) {
-            final detailsList = data['details'] as List;
+          // Fix: Look for 'customer_advance_detail' instead of 'details'
+          if (data.containsKey('customer_advance_detail') &&
+              data['customer_advance_detail'] is List) {
+            final detailsList = data['customer_advance_detail'] as List;
             details.addAll(
               detailsList
                   .map((detail) => CustomerAdvanceDetail.fromJson(detail))
@@ -620,6 +637,98 @@ class CustomerAdvanceController with ChangeNotifier {
       debugPrint('Customer detail error: $_pushErrorMessage');
     } finally {
       _isPushLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> getCustomerInvoicesForDistribution(
+    int customerId,
+    int currencyId,
+  ) async {
+    if (!await _checkToken()) return;
+
+    _isDistributionLoading = true;
+    _distributionErrorMessage = null;
+    _customerInvoicesForDistribution = null;
+    notifyListeners();
+
+    try {
+      final response = await restApi.postCustomerAdvanceDisburse(
+        customerId: customerId,
+        currencyId: currencyId,
+        token: _getAuthHeader(),
+      );
+
+      if (response['IsSuccess'] == true) {
+        final parsedData = CustomerInvoiceForDistributionData.fromJson(
+          response['Data'] ?? {},
+        );
+        _customerInvoicesForDistribution = parsedData.sales;
+        _accountClosing = parsedData.accountClosing;
+      } else {
+        _distributionErrorMessage =
+            response['Message'] ?? 'Failed to fetch invoices for distribution';
+      }
+    } catch (e) {
+      _distributionErrorMessage = _getErrorMessage(e);
+    } finally {
+      _isDistributionLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> postCustomerAdvanceDistributionSave({
+    required int customerAdvanceId,
+    required List<int> selectedInvoiceIds,
+  }) async {
+    if (!await _checkToken()) {
+      debugPrint('=== DEBUG: Token check failed ===');
+      return false;
+    }
+
+    _isDistributionSaving = true;
+    _distributionErrorMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await restApi.postCustomerAdvanceSaveDisburse(
+        token: _getAuthHeader(),
+        body: {
+          "customer_advance_id": customerAdvanceId,
+          "orders": selectedInvoiceIds,
+        },
+      );
+
+      if (response is Map<String, dynamic>) {
+        if (response['IsSuccess'] == true) {
+          final message =
+              response['Data'] as String? ?? 'Distribution completed.';
+          showSuccessSnack(message);
+          await Future.delayed(const Duration(seconds: 2));
+          await getCustomerAdvance();
+          return true;
+        } else {
+          _distributionErrorMessage =
+              response['Data'] as String? ??
+              response['Message'] as String? ??
+              'Failed to distribute advance';
+          debugPrint(
+            'Distribution API call failed: $_distributionErrorMessage',
+          );
+          return false;
+        }
+      } else {
+        _distributionErrorMessage = 'Unexpected response format';
+        debugPrint('Unexpected response format from distribution API');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('=== DEBUG: Exception caught: $e ===');
+      _distributionErrorMessage = _getErrorMessage(e);
+      debugPrint('Distribution error: $_distributionErrorMessage');
+      return false;
+    } finally {
+      _isDistributionSaving = false;
       notifyListeners();
     }
   }

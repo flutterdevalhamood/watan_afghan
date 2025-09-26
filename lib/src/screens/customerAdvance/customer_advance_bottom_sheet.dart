@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sample/src/models/customer_advance_model.dart';
 import 'package:sample/src/providers/customer_advance_controller.dart';
+import 'package:sample/src/screens/customerAdvance/customer_advance_distribute_screen.dart';
 
 class CustomerAdvanceBottomSheet extends StatefulWidget {
   final int id;
@@ -161,50 +162,200 @@ class _CustomerAdvanceBottomSheetState
   Widget _buildDetailContent(CustomerAdvanceWithDetails detail) {
     final customerAdvance = detail.customerAdvance;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Customer Info Card
-          _buildInfoCard(
-            title: 'Customer Information',
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Customer Info Card
+                _buildInfoCard(
+                  title: 'Customer Information',
+                  children: [
+                    _buildInfoRow(
+                      'Customer Name',
+                      customerAdvance.customer?.Name ?? 'Unknown',
+                    ),
+                    _buildInfoRow(
+                      'Receipt Number',
+                      customerAdvance.receiptNumber,
+                    ),
+                    _buildInfoRow(
+                      'Transfer Date',
+                      customerAdvance.formattedDate,
+                    ),
+                    _buildInfoRow(
+                      'Payment Type',
+                      customerAdvance.paymentType.toUpperCase(),
+                    ),
+                    _buildInfoRow(
+                      'Currency',
+                      customerAdvance.currency?.Name ?? 'USD',
+                    ),
+                    if (customerAdvance.receiverName != null)
+                      _buildInfoRow(
+                        'Receiver Name',
+                        customerAdvance.receiverName!,
+                      ),
+                    if (customerAdvance.description != null &&
+                        customerAdvance.description!.isNotEmpty)
+                      _buildInfoRow(
+                        'Description',
+                        customerAdvance.description!,
+                      ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                // Amount Summary Card
+                _buildAmountSummaryCard(customerAdvance),
+
+                const SizedBox(height: 16),
+
+                // Advance Details Section
+                if (detail.details.isNotEmpty)
+                  _buildAdvanceDetailsSection(detail.details),
+
+                // Add some bottom padding for the disperse button
+                const SizedBox(height: 80),
+              ],
+            ),
+          ),
+        ),
+
+        // Disperse Button - Fixed at bottom
+        if (customerAdvance.isPushedBool)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+            ),
+            child: ElevatedButton.icon(
+              onPressed: () => _handleDisperse(customerAdvance),
+              icon: const Icon(Icons.call_made_outlined, size: 20),
+              label: const Text(
+                'Disperse Advance',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 2,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  void _handleDisperse(CustomerAdvance customerAdvance) {
+    // Show confirmation dialog
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Row(
             children: [
-              _buildInfoRow(
-                'Customer Name',
-                customerAdvance.customer?.Name ?? 'Unknown',
-              ),
-              _buildInfoRow('Receipt Number', customerAdvance.receiptNumber),
-              _buildInfoRow('Transfer Date', customerAdvance.formattedDate),
-              _buildInfoRow(
-                'Payment Type',
-                customerAdvance.paymentType.toUpperCase(),
-              ),
-              _buildInfoRow(
-                'Currency',
-                customerAdvance.currency?.Name ?? 'USD',
-              ),
-              if (customerAdvance.receiverName != null)
-                _buildInfoRow('Receiver Name', customerAdvance.receiverName!),
-              if (customerAdvance.description != null &&
-                  customerAdvance.description!.isNotEmpty)
-                _buildInfoRow('Description', customerAdvance.description!),
+              Icon(Icons.call_made_outlined, color: Colors.blue),
+              SizedBox(width: 8),
+              Text('Disperse Advance'),
             ],
           ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Are you sure you want to disperse this advance?',
+                style: TextStyle(color: Colors.grey[700]),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Customer: ${customerAdvance.customer?.Name ?? 'Unknown'}',
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Amount: ${customerAdvance.currency?.Name ?? 'USD'} ${_formatAmount(customerAdvance.remainingBalance)}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Cancel', style: TextStyle(color: Colors.grey[600])),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _disperseAdvance(customerAdvance);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('Disperse'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
-          const SizedBox(height: 16),
-
-          // Amount Summary Card
-          _buildAmountSummaryCard(customerAdvance),
-
-          const SizedBox(height: 16),
-
-          // Advance Details Section
-          if (detail.details.isNotEmpty)
-            _buildAdvanceDetailsSection(detail.details),
-        ],
+  void _disperseAdvance(CustomerAdvance customerAdvance) async {
+    // Navigate to distribute screen
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => CustomerAdvanceDistributeScreen(
+              customerAdvance: customerAdvance,
+            ),
       ),
     );
+
+    // If distribution was successful, refresh the detail view
+    if (result == true) {
+      _controller.getCustomerAdvanceDetail(widget.id);
+    }
   }
 
   Widget _buildInfoCard({
@@ -398,13 +549,19 @@ class _CustomerAdvanceBottomSheetState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Advance Details (${details.length})',
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
-          ),
+        Row(
+          children: [
+            Icon(Icons.receipt_long, size: 20, color: Colors.grey[600]),
+            const SizedBox(width: 8),
+            Text(
+              'Sales Details (${details.length})',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
         ...details.map((detail) => _buildAdvanceDetailCard(detail)).toList(),
@@ -422,11 +579,12 @@ class _CustomerAdvanceBottomSheetState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header with amount
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Detail #${detail.id}',
+                  'Sale #${detail.saleId}',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -443,7 +601,7 @@ class _CustomerAdvanceBottomSheetState
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    _formatAmount(detail.amount),
+                    _formatAmount(detail.amountPaid),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -453,30 +611,74 @@ class _CustomerAdvanceBottomSheetState
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            if (detail.description.isNotEmpty)
-              Text(
-                detail.description,
-                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-              ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                if (detail.referenceNumber != null) ...[
-                  Text(
-                    'Ref: ${detail.referenceNumber}',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  ),
-                  const Spacer(),
-                ],
-                Text(
-                  _formatDate(detail.createdAt),
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+
+            const SizedBox(height: 12),
+
+            // Sale Information (if available)
+            if (detail.sale != null) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[200]!),
                 ),
-              ],
-            ),
+                child: Column(
+                  children: [
+                    _buildDetailInfoRow(
+                      'Invoice Number',
+                      detail.sale!.invoiceNumber,
+                    ),
+                    _buildDetailInfoRow(
+                      'Sale Date',
+                      _formatDate(detail.sale!.saleDate),
+                    ),
+                    _buildDetailInfoRow(
+                      'Total Amount',
+                      _formatAmount(detail.sale!.totalAmount),
+                    ),
+                    _buildDetailInfoRow(
+                      'Paid Balance',
+                      _formatAmount(detail.sale!.paidBalance),
+                    ),
+                    _buildDetailInfoRow(
+                      'Remaining Balance',
+                      _formatAmount(detail.sale!.remainingBalance),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildDetailInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.black87,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }

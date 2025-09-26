@@ -121,40 +121,76 @@ class CustomerAdvance {
 
 class CustomerAdvanceDetail {
   final int id;
-  final String customerAdvanceId;
-  final String amount;
-  final String description;
-  final String createdAt;
-  final String? referenceNumber;
+  final String customerAdvancesId;
+  final String amountPaid;
+  final String saleId;
+  final Sale? sale;
 
   CustomerAdvanceDetail({
     required this.id,
-    required this.customerAdvanceId,
-    required this.amount,
-    required this.description,
-    required this.createdAt,
-    this.referenceNumber,
+    required this.customerAdvancesId,
+    required this.amountPaid,
+    required this.saleId,
+    this.sale,
   });
 
   factory CustomerAdvanceDetail.fromJson(Map<String, dynamic> json) {
     return CustomerAdvanceDetail(
       id: json['id'] ?? 0,
-      customerAdvanceId: json['customer_advance_id']?.toString() ?? '',
-      amount: json['amount']?.toString() ?? '0.00',
-      description: json['description']?.toString() ?? '',
-      createdAt: json['created_at']?.toString() ?? '',
-      referenceNumber: json['referenceNumber']?.toString(),
+      customerAdvancesId: json['customer_advances_id']?.toString() ?? '',
+      amountPaid: json['amountPaid']?.toString() ?? '0.00',
+      saleId: json['sale_id']?.toString() ?? '',
+      sale: json['sale'] != null ? Sale.fromJson(json['sale']) : null,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'customer_advance_id': customerAdvanceId,
-      'amount': amount,
-      'description': description,
-      'created_at': createdAt,
-      'referenceNumber': referenceNumber,
+      'customer_advances_id': customerAdvancesId,
+      'amountPaid': amountPaid,
+      'sale_id': saleId,
+      'sale': sale?.toJson(),
+    };
+  }
+}
+
+class Sale {
+  final int id;
+  final String saleDate;
+  final String invoiceNumber;
+  final String totalAmount;
+  final String paidBalance;
+  final String remainingBalance;
+
+  Sale({
+    required this.id,
+    required this.saleDate,
+    required this.invoiceNumber,
+    required this.totalAmount,
+    required this.paidBalance,
+    required this.remainingBalance,
+  });
+
+  factory Sale.fromJson(Map<String, dynamic> json) {
+    return Sale(
+      id: json['id'] ?? 0,
+      saleDate: json['sale_date']?.toString() ?? '',
+      invoiceNumber: json['InvoiceNumber']?.toString() ?? '',
+      totalAmount: json['total_amount']?.toString() ?? '0.00',
+      paidBalance: json['paidBalance']?.toString() ?? '0.00',
+      remainingBalance: json['remainingBalance']?.toString() ?? '0.00',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'sale_date': saleDate,
+      'InvoiceNumber': invoiceNumber,
+      'total_amount': totalAmount,
+      'paidBalance': paidBalance,
+      'remainingBalance': remainingBalance,
     };
   }
 }
