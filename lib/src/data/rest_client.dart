@@ -354,17 +354,19 @@ abstract class RestClient {
   );
 
   @POST('/api/Purchase')
+  @MultiPart()
   Future<dynamic> registerPurchase({
     @Header("Authorization") String? token,
-    @Field("supplier_id") int? supplierId,
-    @Field("currency_id") int? currencyId,
-    @Field("purchase_date") String? purchaseDate,
-    @Field("InvoiceNumber") String? invoiceNumber,
-    @Field("final_total_before_tax") String? finalTotalBeforeTax,
-    @Field("total_tax") String? totalTax,
-    @Field("grand_total") String? grandTotal,
-    @Field("CustomerNote") String? customerNote,
-    @Field("product_details") String? productDetails,
+    @Part(name: "supplier_id") int? supplierId,
+    @Part(name: "currency_id") int? currencyId,
+    @Part(name: "purchase_date") String? purchaseDate,
+    @Part(name: "InvoiceNumber") String? invoiceNumber,
+    @Part(name: "final_total_before_tax") String? finalTotalBeforeTax,
+    @Part(name: "total_tax") String? totalTax,
+    @Part(name: "grand_total") String? grandTotal,
+    @Part(name: "CustomerNote") String? customerNote,
+    @Part(name: "product_details") String? productDetails,
+    @Part(name: "purchase_invoice_image[]") List<MultipartFile>? invoiceImages,
   });
 
   @GET('/api/getPurchaseBaseList')

@@ -1312,26 +1312,53 @@ class _RestClient implements RestClient {
     String? grandTotal,
     String? customerNote,
     String? productDetails,
+    List<MultipartFile>? invoiceImages,
   }) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{r'Authorization': token};
     _headers.removeWhere((k, v) => v == null);
-    final _data = {
-      'supplier_id': supplierId,
-      'currency_id': currencyId,
-      'purchase_date': purchaseDate,
-      'InvoiceNumber': invoiceNumber,
-      'final_total_before_tax': finalTotalBeforeTax,
-      'total_tax': totalTax,
-      'grand_total': grandTotal,
-      'CustomerNote': customerNote,
-      'product_details': productDetails,
-    };
-    _data.removeWhere((k, v) => v == null);
+    final _data = FormData();
+    if (supplierId != null) {
+      _data.fields.add(MapEntry('supplier_id', supplierId.toString()));
+    }
+    if (currencyId != null) {
+      _data.fields.add(MapEntry('currency_id', currencyId.toString()));
+    }
+    if (purchaseDate != null) {
+      _data.fields.add(MapEntry('purchase_date', purchaseDate));
+    }
+    if (invoiceNumber != null) {
+      _data.fields.add(MapEntry('InvoiceNumber', invoiceNumber));
+    }
+    if (finalTotalBeforeTax != null) {
+      _data.fields.add(MapEntry('final_total_before_tax', finalTotalBeforeTax));
+    }
+    if (totalTax != null) {
+      _data.fields.add(MapEntry('total_tax', totalTax));
+    }
+    if (grandTotal != null) {
+      _data.fields.add(MapEntry('grand_total', grandTotal));
+    }
+    if (customerNote != null) {
+      _data.fields.add(MapEntry('CustomerNote', customerNote));
+    }
+    if (productDetails != null) {
+      _data.fields.add(MapEntry('product_details', productDetails));
+    }
+    if (invoiceImages != null) {
+      _data.files.addAll(
+        invoiceImages.map((i) => MapEntry('purchase_invoice_image[]', i)),
+      );
+    }
     final _options = _setStreamType<dynamic>(
-      Options(method: 'POST', headers: _headers, extra: _extra)
+      Options(
+            method: 'POST',
+            headers: _headers,
+            extra: _extra,
+            contentType: 'multipart/form-data',
+          )
           .compose(
             _dio.options,
             '/api/Purchase',

@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:sample/src/providers/purchase_controller.dart';
@@ -102,6 +104,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
         listen: false,
       );
       controller.clearSelections();
+      controller.clearImages();
       controller.getPurchaseBaseData();
     });
   }
@@ -222,6 +225,39 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeInOut,
       );
+    }
+  }
+
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _pickImages() async {
+    try {
+      final List<XFile> images = await _picker.pickMultiImage();
+      final controller = Provider.of<PurchaseController>(
+        context,
+        listen: false,
+      );
+
+      for (XFile image in images) {
+        controller.addImage(File(image.path));
+      }
+    } catch (e) {
+      showErrorSnack('Error picking images: ${e.toString()}');
+    }
+  }
+
+  Future<void> _pickImageFromCamera() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.camera);
+      if (image != null) {
+        final controller = Provider.of<PurchaseController>(
+          context,
+          listen: false,
+        );
+        controller.addImage(File(image.path));
+      }
+    } catch (e) {
+      showErrorSnack('Error taking photo: ${e.toString()}');
     }
   }
 
@@ -943,6 +979,187 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
 
                             const SizedBox(height: 20),
 
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.2),
+                                    spreadRadius: 1,
+                                    blurRadius: 3,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text(
+                                        'Invoice Images',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      Column(
+                                        children: [
+                                          ElevatedButton.icon(
+                                            onPressed: _pickImageFromCamera,
+                                            icon: const Icon(
+                                              Icons.camera_alt,
+                                              size: 16,
+                                            ),
+                                            label: const Text('Camera'),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.blue,
+                                              foregroundColor: Colors.white,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 8,
+                                                  ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          ElevatedButton.icon(
+                                            onPressed: _pickImages,
+                                            icon: const Icon(
+                                              Icons.photo_library,
+                                              size: 16,
+                                            ),
+                                            label: const Text('Gallery'),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.green,
+                                              foregroundColor: Colors.white,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 8,
+                                                  ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+
+                                  if (controller.selectedImages.isEmpty)
+                                    Container(
+                                      width: double.infinity,
+                                      height: 100,
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: Colors.grey.shade300,
+                                          style: BorderStyle.solid,
+                                        ),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Center(
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.image,
+                                              size: 40,
+                                              color: Colors.grey,
+                                            ),
+                                            SizedBox(height: 8),
+                                            Text(
+                                              'No images selected',
+                                              style: TextStyle(
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                  else
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 8,
+                                      children:
+                                          controller.selectedImages
+                                              .asMap()
+                                              .entries
+                                              .map((entry) {
+                                                int index = entry.key;
+                                                File image = entry.value;
+
+                                                return Stack(
+                                                  children: [
+                                                    Container(
+                                                      width: 100,
+                                                      height: 100,
+                                                      decoration: BoxDecoration(
+                                                        border: Border.all(
+                                                          color:
+                                                              Colors
+                                                                  .grey
+                                                                  .shade300,
+                                                        ),
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              8,
+                                                            ),
+                                                      ),
+                                                      child: ClipRRect(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              8,
+                                                            ),
+                                                        child: Image.file(
+                                                          image,
+                                                          fit: BoxFit.cover,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Positioned(
+                                                      top: 4,
+                                                      right: 4,
+                                                      child: GestureDetector(
+                                                        onTap:
+                                                            () => controller
+                                                                .removeImage(
+                                                                  index,
+                                                                ),
+                                                        child: Container(
+                                                          width: 24,
+                                                          height: 24,
+                                                          decoration:
+                                                              const BoxDecoration(
+                                                                color:
+                                                                    Colors.red,
+                                                                shape:
+                                                                    BoxShape
+                                                                        .circle,
+                                                              ),
+                                                          child: const Icon(
+                                                            Icons.close,
+                                                            color: Colors.white,
+                                                            size: 16,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                );
+                                              })
+                                              .toList(),
+                                    ),
+                                ],
+                              ),
+                            ),
+
                             // Error Message Display
                             if (controller.errorMessage != null)
                               Container(
@@ -961,6 +1178,8 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
                                   style: TextStyle(color: Colors.red.shade700),
                                 ),
                               ),
+
+                            const SizedBox(height: 20),
 
                             // Submit Buttons
                             Row(
@@ -1152,6 +1371,7 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
           };
         }).toList();
 
+    // In the _savePurchase method, update the controller call:
     final success = await controller.postPurchaseRegistration(
       supplierId: controller.selectedSupplierId,
       currencyId: controller.selectedCurrencyTypeId,
@@ -1162,6 +1382,10 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
       grandTotal: grandTotal.toString(),
       customerNote: notesController.text,
       productDetails: jsonEncode(productDetails),
+      invoiceImages:
+          controller.selectedImages.isNotEmpty
+              ? controller.selectedImages
+              : null,
     );
 
     if (success) {

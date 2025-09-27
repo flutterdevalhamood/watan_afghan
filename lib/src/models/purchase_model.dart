@@ -13,6 +13,7 @@ class Purchase {
   final String createdAt;
   final String userId;
   final User? user;
+  List<PurchaseInvoiceImage>? purchaseInvoiceImages;
 
   Purchase({
     required this.id,
@@ -29,6 +30,7 @@ class Purchase {
     this.createdAt = '',
     this.userId = '',
     this.user,
+    this.purchaseInvoiceImages,
   });
 
   factory Purchase.fromJson(Map<String, dynamic> json) {
@@ -50,6 +52,12 @@ class Purchase {
       createdAt: json['created_at']?.toString() ?? '',
       userId: json['user_id']?.toString() ?? '',
       user: json['user'] != null ? User.fromJson(json['user']) : null,
+      purchaseInvoiceImages:
+          json['purchase_invoice_image'] != null
+              ? (json['purchase_invoice_image'] as List)
+                  .map((image) => PurchaseInvoiceImage.fromJson(image))
+                  .toList()
+              : null,
     );
   }
 
@@ -70,6 +78,8 @@ class Purchase {
       'created_at': createdAt,
       'user_id': userId,
       'user': user?.toJson(),
+      'purchase_invoice_image':
+          purchaseInvoiceImages?.map((image) => image.toJson()).toList(),
     };
   }
 
@@ -146,6 +156,38 @@ class PurchaseDetail {
               .map((item) => PurchaseDetailItem.fromJson(item))
               .toList(),
     );
+  }
+}
+
+class PurchaseInvoiceImage {
+  final int id;
+  final String title;
+  final String relationId;
+  final String fullUrl;
+
+  PurchaseInvoiceImage({
+    required this.id,
+    required this.title,
+    required this.relationId,
+    required this.fullUrl,
+  });
+
+  factory PurchaseInvoiceImage.fromJson(Map<String, dynamic> json) {
+    return PurchaseInvoiceImage(
+      id: json['id'] ?? 0,
+      title: json['Title'] ?? '',
+      relationId: json['RelationId'] ?? '',
+      fullUrl: json['FullUrl'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'Title': title,
+      'RelationId': relationId,
+      'FullUrl': fullUrl,
+    };
   }
 }
 

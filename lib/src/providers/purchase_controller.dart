@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:sample/src/models/purchase_model.dart';
@@ -48,6 +50,8 @@ class PurchaseController with ChangeNotifier {
   String? savedPurchaseId;
 
   bool get hasData => _allPurchases.isNotEmpty;
+
+  List<File> selectedImages = [];
 
   // Search functionality
   void searchExpenses(String query) {
@@ -320,10 +324,25 @@ class PurchaseController with ChangeNotifier {
     String? grandTotal,
     String? customerNote,
     String? productDetails,
+    List<File>? invoiceImages,
   }) async {
     if (!await _checkToken()) return false;
 
     try {
+      // Convert File list to MultipartFile list
+      List<MultipartFile>? multipartFiles;
+      if (invoiceImages != null && invoiceImages.isNotEmpty) {
+        multipartFiles = [];
+        for (File image in invoiceImages) {
+          multipartFiles.add(
+            await MultipartFile.fromFile(
+              image.path,
+              filename: image.path.split('/').last,
+            ),
+          );
+        }
+      }
+
       final response = await restApi.registerPurchase(
         token: _getAuthHeader(),
         supplierId: supplierId,
@@ -335,6 +354,7 @@ class PurchaseController with ChangeNotifier {
         grandTotal: grandTotal,
         customerNote: customerNote,
         productDetails: productDetails,
+        invoiceImages: multipartFiles,
       );
 
       if (response is Map<String, dynamic>) {
@@ -349,8 +369,11 @@ class PurchaseController with ChangeNotifier {
               savedPurchaseId = response['Data'];
             }
           }
+          return true; // Add this return statement
+        } else {
+          errorMessage = response['Message'] ?? 'Failed to save purchase';
+          return false; // Add this return statement
         }
-        return true;
       } else if (response is int) {
         // Case 3: API returns just the ID as integer
         savedPurchaseId = response.toString();
@@ -366,6 +389,22 @@ class PurchaseController with ChangeNotifier {
       isLoading = false;
       notifyListeners();
     }
+  }
+
+  // Add these methods to your controller
+  void addImage(File image) {
+    selectedImages.add(image);
+    notifyListeners();
+  }
+
+  void removeImage(int index) {
+    selectedImages.removeAt(index);
+    notifyListeners();
+  }
+
+  void clearImages() {
+    selectedImages.clear();
+    notifyListeners();
   }
 
   Future<void> deletePurchases(int? id, String? descriptionText) async {
