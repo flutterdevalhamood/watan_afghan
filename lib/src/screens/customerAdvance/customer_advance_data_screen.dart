@@ -803,6 +803,21 @@ class _CustomerAdvanceDataScreenState extends State<CustomerAdvanceDataScreen> {
                     children: [
                       Expanded(
                         child: ElevatedButton(
+                          onPressed: _clearForm,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(0, 50),
+                          ),
+                          child: const Text(
+                            'Clear',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: ElevatedButton(
                           onPressed: controller.isLoading ? null : _submitForm,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green,
@@ -818,21 +833,6 @@ class _CustomerAdvanceDataScreenState extends State<CustomerAdvanceDataScreen> {
                                     'Save',
                                     style: TextStyle(fontSize: 16),
                                   ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: _clearForm,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey,
-                            foregroundColor: Colors.white,
-                            minimumSize: const Size(0, 50),
-                          ),
-                          child: const Text(
-                            'Clear',
-                            style: TextStyle(fontSize: 16),
-                          ),
                         ),
                       ),
                     ],

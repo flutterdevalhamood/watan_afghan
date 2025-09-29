@@ -101,13 +101,17 @@ class FinancialTransactionsScreen extends StatelessWidget {
                         );
                       },
                     ),
-                    // _buildTransactionCard(
-                    //   context,
-                    //   'Supplier Payment',
-                    //   Icons.receipt_long,
-                    //   Colors.purple,
-                    //   () {},
-                    // ),
+                    _buildTransactionCard(
+                      context,
+                      'Supplier Payment',
+                      Icons.receipt_long,
+                      Colors.purple,
+                      () {
+                        NavigationService().pushNavigation(
+                          Screenroutes.supplierPaymentListScreen,
+                        );
+                      },
+                    ),
                     // _buildTransactionCard(
                     //   context,
                     //   'Bank to Bank',

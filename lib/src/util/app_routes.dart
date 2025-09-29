@@ -38,6 +38,9 @@ import 'package:sample/src/screens/supplier/supplier_list_screen.dart';
 import 'package:sample/src/screens/supplierAdvance/supplier_advance_data_screen.dart';
 import 'package:sample/src/screens/supplierAdvance/supplier_advance_list_screen.dart';
 import 'package:sample/src/screens/supplierAdvance/supplier_advance_update_screen.dart';
+import 'package:sample/src/screens/supplierPayment/supplier_payment_data_screen.dart';
+import 'package:sample/src/screens/supplierPayment/supplier_payment_list_screen.dart';
+import 'package:sample/src/screens/supplierPayment/supplier_payment_update_screen.dart';
 import 'package:sample/src/screens/units/unit_list_screen.dart';
 import 'package:sample/src/screens/units/unit_registration_screen.dart';
 import 'package:sample/src/screens/units/unit_update_screen.dart';
@@ -135,6 +138,14 @@ class Screenroutes {
       "supplierAdvanceUpdateScreen";
   static const String supplierAdvanceDistributeScreen =
       "supplierAdvanceDistributeScreen";
+
+  //supplierpayment
+  static const String supplierPaymentListScreen = "supplierPaymentListScreen";
+  static const String supplierPaymentDataScreen = "supplierPaymentDataScreen";
+  static const String supplierPaymentUpdateScreen =
+      "supplierPaymentUpdateScreen";
+  static const String supplierPaymentDistributeScreen =
+      "supplierPaymentDistributeScreen";
 
   //customeradvance
   static const String customerAdvanceListScreen = "customerAdvanceListScreen";
@@ -594,6 +605,36 @@ class Screenroutes {
       //       return customerAdvanceUpdateScreen();
       //     },
       //   );
+
+      case Screenroutes.supplierPaymentListScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(
+            name: Screenroutes.supplierPaymentListScreen,
+          ),
+          builder: (BuildContext context) {
+            return SupplierPaymentListScreen();
+          },
+        );
+
+      case Screenroutes.supplierPaymentDataScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(
+            name: Screenroutes.supplierPaymentDataScreen,
+          ),
+          builder: (BuildContext context) {
+            return SupplierPaymentDataScreen();
+          },
+        );
+
+      case Screenroutes.supplierPaymentUpdateScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(
+            name: Screenroutes.supplierPaymentUpdateScreen,
+          ),
+          builder: (BuildContext context) {
+            return SupplierPaymentUpdateScreen();
+          },
+        );
     }
     return null;
   }

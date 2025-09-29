@@ -13,6 +13,7 @@ import 'package:sample/src/providers/reports_controller.dart';
 import 'package:sample/src/providers/sales_controller.dart';
 import 'package:sample/src/providers/supplier_advance_controller.dart';
 import 'package:sample/src/providers/supplier_controller.dart';
+import 'package:sample/src/providers/supplier_payment_controller.dart';
 import 'package:sample/src/providers/unit_controller.dart';
 import 'package:sample/src/util/shared_pref.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -52,6 +53,9 @@ void main() async {
           create: (context) => CustomerAdvanceController(),
         ),
         ChangeNotifierProvider(create: (context) => ReportsController()),
+        ChangeNotifierProvider(
+          create: (context) => SupplierPaymentController(),
+        ),
       ],
       child: const BaseScreen(),
     ),
