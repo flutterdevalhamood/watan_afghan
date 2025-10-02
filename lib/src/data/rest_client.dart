@@ -719,10 +719,9 @@ abstract class RestClient {
     @Part(name: "payment_type") String? paymentType,
     @Part(name: "bank_id") int? bankId,
     @Part(name: "accountNumber") String? accountNumber,
-    @Part(name: "receiptNumber") String? receiptNumber,
     @Part(name: "transferDate") String? transferDate,
     @Part(name: "totalAmount") String? totalAmount,
-    @Part(name: "paidAmount") int? paidAmount,
+    @Part(name: "paidAmount") String? paidAmount,
     @Part(name: "amountInWords") String? amountInWords,
     @Part(name: "currency_id") int? currencyId,
     @Part(name: "receiverName") String? receiverName,
@@ -775,7 +774,7 @@ abstract class RestClient {
   @POST('/api/CheckSupplierPaymentReferenceExist')
   Future<dynamic> postCheckSupplierPaymentReferenceExist({
     @Header("Authorization") String? token,
-    @Field("receiptNumber") String? receiptNumber,
+    @Field("referenceNumber") String? referenceNumber,
   });
 
   @POST('/api/SupplierPaymentGetDisbursementRecords')

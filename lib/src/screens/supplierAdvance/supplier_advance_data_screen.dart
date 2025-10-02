@@ -57,7 +57,6 @@ class _SupplierAdvanceDataScreenState extends State<SupplierAdvanceDataScreen> {
       _loadBaseData();
     });
 
-    // Add listener to PV number field for real-time validation
     _pvNumberController.addListener(_onPvNumberChanged);
 
     _amountController.addListener(
@@ -89,7 +88,6 @@ class _SupplierAdvanceDataScreenState extends State<SupplierAdvanceDataScreen> {
   }
 
   void _onPvNumberChanged() {
-    // Only perform validation if user has modified the PV number
     if (_isPvNumberUserModified) {
       _debounceTimer?.cancel();
       _debounceTimer = Timer(_debounceDuration, () {
@@ -99,7 +97,6 @@ class _SupplierAdvanceDataScreenState extends State<SupplierAdvanceDataScreen> {
   }
 
   void _onPvNumberManualChange() {
-    // Mark that user has manually changed the PV number
     _isPvNumberUserModified = true;
     _onPvNumberChanged();
   }
@@ -446,7 +443,6 @@ class _SupplierAdvanceDataScreenState extends State<SupplierAdvanceDataScreen> {
                           ),
                           const SizedBox(height: 16),
 
-                          // PV Number with validation
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [

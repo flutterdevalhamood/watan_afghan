@@ -2769,10 +2769,9 @@ class _RestClient implements RestClient {
     String? paymentType,
     int? bankId,
     String? accountNumber,
-    String? receiptNumber,
     String? transferDate,
     String? totalAmount,
-    int? paidAmount,
+    String? paidAmount,
     String? amountInWords,
     int? currencyId,
     String? receiverName,
@@ -2800,9 +2799,6 @@ class _RestClient implements RestClient {
     if (accountNumber != null) {
       _data.fields.add(MapEntry('accountNumber', accountNumber));
     }
-    if (receiptNumber != null) {
-      _data.fields.add(MapEntry('receiptNumber', receiptNumber));
-    }
     if (transferDate != null) {
       _data.fields.add(MapEntry('transferDate', transferDate));
     }
@@ -2810,7 +2806,7 @@ class _RestClient implements RestClient {
       _data.fields.add(MapEntry('totalAmount', totalAmount));
     }
     if (paidAmount != null) {
-      _data.fields.add(MapEntry('paidAmount', paidAmount.toString()));
+      _data.fields.add(MapEntry('paidAmount', paidAmount));
     }
     if (amountInWords != null) {
       _data.fields.add(MapEntry('amountInWords', amountInWords));
@@ -3021,14 +3017,14 @@ class _RestClient implements RestClient {
   @override
   Future<dynamic> postCheckSupplierPaymentReferenceExist({
     String? token,
-    String? receiptNumber,
+    String? referenceNumber,
   }) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{r'Authorization': token};
     _headers.removeWhere((k, v) => v == null);
-    final _data = {'receiptNumber': receiptNumber};
+    final _data = {'referenceNumber': referenceNumber};
     _data.removeWhere((k, v) => v == null);
     final _options = _setStreamType<dynamic>(
       Options(method: 'POST', headers: _headers, extra: _extra)

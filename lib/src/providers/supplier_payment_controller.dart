@@ -22,7 +22,7 @@ class SupplierPaymentController with ChangeNotifier {
   bool get hasData => _allSupplierPayments.isNotEmpty;
 
   // Detail properties
-  // SupplierPaymentWithDetails? _supplierPaymentDetail;
+  SupplierPaymentDetail? _supplierPaymentDetail;
   bool _isDetailLoading = false;
   String? _detailErrorMessage;
 
@@ -37,8 +37,7 @@ class SupplierPaymentController with ChangeNotifier {
   bool get hasExpenses => _filteredSupplierPayments.isNotEmpty;
 
   // Detail getters
-  // SupplierPaymentWithDetails? get supplierPaymentDetail =>
-  // _supplierPaymentDetail;
+  SupplierPaymentDetail? get supplierPaymentDetail => _supplierPaymentDetail;
   bool get isDetailLoading => _isDetailLoading;
   String? get detailErrorMessage => _detailErrorMessage;
 
@@ -86,6 +85,61 @@ class SupplierPaymentController with ChangeNotifier {
   String? get distributionErrorMessage => _distributionErrorMessage;
   bool get isDistributionSaving => _isDistributionSaving;
 
+  // In SupplierPaymentController
+  bool? validationTriggered;
+
+  String? selectedBankAccountNumber;
+
+  void setValidationTriggered(bool value) {
+    validationTriggered = value;
+    notifyListeners();
+  }
+
+  void clearSupplierAdvanceDetail() {
+    _supplierPaymentDetail = null;
+    _detailErrorMessage = null;
+    notifyListeners();
+  }
+
+  void clearInvoiceDistributionData() {
+    _supplierInvoicesForDistribution = null;
+    _isDistributionLoading = false;
+    _distributionErrorMessage = null;
+    notifyListeners();
+  }
+
+  /// Enhanced clearSelections to also clear invoice data
+  void clearSelectionsAndData() {
+    selectedSupplierId = null;
+    selectedBankId = null;
+    selectedCurrencyId = null;
+    selectedPaymentVoucherId = null;
+
+    // Clear invoice distribution data
+    _supplierInvoicesForDistribution = null;
+    _isDistributionLoading = false;
+    _distributionErrorMessage = null;
+
+    notifyListeners();
+  }
+
+  void setBankName(int? bankNameId) {
+    selectedBankId = bankNameId;
+
+    // Auto-fill account number when bank is selected
+    if (bankNameId != null && bankName != null) {
+      final selectedBank = bankName!.firstWhere(
+        (bank) => bank['id'] == bankNameId,
+        orElse: () => {},
+      );
+      selectedBankAccountNumber = selectedBank['account_number']?.toString();
+    } else {
+      selectedBankAccountNumber = null;
+    }
+
+    notifyListeners();
+  }
+
   // Search functionality
   void searchExpenses(String query) {
     _searchQuery = query.toLowerCase();
@@ -115,11 +169,6 @@ class SupplierPaymentController with ChangeNotifier {
     notifyListeners();
   }
 
-  void setBankName(int? bankNameId) {
-    selectedBankId = bankNameId;
-    notifyListeners();
-  }
-
   void setCurrencyName(int? currencyId) {
     selectedCurrencyId = currencyId;
     notifyListeners();
@@ -135,7 +184,7 @@ class SupplierPaymentController with ChangeNotifier {
     selectedBankId = null;
     selectedCurrencyId = null;
     selectedPaymentVoucherId = null;
-
+    selectedBankAccountNumber = null;
     notifyListeners();
   }
 
@@ -272,280 +321,147 @@ class SupplierPaymentController with ChangeNotifier {
     await getSupplierPayment(loadMore: false);
   }
 
-  // Future<void> getSupplierAdvanceDetail(int id) async {
-  //   if (!await _checkToken()) return;
-  //
-  //   _isDetailLoading = true;
-  //   _detailErrorMessage = null;
-  //   notifyListeners();
-  //
-  //   try {
-  //     final supplierDetailData = await restApi.getSupplierAdvanceDetail(
-  //       id: id,
-  //       token: _getAuthHeader(),
-  //     );
-  //
-  //     if (supplierDetailData['IsSuccess'] == true) {
-  //       final data = supplierDetailData['Data'] as Map<String, dynamic>;
-  //
-  //       // Create SupplierAdvanceWithDetails from the API response
-  //       _supplierAdvanceDetail = SupplierAdvanceWithDetails.fromJson(data);
-  //
-  //       debugPrint(
-  //         'Successfully loaded supplier advance detail with ${_supplierAdvanceDetail?.supplierAdvance.details.length ?? 0} details',
-  //       );
-  //     } else {
-  //       _detailErrorMessage =
-  //           supplierDetailData['Message'] ?? 'Failed to fetch supplier detail';
-  //       debugPrint('API call failed: $_detailErrorMessage');
-  //     }
-  //   } catch (e) {
-  //     _detailErrorMessage = _getErrorMessage(e);
-  //     debugPrint('Supplier detail error: $_detailErrorMessage');
-  //     debugPrint('Error details: $e');
-  //   } finally {
-  //     _isDetailLoading = false;
-  //     notifyListeners();
-  //   }
-  // }
-  //
-  // void clearSupplierAdvanceDetail() {
-  //   _supplierAdvanceDetail = null;
-  //   _detailErrorMessage = null;
-  //   notifyListeners();
-  // }
-  //
-  // Future<void> getSupplierAdvanceBaseData() async {
-  //   if (!await _checkToken()) return;
-  //
-  //   isLoading = true;
-  //   errorMessage = null;
-  //   notifyListeners();
-  //
-  //   try {
-  //     final supplierAdvanceBaseData = await restApi.getSupplierAdvanceBaseList(
-  //       token: _getAuthHeader(),
-  //     );
-  //
-  //     if (supplierAdvanceBaseData['IsSuccess'] == true) {
-  //       supplierName = List<Map<String, dynamic>>.from(
-  //         supplierAdvanceBaseData['Data']['suppliers'] ?? [],
-  //       );
-  //
-  //       bankName = List<Map<String, dynamic>>.from(
-  //         supplierAdvanceBaseData['Data']['banks'] ?? [],
-  //       );
-  //       currencyName = List<Map<String, dynamic>>.from(
-  //         supplierAdvanceBaseData['Data']['currencies'],
-  //       );
-  //       nextPaymentVoucher =
-  //           supplierAdvanceBaseData['Data']['next_payment_voucher'];
-  //
-  //       debugPrint('Base data fetched successfully');
-  //     } else {
-  //       print('API call failed: ${supplierAdvanceBaseData['Message']}');
-  //       errorMessage =
-  //           supplierAdvanceBaseData['Message'] ?? 'Failed to fetch base data';
-  //     }
-  //   } catch (e) {
-  //     _handleApiError(e);
-  //   } finally {
-  //     isLoading = false;
-  //     notifyListeners();
-  //   }
-  // }
-  //
-  // Future<bool> postSupplierAdvanceDistributionSave({
-  //   required int supplierAdvanceId,
-  //   required List<int> selectedInvoiceIds,
-  // }) async {
-  //   if (!await _checkToken()) {
-  //     debugPrint('=== DEBUG: Token check failed ===');
-  //     return false;
-  //   }
-  //
-  //   _isDistributionSaving = true;
-  //   _distributionErrorMessage = null;
-  //   notifyListeners();
-  //
-  //   try {
-  //     final response = await restApi.postSupplierAdvanceSaveDisburse(
-  //       token: _getAuthHeader(),
-  //       body: {
-  //         "supplier_advance_id": supplierAdvanceId,
-  //         "orders": selectedInvoiceIds,
-  //       },
-  //     );
-  //
-  //     if (response is Map<String, dynamic>) {
-  //       if (response['IsSuccess'] == true) {
-  //         final message =
-  //             response['Data'] as String? ?? 'Distribution completed.';
-  //         showSuccessSnack(message);
-  //         await Future.delayed(const Duration(seconds: 2));
-  //         await getSupplierAdvance();
-  //         return true;
-  //       } else {
-  //         _distributionErrorMessage =
-  //             response['Data'] as String? ??
-  //             response['Message'] as String? ??
-  //             'Failed to distribute advance';
-  //         debugPrint(
-  //           'Distribution API call failed: $_distributionErrorMessage',
-  //         );
-  //         return false;
-  //       }
-  //     } else {
-  //       _distributionErrorMessage = 'Unexpected response format';
-  //       debugPrint('Unexpected response format from distribution API');
-  //       return false;
-  //     }
-  //   } catch (e) {
-  //     debugPrint('=== DEBUG: Exception caught: $e ===');
-  //     _distributionErrorMessage = _getErrorMessage(e);
-  //     debugPrint('Distribution error: $_distributionErrorMessage');
-  //     return false;
-  //   } finally {
-  //     _isDistributionSaving = false;
-  //     notifyListeners();
-  //   }
-  // }
+  Future<void> getSupplierPaymentDetail(int id) async {
+    if (!await _checkToken()) return;
 
-  // Future<void> getInvoicesOfProduct(int selectedProductTypeId) async {
-  //   if (!await _checkToken()) return;
-  //
-  //   _isLoadingInvoices = true;
-  //   invoicesOfProductData = null;
-  //   notifyListeners();
-  //
-  //   try {
-  //     final invoicesOfProductResponse = await restApi
-  //         .getAllInvoicesOfProductFromInventory(
-  //           id: selectedProductTypeId,
-  //           token: _getAuthHeader(),
-  //         );
-  //
-  //     if (invoicesOfProductResponse['IsSuccess'] == true) {
-  //       final invoiceNumbers = List<String>.from(
-  //         invoicesOfProductResponse['Data'] ?? [],
-  //       );
-  //
-  //       invoicesOfProductData =
-  //           invoiceNumbers.asMap().entries.map((entry) {
-  //             return {
-  //               'id': entry.key.toString(),
-  //               'invoice_number': entry.value,
-  //               'display_name': entry.value,
-  //             };
-  //           }).toList();
-  //
-  //       debugPrint(
-  //         'Invoices data fetched successfully: ${invoicesOfProductData?.length} invoices',
-  //       );
-  //       debugPrint('Invoice numbers: ${invoiceNumbers.join(', ')}');
-  //     } else {
-  //       debugPrint('API call failed: ${invoicesOfProductResponse['Message']}');
-  //       // Don't set main errorMessage here to avoid affecting main screen
-  //       invoicesOfProductData = []; // Set empty list on failure
-  //     }
-  //   } catch (e) {
-  //     debugPrint('Error fetching invoices: $e');
-  //     invoicesOfProductData = []; // Set empty list on error
-  //     // Don't call _handleApiError here as it might affect main loading state
-  //   } finally {
-  //     _isLoadingInvoices = false;
-  //     notifyListeners();
-  //   }
-  // }
-
-  // void clearInvoicesOfProduct() {
-  //   invoicesOfProductData = null;
-  //   notifyListeners();
-  // }
-  //
-  // Future<bool> postSupplierAdvanceRegistration({
-  //   int? supplierId,
-  //   String? receiptNumber,
-  //   String? paymentType,
-  //   int? bankId,
-  //   String? accountNumber,
-  //   String? chequeNumber,
-  //   String? transferDate,
-  //   String? amount,
-  //   int? currencyId,
-  //   String? sumOf,
-  //   String? receiverName,
-  //   String? description,
-  //   List<MultipartFile>? supplierAdvanceImage,
-  // }) async {
-  //   if (!await _checkToken()) return false;
-  //
-  //   try {
-  //     final response = await restApi.postSupplierAdvance(
-  //       token: _getAuthHeader(),
-  //       supplierId: supplierId,
-  //       receiptNumber: receiptNumber,
-  //       paymentType: paymentType,
-  //       bankId: bankId,
-  //       accountNumber: accountNumber,
-  //       chequeNumber: chequeNumber,
-  //       transferDate: transferDate,
-  //       amount: amount,
-  //       currencyId: currencyId,
-  //       sumOf: sumOf,
-  //       receiverName: receiverName,
-  //       description: description,
-  //       files: supplierAdvanceImage,
-  //     );
-  //
-  //     if (response != null && response is Map<String, dynamic>) {
-  //       if (response['IsSuccess'] == true) {
-  //         getSupplierAdvance();
-  //
-  //         notifyListeners();
-  //       }
-  //       return true;
-  //     } else if (response is int) {
-  //       savedSupplierAdvanceId = response.toString();
-  //       return true;
-  //     } else {
-  //       errorMessage = 'Unexpected response format';
-  //       return false;
-  //     }
-  //   } catch (e) {
-  //     errorMessage = 'Error saving supplier advance: ${e.toString()}';
-  //     return false;
-  //   } finally {
-  //     isLoading = false;
-  //     notifyListeners();
-  //   }
-  // }
-
-  // In your SalesController class
-  Future<double?> postAvailableQtyForInvoice(String? invoiceNumber) async {
-    if (invoiceNumber == null || invoiceNumber.isEmpty) return null;
-    if (!await _checkToken()) return null;
+    _isDetailLoading = true;
+    _detailErrorMessage = null;
+    notifyListeners();
 
     try {
-      final response = await restApi.postAvailableQtyForInvoiceInventory(
+      final supplierPaymentDetailData = await restApi.getSupplierPaymentDetail(
+        id: id,
         token: _getAuthHeader(),
-        fromInvoice: invoiceNumber,
       );
 
-      // Fix: Access the nested Debit field inside Data
-      if (response['IsSuccess'] == true &&
-          response['Data'] != null &&
-          response['Data']['Debit'] != null) {
-        return double.tryParse(response['Data']['Debit'].toString());
+      if (supplierPaymentDetailData['IsSuccess'] == true) {
+        final data = supplierPaymentDetailData['Data'] as Map<String, dynamic>;
+
+        _supplierPaymentDetail = SupplierPaymentDetail.fromJson(data);
+
+        debugPrint(
+          'Successfully loaded supplier advance detail with ${_supplierPaymentDetail?.details.length ?? 0} details',
+        );
+      } else {
+        _detailErrorMessage =
+            supplierPaymentDetailData['Message'] ??
+            'Failed to fetch supplier detail';
+        debugPrint('API call failed: $_detailErrorMessage');
       }
-      return null;
     } catch (e) {
-      debugPrint('Error getting available quantity: $e');
-      return null;
+      _detailErrorMessage = _getErrorMessage(e);
+      debugPrint('Supplier detail error: $_detailErrorMessage');
+      debugPrint('Error details: $e');
+    } finally {
+      _isDetailLoading = false;
+      notifyListeners();
     }
   }
 
-  Future<bool> checkSupplierAdvanceReferenceExist(String? receiptNumber) async {
+  void clearSupplierPaymentDetail() {
+    _supplierPaymentDetail = null;
+    _detailErrorMessage = null;
+    notifyListeners();
+  }
+
+  Future<void> getSupplierAdvanceBaseData() async {
+    if (!await _checkToken()) return;
+
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+
+    try {
+      final supplierAdvanceBaseData = await restApi.getSupplierAdvanceBaseList(
+        token: _getAuthHeader(),
+      );
+
+      if (supplierAdvanceBaseData['IsSuccess'] == true) {
+        supplierName = List<Map<String, dynamic>>.from(
+          supplierAdvanceBaseData['Data']['suppliers'] ?? [],
+        );
+
+        bankName = List<Map<String, dynamic>>.from(
+          supplierAdvanceBaseData['Data']['banks'] ?? [],
+        );
+        currencyName = List<Map<String, dynamic>>.from(
+          supplierAdvanceBaseData['Data']['currencies'],
+        );
+        nextPaymentVoucher =
+            supplierAdvanceBaseData['Data']['next_payment_voucher'];
+
+        debugPrint('Base data fetched successfully');
+      } else {
+        print('API call failed: ${supplierAdvanceBaseData['Message']}');
+        errorMessage =
+            supplierAdvanceBaseData['Message'] ?? 'Failed to fetch base data';
+      }
+    } catch (e) {
+      _handleApiError(e);
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> postSupplierPaymentRegistration({
+    required int supplierId,
+    required String referenceNumber,
+    required String paymentType,
+    required int bankId,
+    required String accountNumber,
+    required String transferDate,
+    required String totalAmount,
+    required String paidAmount,
+    required String amountInWords,
+    required int currencyId,
+    required String receiverName,
+    required String description,
+    List<MultipartFile>? paymentFiles,
+  }) async {
+    if (!await _checkToken()) return false;
+
+    try {
+      final response = await restApi.postSupplierPayment(
+        token: _getAuthHeader(),
+        supplierId: supplierId,
+        referenceNumber: referenceNumber,
+        paymentType: paymentType,
+        bankId: bankId,
+        accountNumber: accountNumber,
+        transferDate: transferDate,
+        totalAmount: totalAmount,
+        paidAmount: paidAmount,
+        amountInWords: amountInWords,
+        currencyId: currencyId,
+        receiverName: receiverName,
+        description: description,
+        files: paymentFiles,
+      );
+
+      if (response != null && response is Map<String, dynamic>) {
+        if (response['IsSuccess'] == true) {
+          showSuccessSnack('Supplier payment registered successfully');
+          await getSupplierPayment();
+          notifyListeners();
+          return true;
+        } else {
+          errorMessage = response['Message'] ?? 'Failed to register payment';
+          showErrorSnack(errorMessage!);
+          return false;
+        }
+      } else {
+        errorMessage = 'Unexpected response format';
+        return false;
+      }
+    } catch (e) {
+      errorMessage = 'Error saving supplier payment: ${e.toString()}';
+      showErrorSnack(errorMessage!);
+      return false;
+    }
+  }
+
+  Future<bool> checkSupplierpaymentReferenceExist(String? receiptNumber) async {
     if (receiptNumber == null || receiptNumber.isEmpty) {
       _receiptExists = null;
       _receiptCheckMessage = null;
@@ -566,9 +482,9 @@ class SupplierPaymentController with ChangeNotifier {
     }
 
     try {
-      final response = await restApi.postCheckSupplierAdvanceReferenceExist(
+      final response = await restApi.postCheckSupplierPaymentReferenceExist(
         token: _getAuthHeader(),
-        receiptNumber: receiptNumber,
+        referenceNumber: receiptNumber,
       );
 
       _isCheckingReceipt = false;
@@ -576,18 +492,30 @@ class SupplierPaymentController with ChangeNotifier {
       if (response['IsSuccess'] == true) {
         final data = response['Data'];
 
-        if (data == "false" || data == false) {
-          _receiptExists = false;
-          _receiptCheckMessage = 'Receipt number is available';
+        // FIXED: Handle the response structure properly
+        if (data != null && data is Map<String, dynamic>) {
+          final referenceExists = data['reference_exists'];
+
+          if (referenceExists == true) {
+            _receiptExists = true;
+            _receiptCheckMessage =
+                'Receipt number already exists. Please use a different number.';
+          } else {
+            _receiptExists = false;
+            _receiptCheckMessage = 'Receipt number is available';
+          }
         } else {
-          _receiptExists = true;
-          _receiptCheckMessage =
-              'Receipt number already exists. Please use a different number.';
+          // Handle case where Data might be null or different structure
+          _receiptExists = null;
+          _receiptCheckMessage = 'Unable to validate receipt number';
         }
       } else {
         _receiptExists = null;
         _receiptCheckMessage =
             response['Message'] ?? 'Failed to check receipt number';
+
+        // FIXED: Additional debugging for API response
+        debugPrint('API Response: $response');
       }
 
       notifyListeners();
@@ -595,9 +523,15 @@ class SupplierPaymentController with ChangeNotifier {
     } catch (e) {
       _isCheckingReceipt = false;
       _receiptExists = null;
-      _receiptCheckMessage = 'Error checking invoice number: $e';
+      _receiptCheckMessage = 'Error checking receipt number: ${e.toString()}';
       notifyListeners();
-      debugPrint('Error checking invoice existence: $e');
+      debugPrint('Error checking receipt existence: $e');
+
+      // FIXED: Log detailed error information
+      if (e is DioException) {
+        debugPrint('Dio error: ${e.message}');
+        debugPrint('Response: ${e.response}');
+      }
       return false;
     }
   }
@@ -684,7 +618,7 @@ class SupplierPaymentController with ChangeNotifier {
     }
   }
 
-  Future<void> getSupplierAdvancePush(int id) async {
+  Future<void> getSupplierPaymentPush(int id) async {
     if (!await _checkToken()) return;
 
     _isPushLoading = true;
@@ -692,16 +626,16 @@ class SupplierPaymentController with ChangeNotifier {
     notifyListeners();
 
     try {
-      final pushSupplierAdvance = await restApi.getSupplierAdvancePush(
+      final pushSupplierPayment = await restApi.getSupplierPaymentPush(
         id: id,
         token: _getAuthHeader(),
       );
 
-      if (pushSupplierAdvance['IsSuccess'] == true) {
-        final data = pushSupplierAdvance['Data'];
+      if (pushSupplierPayment['IsSuccess'] == true) {
+        final data = pushSupplierPayment['Data'];
       } else {
         _pushErrorMessage =
-            pushSupplierAdvance['Message'] ?? 'Failed to fetch supplier detail';
+            pushSupplierPayment['Message'] ?? 'Failed to fetch supplier detail';
         debugPrint('API call failed: $_pushErrorMessage');
       }
     } catch (e) {

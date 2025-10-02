@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sample/src/models/supplier_payment_model.dart';
 import 'package:sample/src/providers/supplier_payment_controller.dart';
+import 'package:sample/src/screens/supplierPayment/supplier_payment_bottom_sheet.dart';
+import 'package:sample/src/util/app_navigation.dart';
+import 'package:sample/src/util/app_routes.dart';
 import 'package:sample/src/util/delete_confirmation_dialog.dart';
 
 class SupplierPaymentListScreen extends StatefulWidget {
@@ -90,7 +93,7 @@ class _SupplierPaymentListScreenState extends State<SupplierPaymentListScreen>
     );
 
     try {
-      await provider.getSupplierAdvancePush(payment.id);
+      await provider.getSupplierPaymentPush(payment.id);
 
       if (provider.pushErrorMessage == null) {
         await provider.getSupplierPayment();
@@ -198,10 +201,9 @@ class _SupplierPaymentListScreenState extends State<SupplierPaymentListScreen>
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Navigate to add payment screen
-          // NavigationService().pushNavigation(
-          //   Screenroutes.supplierPaymentDataScreen,
-          // );
+          NavigationService().pushNavigation(
+            Screenroutes.supplierPaymentDataScreen,
+          );
           _searchController.clear();
           _controller.clearSearch();
           _controller.refresh();
@@ -344,7 +346,7 @@ class _SupplierPaymentListScreenState extends State<SupplierPaymentListScreen>
         borderRadius: BorderRadius.circular(12),
         onTap: () {
           // Navigate to detail screen or show bottom sheet
-          // _showPaymentDetails(payment);
+          _showPaymentDetails(payment);
         },
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -547,6 +549,23 @@ class _SupplierPaymentListScreenState extends State<SupplierPaymentListScreen>
         await _controller.deleteSupplierPayment(payment.id, reason);
       },
       getErrorMessage: () => _controller.errorMessage,
+    );
+  }
+
+  void _showPaymentDetails(SupplierPayment payment) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder:
+          (context) => DraggableScrollableSheet(
+            initialChildSize: 0.7,
+            minChildSize: 0.5,
+            maxChildSize: 0.95,
+            builder:
+                (context, scrollController) =>
+                    SupplierPaymentBottomSheet(id: payment.id),
+          ),
     );
   }
 
