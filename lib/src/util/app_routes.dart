@@ -8,6 +8,8 @@ import 'package:sample/src/screens/customer/customer_data_screen.dart';
 import 'package:sample/src/screens/customer/customer_list_screen.dart';
 import 'package:sample/src/screens/customerAdvance/customer_advance_data_screen.dart';
 import 'package:sample/src/screens/customerAdvance/customer_advance_list_screen.dart';
+import 'package:sample/src/screens/customerPayment/customer_payment_data_screen.dart';
+import 'package:sample/src/screens/customerPayment/customer_payment_list_screen.dart';
 import 'package:sample/src/screens/expenses/expense_data_screen.dart';
 import 'package:sample/src/screens/expenses/expense_list_screen.dart';
 import 'package:sample/src/screens/financialTransactions/financial_transactions_screen.dart';
@@ -152,6 +154,12 @@ class Screenroutes {
   static const String customerAdvanceDataScreen = "customerAdvanceDataScreen";
   static const String customerAdvanceUpdateScreen =
       "customerAdvanceUpdateScreen";
+
+  //customerpayment
+  static const String customerPaymentListScreen = "customerPaymentListScreen";
+  static const String customerPaymentDataScreen = "customerPaymentDataScreen";
+  static const String customerPaymentUpdateScreen =
+      "customerPaymentUpdateScreen";
 
   static Route<dynamic>? routes(RouteSettings settings) {
     StringConstants.currentRoute = settings.name ?? "";
@@ -633,6 +641,36 @@ class Screenroutes {
           ),
           builder: (BuildContext context) {
             return SupplierPaymentUpdateScreen();
+          },
+        );
+
+      case Screenroutes.customerPaymentListScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(
+            name: Screenroutes.customerPaymentListScreen,
+          ),
+          builder: (BuildContext context) {
+            return CustomerPaymentListScreen();
+          },
+        );
+
+      case Screenroutes.customerPaymentDataScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(
+            name: Screenroutes.customerPaymentDataScreen,
+          ),
+          builder: (BuildContext context) {
+            return CustomerPaymentDataScreen();
+          },
+        );
+
+      case Screenroutes.customerPaymentUpdateScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(
+            name: Screenroutes.customerPaymentUpdateScreen,
+          ),
+          builder: (BuildContext context) {
+            return CustomerPaymentDataScreen();
           },
         );
     }

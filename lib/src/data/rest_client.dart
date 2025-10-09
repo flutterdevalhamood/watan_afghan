@@ -789,4 +789,85 @@ abstract class RestClient {
     @Header("Authorization") String? token,
     @Body() required Map<String, dynamic> body,
   });
+
+  @GET('/api/CustomerPayment/paginate/{page}/{limit}')
+  Future<dynamic> getCustomerPayment(
+    @Path("page") int page,
+    @Path("limit") int limit,
+    @Header("Authorization") String? token,
+  );
+
+  @POST('/api/PaymentReceive')
+  Future<dynamic> postCustomerPayment({
+    @Header("Authorization") String? token,
+    @Part(name: "customer_id") int? customerId,
+    @Part(name: "referenceNumber") String? referenceNumber,
+    @Part(name: "payment_type") String? paymentType,
+    @Part(name: "bank_id") int? bankId,
+    @Part(name: "accountNumber") String? accountNumber,
+    @Part(name: "receiptNumber") String? receiptNumber,
+    @Part(name: "paymentReceiveDate") String? paymentReceiveDate,
+    @Part(name: "totalAmount") String? totalAmount,
+    @Part(name: "paidAmount") String? paidAmount,
+    @Part(name: "amountInWords") String? amountInWords,
+    @Part(name: "currency_id") int? currencyId,
+    @Part(name: "receiverName") String? receiverName,
+    @Part(name: "Description") String? description,
+    @Part(name: 'payment_receive_image') List<MultipartFile>? files,
+  });
+
+  @POST('/api/CustomerPaymentUpdate')
+  Future<dynamic> postCustomerPaymentUpdate({
+    @Header("Authorization") String? token,
+    @Part(name: "supplier_id") int? supplierId,
+    @Part(name: "receiptNumber") String? receiptNumber,
+    @Part(name: "paymentType") String? paymentType,
+    @Part(name: "bank_id") int? bankId,
+    @Part(name: "accountNumber") String? accountNumber,
+    @Part(name: "ChequeNumber") String? chequeNumber,
+    @Part(name: "TransferDate") String? transferDate,
+    @Part(name: "Amount") String? amount,
+    @Part(name: "currency_id") int? currencyId,
+    @Part(name: "sumOf") String? sumOf,
+    @Part(name: "receiverName") String? receiverName,
+    @Part(name: "Description") String? description,
+    @Part(name: "id") int? id,
+  });
+
+  @GET('/api/getCustomerPaymentBaseList')
+  Future<dynamic> getCustomerPaymentBaseList({
+    @Header("Authorization") String? token,
+  });
+
+  @GET('/api/PaymentReceiveDetail/{id}')
+  Future<dynamic> getCustomerPaymentDetail({
+    @Path("id") int? id,
+    @Header("Authorization") String? token,
+  });
+
+  @GET('/api/CustomerPaymentPush/{id}')
+  Future<dynamic> getCustomerPaymentPush({
+    @Path("id") int? id,
+    @Header("Authorization") String? token,
+  });
+
+  @POST('/api/CustomerPaymentDelete')
+  Future<dynamic> deleteCustomerPayment({
+    @Header("Authorization") String? token,
+    @Field("id") int? id,
+    @Field("deleteDescription") String? deleteDescription,
+  });
+
+  @POST('/api/CheckCustomerPaymentReferenceExist')
+  Future<dynamic> postCheckCustomerPaymentReferenceExist({
+    @Header("Authorization") String? token,
+    @Field("referenceNumber") String? referenceNumber,
+  });
+
+  @POST('/api/CustomerPaymentGetDisbursementRecords')
+  Future<dynamic> postCustomerPaymentDisburse({
+    @Header("Authorization") String? token,
+    @Field("supplier_id") int? supplierId,
+    @Field("currency_id") int? currencyId,
+  });
 }

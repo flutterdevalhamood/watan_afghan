@@ -3096,6 +3096,341 @@ class _RestClient implements RestClient {
     return _value;
   }
 
+  @override
+  Future<dynamic> getCustomerPayment(int page, int limit, String? token) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{r'Authorization': token};
+    _headers.removeWhere((k, v) => v == null);
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'GET', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/api/CustomerPayment/paginate/${page}/${limit}',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> postCustomerPayment({
+    String? token,
+    int? customerId,
+    String? referenceNumber,
+    String? paymentType,
+    int? bankId,
+    String? accountNumber,
+    String? receiptNumber,
+    String? paymentReceiveDate,
+    String? totalAmount,
+    String? paidAmount,
+    String? amountInWords,
+    int? currencyId,
+    String? receiverName,
+    String? description,
+    List<MultipartFile>? files,
+  }) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{r'Authorization': token};
+    _headers.removeWhere((k, v) => v == null);
+    final _data = FormData();
+    if (customerId != null) {
+      _data.fields.add(MapEntry('customer_id', customerId.toString()));
+    }
+    if (referenceNumber != null) {
+      _data.fields.add(MapEntry('referenceNumber', referenceNumber));
+    }
+    if (paymentType != null) {
+      _data.fields.add(MapEntry('payment_type', paymentType));
+    }
+    if (bankId != null) {
+      _data.fields.add(MapEntry('bank_id', bankId.toString()));
+    }
+    if (accountNumber != null) {
+      _data.fields.add(MapEntry('accountNumber', accountNumber));
+    }
+    if (receiptNumber != null) {
+      _data.fields.add(MapEntry('receiptNumber', receiptNumber));
+    }
+    if (paymentReceiveDate != null) {
+      _data.fields.add(MapEntry('paymentReceiveDate', paymentReceiveDate));
+    }
+    if (totalAmount != null) {
+      _data.fields.add(MapEntry('totalAmount', totalAmount));
+    }
+    if (paidAmount != null) {
+      _data.fields.add(MapEntry('paidAmount', paidAmount));
+    }
+    if (amountInWords != null) {
+      _data.fields.add(MapEntry('amountInWords', amountInWords));
+    }
+    if (currencyId != null) {
+      _data.fields.add(MapEntry('currency_id', currencyId.toString()));
+    }
+    if (receiverName != null) {
+      _data.fields.add(MapEntry('receiverName', receiverName));
+    }
+    if (description != null) {
+      _data.fields.add(MapEntry('Description', description));
+    }
+    if (files != null) {
+      _data.files.addAll(
+        files.map((i) => MapEntry('payment_receive_image', i)),
+      );
+    }
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/api/PaymentReceive',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> postCustomerPaymentUpdate({
+    String? token,
+    int? supplierId,
+    String? receiptNumber,
+    String? paymentType,
+    int? bankId,
+    String? accountNumber,
+    String? chequeNumber,
+    String? transferDate,
+    String? amount,
+    int? currencyId,
+    String? sumOf,
+    String? receiverName,
+    String? description,
+    int? id,
+  }) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{r'Authorization': token};
+    _headers.removeWhere((k, v) => v == null);
+    final _data = FormData();
+    if (supplierId != null) {
+      _data.fields.add(MapEntry('supplier_id', supplierId.toString()));
+    }
+    if (receiptNumber != null) {
+      _data.fields.add(MapEntry('receiptNumber', receiptNumber));
+    }
+    if (paymentType != null) {
+      _data.fields.add(MapEntry('paymentType', paymentType));
+    }
+    if (bankId != null) {
+      _data.fields.add(MapEntry('bank_id', bankId.toString()));
+    }
+    if (accountNumber != null) {
+      _data.fields.add(MapEntry('accountNumber', accountNumber));
+    }
+    if (chequeNumber != null) {
+      _data.fields.add(MapEntry('ChequeNumber', chequeNumber));
+    }
+    if (transferDate != null) {
+      _data.fields.add(MapEntry('TransferDate', transferDate));
+    }
+    if (amount != null) {
+      _data.fields.add(MapEntry('Amount', amount));
+    }
+    if (currencyId != null) {
+      _data.fields.add(MapEntry('currency_id', currencyId.toString()));
+    }
+    if (sumOf != null) {
+      _data.fields.add(MapEntry('sumOf', sumOf));
+    }
+    if (receiverName != null) {
+      _data.fields.add(MapEntry('receiverName', receiverName));
+    }
+    if (description != null) {
+      _data.fields.add(MapEntry('Description', description));
+    }
+    if (id != null) {
+      _data.fields.add(MapEntry('id', id.toString()));
+    }
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/api/CustomerPaymentUpdate',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> getCustomerPaymentBaseList({String? token}) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{r'Authorization': token};
+    _headers.removeWhere((k, v) => v == null);
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'GET', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/api/getCustomerPaymentBaseList',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> getCustomerPaymentDetail({int? id, String? token}) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{r'Authorization': token};
+    _headers.removeWhere((k, v) => v == null);
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'GET', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/api/PaymentReceiveDetail/${id}',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> getCustomerPaymentPush({int? id, String? token}) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{r'Authorization': token};
+    _headers.removeWhere((k, v) => v == null);
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'GET', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/api/CustomerPaymentPush/${id}',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> deleteCustomerPayment({
+    String? token,
+    int? id,
+    String? deleteDescription,
+  }) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{r'Authorization': token};
+    _headers.removeWhere((k, v) => v == null);
+    final _data = {'id': id, 'deleteDescription': deleteDescription};
+    _data.removeWhere((k, v) => v == null);
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/api/CustomerPaymentDelete',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> postCheckCustomerPaymentReferenceExist({
+    String? token,
+    String? referenceNumber,
+  }) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{r'Authorization': token};
+    _headers.removeWhere((k, v) => v == null);
+    final _data = {'referenceNumber': referenceNumber};
+    _data.removeWhere((k, v) => v == null);
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/api/CheckCustomerPaymentReferenceExist',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> postCustomerPaymentDisburse({
+    String? token,
+    int? supplierId,
+    int? currencyId,
+  }) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{r'Authorization': token};
+    _headers.removeWhere((k, v) => v == null);
+    final _data = {'supplier_id': supplierId, 'currency_id': currencyId};
+    _data.removeWhere((k, v) => v == null);
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/api/CustomerPaymentGetDisbursementRecords',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
   RequestOptions _setStreamType<T>(RequestOptions requestOptions) {
     if (T != dynamic &&
         !(requestOptions.responseType == ResponseType.bytes ||
