@@ -256,79 +256,118 @@ class _SupplierPaymentListScreenState extends State<SupplierPaymentListScreen>
   }
 
   Widget _buildContent(SupplierPaymentController provider) {
-    return RefreshIndicator(
-      onRefresh: _handleRefresh,
-      child: CustomScrollView(
-        controller: _scrollController,
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          if (provider.isLoading && provider.filteredSupplierPayments.isEmpty)
-            SliverFillRemaining(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const CircularProgressIndicator(),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Loading supplier payments...',
-                      style: TextStyle(color: Colors.grey, fontSize: 16),
-                    ),
-                  ],
+    return Column(
+      children: [
+        // Sticky info banner
+        Container(
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.blue[200]!),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'If a supplier has an unpushed payment entry, they will not be visible for creating a new payment entry until the previous one is pushed.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.blue[900],
+                    height: 1.4,
+                  ),
                 ),
               ),
-            )
-          else if (provider.filteredSupplierPayments.isEmpty)
-            SliverFillRemaining(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.payment_outlined,
-                      size: 64,
-                      color: Colors.grey[400],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No Supplier Payments',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[700],
+            ],
+          ),
+        ),
+        // Scrollable content
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: _handleRefresh,
+            child: CustomScrollView(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                if (provider.isLoading &&
+                    provider.filteredSupplierPayments.isEmpty)
+                  SliverFillRemaining(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const CircularProgressIndicator(),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Loading supplier payments...',
+                            style: TextStyle(color: Colors.grey, fontSize: 16),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _searchController.text.isNotEmpty
-                          ? 'No payments found matching your search'
-                          : 'No supplier payments available',
-                      style: TextStyle(color: Colors.grey[500], fontSize: 16),
+                  )
+                else if (provider.filteredSupplierPayments.isEmpty)
+                  SliverFillRemaining(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.payment_outlined,
+                            size: 64,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No Supplier Payments',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _searchController.text.isNotEmpty
+                                ? 'No payments found matching your search'
+                                : 'No supplier payments available',
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
-              ),
-            )
-          else
-            SliverPadding(
-              padding: const EdgeInsets.all(16),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    if (index == provider.filteredSupplierPayments.length) {
-                      return _buildLoadMoreIndicator(provider);
-                    }
-                    final payment = provider.filteredSupplierPayments[index];
-                    return _buildPaymentCard(payment, provider);
-                  },
-                  childCount:
-                      provider.filteredSupplierPayments.length +
-                      (provider.hasMore ? 1 : 0),
-                ),
-              ),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.all(16),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          if (index ==
+                              provider.filteredSupplierPayments.length) {
+                            return _buildLoadMoreIndicator(provider);
+                          }
+                          final payment =
+                              provider.filteredSupplierPayments[index];
+                          return _buildPaymentCard(payment, provider);
+                        },
+                        childCount:
+                            provider.filteredSupplierPayments.length +
+                            (provider.hasMore ? 1 : 0),
+                      ),
+                    ),
+                  ),
+              ],
             ),
-        ],
-      ),
+          ),
+        ),
+      ],
     );
   }
 
