@@ -1,7 +1,7 @@
 import 'package:sample/src/providers/supplier_payment_controller.dart';
 
 /// Mixin for form validation logic
-mixin ValidationMixin {
+mixin SupplierPaymentValidationMixin {
   // Validation flags - to be implemented by the class using this mixin
   bool get currencyTouched;
   bool get supplierTouched;

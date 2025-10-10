@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:sample/src/providers/supplier_payment_controller.dart';
 import 'package:sample/src/screens/supplierPayment/utils/dialog_helpers.dart';
 import 'package:sample/src/screens/supplierPayment/utils/payment_helpers.dart';
-import 'package:sample/src/screens/supplierPayment/utils/validation_mixin.dart';
+import 'package:sample/src/screens/supplierPayment/utils/supplier_payment_validation_mixin.dart';
 import 'package:sample/src/screens/supplierPayment/widgets/invoice_widget.dart';
 import 'package:sample/src/util/number_to_words_convertor.dart';
 import 'package:sample/src/util/snack.dart';
@@ -26,7 +26,7 @@ class SupplierPaymentDataScreen extends StatefulWidget {
 }
 
 class _SupplierPaymentDataScreenState extends State<SupplierPaymentDataScreen>
-    with ValidationMixin {
+    with SupplierPaymentValidationMixin {
   bool _selectAll = false;
   final Set<int> _selectedInvoices = {};
 

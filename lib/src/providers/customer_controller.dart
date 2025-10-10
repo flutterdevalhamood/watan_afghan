@@ -164,9 +164,9 @@ class CustomerController with ChangeNotifier {
         parentState != null &&
         parentCountry != null) {
       selectedRegionId = regionId;
-      selectedCityId = parentCity!['id'];
-      selectedStateId = parentState!['id'];
-      selectedCountryId = parentCountry!['id'];
+      selectedCityId = parentCity['id'];
+      selectedStateId = parentState['id'];
+      selectedCountryId = parentCountry['id'];
 
       states = List<Map<String, dynamic>>.from(parentCountry['states'] ?? []);
       cities = List<Map<String, dynamic>>.from(parentState['cities'] ?? []);

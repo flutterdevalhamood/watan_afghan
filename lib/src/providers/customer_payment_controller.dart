@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:sample/src/models/customer_payment_model.dart';
-import 'package:sample/src/models/supplier_advance_disburse_model.dart';
 import 'package:sample/src/util/snack.dart';
 
 import '../data/rest_client.dart';
+import '../models/customer_payment_disburse_model.dart';
 import '../repo/auth_repo.dart';
 
 class CustomerPaymentController with ChangeNotifier {
@@ -73,14 +73,14 @@ class CustomerPaymentController with ChangeNotifier {
   String? _receiptCheckMessage;
   String? get receiptCheckMessage => _receiptCheckMessage;
 
-  List<SupplierInvoiceForDistribution>? _supplierInvoicesForDistribution;
+  List<CustomerInvoiceForDistribution>? _customerInvoicesForDistribution;
   bool _isDistributionLoading = false;
   String? _distributionErrorMessage;
   bool _isDistributionSaving = false;
 
   // Distribution getters
-  // List<CustomerInvoiceForDistribution>? get supplierInvoicesForDistribution =>
-  // _supplierInvoicesForDistribution;
+  List<CustomerInvoiceForDistribution>? get customerInvoicesForDistribution =>
+      _customerInvoicesForDistribution;
   bool get isDistributionLoading => _isDistributionLoading;
   String? get distributionErrorMessage => _distributionErrorMessage;
   bool get isDistributionSaving => _isDistributionSaving;
@@ -102,7 +102,7 @@ class CustomerPaymentController with ChangeNotifier {
   }
 
   void clearInvoiceDistributionData() {
-    _supplierInvoicesForDistribution = null;
+    _customerInvoicesForDistribution = null;
     _isDistributionLoading = false;
     _distributionErrorMessage = null;
     notifyListeners();
@@ -116,7 +116,7 @@ class CustomerPaymentController with ChangeNotifier {
     selectedPaymentVoucherId = null;
 
     // Clear invoice distribution data
-    _supplierInvoicesForDistribution = null;
+    _customerInvoicesForDistribution = null;
     _isDistributionLoading = false;
     _distributionErrorMessage = null;
 
@@ -378,7 +378,7 @@ class CustomerPaymentController with ChangeNotifier {
 
       if (customerPaymentBaseData['IsSuccess'] == true) {
         customerName = List<Map<String, dynamic>>.from(
-          customerPaymentBaseData['Data']['suppliers'] ?? [],
+          customerPaymentBaseData['Data']['customers'] ?? [],
         );
 
         bankName = List<Map<String, dynamic>>.from(
@@ -461,7 +461,7 @@ class CustomerPaymentController with ChangeNotifier {
     }
   }
 
-  Future<bool> checkSupplierpaymentReferenceExist(String? receiptNumber) async {
+  Future<bool> checkCustomerPaymentReferenceExist(String? receiptNumber) async {
     if (receiptNumber == null || receiptNumber.isEmpty) {
       _receiptExists = null;
       _receiptCheckMessage = null;
@@ -482,7 +482,7 @@ class CustomerPaymentController with ChangeNotifier {
     }
 
     try {
-      final response = await restApi.postCheckSupplierPaymentReferenceExist(
+      final response = await restApi.postCheckCustomerPaymentReferenceExist(
         token: _getAuthHeader(),
         referenceNumber: receiptNumber,
       );
@@ -641,20 +641,20 @@ class CustomerPaymentController with ChangeNotifier {
     }
   }
 
-  Future<void> getSupplierPaymentInvoicesForDistribution(
-    int supplierId,
+  Future<void> getCustomerPaymentInvoicesForDistribution(
+    int customerId,
     int currencyId,
   ) async {
     if (!await _checkToken()) return;
 
     _isDistributionLoading = true;
     _distributionErrorMessage = null;
-    _supplierInvoicesForDistribution = null;
+    _customerInvoicesForDistribution = null;
     notifyListeners();
 
     try {
-      final response = await restApi.postSupplierPaymentDisburse(
-        supplierId: supplierId,
+      final response = await restApi.postCustomerPaymentDisburse(
+        customerId: customerId,
         currencyId: currencyId,
         token: _getAuthHeader(),
       );
@@ -662,12 +662,12 @@ class CustomerPaymentController with ChangeNotifier {
       if (response['IsSuccess'] == true) {
         final data = response['Data'] as List<dynamic>?;
         if (data != null) {
-          _supplierInvoicesForDistribution =
+          _customerInvoicesForDistribution =
               data
-                  .map((json) => SupplierInvoiceForDistribution.fromJson(json))
+                  .map((json) => CustomerInvoiceForDistribution.fromJson(json))
                   .toList();
         } else {
-          _supplierInvoicesForDistribution = [];
+          _customerInvoicesForDistribution = [];
         }
       } else {
         _distributionErrorMessage =

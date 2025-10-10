@@ -202,7 +202,7 @@ class _CustomerPaymentListScreenState extends State<CustomerPaymentListScreen>
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           NavigationService().pushNavigation(
-            Screenroutes.supplierPaymentDataScreen,
+            Screenroutes.customerPaymentDataScreen,
           );
           _searchController.clear();
           _controller.clearSearch();

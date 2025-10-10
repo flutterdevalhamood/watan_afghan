@@ -867,7 +867,7 @@ abstract class RestClient {
   @POST('/api/CustomerPaymentGetDisbursementRecords')
   Future<dynamic> postCustomerPaymentDisburse({
     @Header("Authorization") String? token,
-    @Field("supplier_id") int? supplierId,
+    @Field("customer_id") int? customerId,
     @Field("currency_id") int? currencyId,
   });
 }

@@ -476,17 +476,4 @@ class ReportsController with ChangeNotifier {
     }
     return 'An unexpected error occurred. Please try again.';
   }
-
-  bool _shouldRetry(DioException e) {
-    // Retry on network errors, timeouts, and DNS issues
-    return e.type == DioExceptionType.connectionTimeout ||
-        e.type == DioExceptionType.receiveTimeout ||
-        e.type == DioExceptionType.sendTimeout ||
-        e.type == DioExceptionType.connectionError ||
-        (e.message?.contains('Failed host lookup') ?? false) ||
-        (e.message?.contains('SocketException') ?? false) ||
-        (e.response?.statusCode == 502) ||
-        (e.response?.statusCode == 503) ||
-        (e.response?.statusCode == 504);
-  }
 }

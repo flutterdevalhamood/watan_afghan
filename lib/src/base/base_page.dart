@@ -144,11 +144,6 @@ class BasePage extends StatelessWidget {
         {
           return _appBarBackWithAction(context);
         }
-
-      default:
-        {
-          return _appBarWithTitleAndClose(context);
-        }
     }
   }
 
@@ -183,45 +178,6 @@ class BasePage extends StatelessWidget {
           image: AssetImage(ImageConstants.background(context)),
           fit: BoxFit.cover,
         ),
-      ),
-    );
-  }
-
-  _appBarWithTitleAndClose(BuildContext context) {
-    return AppBar(
-      bottom:
-          (preferredSizeWidget != null)
-              ? preferredSizeWidget
-              : PreferredSize(
-                preferredSize: const Size.fromHeight(0),
-                child: Container(),
-              ),
-      leadingWidth: 0,
-      leading: Container(),
-      centerTitle: false,
-      backgroundColor: Appcolors.appBarBgColor(context).withOpacity(0.4),
-      elevation: 0.5,
-      flexibleSpace: Container(
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            alignment: Alignment.topCenter,
-            image: AssetImage(ImageConstants.background(context)),
-            fit: BoxFit.cover,
-          ),
-        ),
-      ),
-      title: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(title ?? "", style: Theme.of(context).textTheme.displaySmall),
-          // IconButton(
-          //     onPressed: (tapOnClose != null)
-          //         ? tapOnClose!
-          //         : () {
-          //       NavigationService().popNavigation();
-          //     },
-          //     icon: SvgPicture.asset(ImageConstants.close(context),)),
-        ],
       ),
     );
   }

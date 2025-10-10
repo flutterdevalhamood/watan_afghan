@@ -3406,7 +3406,7 @@ class _RestClient implements RestClient {
   @override
   Future<dynamic> postCustomerPaymentDisburse({
     String? token,
-    int? supplierId,
+    int? customerId,
     int? currencyId,
   }) async {
     final _extra = <String, dynamic>{};
@@ -3414,7 +3414,7 @@ class _RestClient implements RestClient {
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{r'Authorization': token};
     _headers.removeWhere((k, v) => v == null);
-    final _data = {'supplier_id': supplierId, 'currency_id': currencyId};
+    final _data = {'customer_id': customerId, 'currency_id': currencyId};
     _data.removeWhere((k, v) => v == null);
     final _options = _setStreamType<dynamic>(
       Options(method: 'POST', headers: _headers, extra: _extra)
