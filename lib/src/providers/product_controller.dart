@@ -30,12 +30,10 @@ class ProductController with ChangeNotifier {
         totalPages,
         'Bearer $token',
       );
-      print('Full API Response: $product'); // Debug print
+
       if (product['IsSuccess'] == true) {
         final data = product['Data'] as List<dynamic>;
         final newProduct = data.map((v) => v as Map<String, dynamic>).toList();
-        print('New products loaded: ${newProduct.length}'); // Debug print
-        print('Product data: $newProduct'); // Debug print
 
         if (loadMore) {
           productData ??= [];
@@ -47,25 +45,16 @@ class ProductController with ChangeNotifier {
         // Fix pagination logic - check if we have more data to load
         hasMore = newProduct.isNotEmpty && newProduct.length >= totalPages;
 
-        print(
-          'Total products after loading: ${productData?.length}',
-        ); // Debug print
         _applySearch(); // Apply current search after loading data
       } else {
-        print('Api call failed ${product['Message']}');
-        // Initialize empty list if API fails
         if (!loadMore) {
           productData = [];
           _applySearch();
         }
       }
     } catch (e) {
-      print('Exception occurred: $e'); // Debug print
-      if (e is DioException) {
-        print('Dio Exception details: ${e.response?.data}');
-        print('Dio Exception message: ${e.message}');
-      }
-      // Initialize empty list on error if not loading more
+      if (e is DioException) {}
+
       if (!loadMore) {
         productData = [];
         _applySearch();
@@ -105,9 +94,7 @@ class ProductController with ChangeNotifier {
             return name.contains(searchQuery) || id.contains(searchQuery);
           }).toList();
     }
-    print(
-      'Filtered products count: ${filteredProducts?.length}',
-    ); // Debug print
+
     notifyListeners();
   }
 
@@ -131,9 +118,7 @@ class ProductController with ChangeNotifier {
       await getProductData();
       return true;
     } catch (e) {
-      if (e is DioException) {
-        print("Dio Exception $e");
-      }
+      if (e is DioException) {}
       return false;
     }
   }
@@ -156,9 +141,7 @@ class ProductController with ChangeNotifier {
       await getProductData();
       return true;
     } catch (e) {
-      if (e is DioException) {
-        print('Dio Exception $e');
-      }
+      if (e is DioException) {}
       return false;
     }
   }
@@ -175,10 +158,8 @@ class ProductController with ChangeNotifier {
       );
       await getProductData();
     } catch (e) {
-      if (e is DioException) {
-        print("Dio Exception $e");
-      }
-      rethrow; // Re-throw to handle in UI
+      if (e is DioException) {}
+      rethrow;
     }
   }
 }
