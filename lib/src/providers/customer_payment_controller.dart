@@ -85,7 +85,6 @@ class CustomerPaymentController with ChangeNotifier {
   String? get distributionErrorMessage => _distributionErrorMessage;
   bool get isDistributionSaving => _isDistributionSaving;
 
-  // In SupplierPaymentController
   bool? validationTriggered;
 
   String? selectedBankAccountNumber;
@@ -148,8 +147,8 @@ class CustomerPaymentController with ChangeNotifier {
       _filteredCustomerPayments = List.from(_allCustomerPayments);
     } else {
       _filteredCustomerPayments =
-          _allCustomerPayments.where((supplierPayments) {
-            return supplierPayments.referenceNumber.toLowerCase().contains(
+          _allCustomerPayments.where((customerPayments) {
+            return customerPayments.referenceNumber.toLowerCase().contains(
               _searchQuery,
             );
           }).toList();
@@ -164,8 +163,8 @@ class CustomerPaymentController with ChangeNotifier {
     notifyListeners();
   }
 
-  void setCustomerName(int? supplierId) {
-    selectedCustomerId = supplierId;
+  void setCustomerName(int? customerId) {
+    selectedCustomerId = customerId;
     notifyListeners();
   }
 
@@ -345,12 +344,12 @@ class CustomerPaymentController with ChangeNotifier {
       } else {
         _detailErrorMessage =
             customerPaymentDetailData['Message'] ??
-            'Failed to fetch supplier detail';
+            'Failed to fetch customer detail';
         debugPrint('API call failed: $_detailErrorMessage');
       }
     } catch (e) {
       _detailErrorMessage = _getErrorMessage(e);
-      debugPrint('Supplier detail error: $_detailErrorMessage');
+      debugPrint('Customer detail error: $_detailErrorMessage');
       debugPrint('Error details: $e');
     } finally {
       _isDetailLoading = false;
@@ -405,12 +404,12 @@ class CustomerPaymentController with ChangeNotifier {
   }
 
   Future<bool> postCustomerPaymentRegistration({
-    required int supplierId,
+    required int customerId,
     required String referenceNumber,
     required String paymentType,
     required int bankId,
     required String accountNumber,
-    required String transferDate,
+    required String paymentReceiveDate,
     required String totalAmount,
     required String paidAmount,
     required String amountInWords,
@@ -422,14 +421,14 @@ class CustomerPaymentController with ChangeNotifier {
     if (!await _checkToken()) return false;
 
     try {
-      final response = await restApi.postSupplierPayment(
+      final response = await restApi.postCustomerPayment(
         token: _getAuthHeader(),
-        supplierId: supplierId,
+        customerId: customerId,
         referenceNumber: referenceNumber,
         paymentType: paymentType,
         bankId: bankId,
         accountNumber: accountNumber,
-        transferDate: transferDate,
+        paymentReceiveDate: paymentReceiveDate,
         totalAmount: totalAmount,
         paidAmount: paidAmount,
         amountInWords: amountInWords,
@@ -441,7 +440,7 @@ class CustomerPaymentController with ChangeNotifier {
 
       if (response != null && response is Map<String, dynamic>) {
         if (response['IsSuccess'] == true) {
-          showSuccessSnack('Supplier payment registered successfully');
+          showSuccessSnack('Customer payment registered successfully');
           await getCustomerPayment();
           notifyListeners();
           return true;
@@ -455,7 +454,7 @@ class CustomerPaymentController with ChangeNotifier {
         return false;
       }
     } catch (e) {
-      errorMessage = 'Error saving supplier payment: ${e.toString()}';
+      errorMessage = 'Error saving customer payment: ${e.toString()}';
       showErrorSnack(errorMessage!);
       return false;
     }

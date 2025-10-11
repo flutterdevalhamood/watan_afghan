@@ -250,7 +250,7 @@ class _InvestorTransactionScreenState extends State<InvestorTransactionScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: () {
           NavigationService().pushNavigation(
             Screenroutes.investorTransactionDataScreen,
@@ -259,9 +259,8 @@ class _InvestorTransactionScreenState extends State<InvestorTransactionScreen> {
           _searchQuery = '';
           _controller.getInvestorTransaction();
         },
-        icon: const Icon(Icons.add),
-        label: const Text('Create New'),
         backgroundColor: Theme.of(context).colorScheme.primary,
+        child: Icon(Icons.add, color: Colors.white),
       ),
     );
   }

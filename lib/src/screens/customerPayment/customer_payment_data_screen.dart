@@ -6,7 +6,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:sample/src/providers/customer_payment_controller.dart';
-import 'package:sample/src/providers/supplier_payment_controller.dart';
 import 'package:sample/src/screens/customerPayment/customer_payment_validation_mixin.dart';
 import 'package:sample/src/screens/supplierPayment/utils/dialog_helpers.dart';
 import 'package:sample/src/screens/supplierPayment/utils/payment_helpers.dart';
@@ -49,7 +48,7 @@ class _CustomerPaymentDataScreenState extends State<CustomerPaymentDataScreen>
 
   // Validation flags
   bool _currencyTouched = false;
-  bool _supplierTouched = false;
+  bool _customerTouched = false;
   bool _paymentTypeTouched = false;
   bool _bankTouched = false;
   bool _accountNumberTouched = false;
@@ -65,7 +64,7 @@ class _CustomerPaymentDataScreenState extends State<CustomerPaymentDataScreen>
   bool get currencyTouched => _currencyTouched;
 
   @override
-  bool get customerTouched => _supplierTouched;
+  bool get customerTouched => _customerTouched;
 
   @override
   bool get paymentTypeTouched => _paymentTypeTouched;
@@ -242,7 +241,7 @@ class _CustomerPaymentDataScreenState extends State<CustomerPaymentDataScreen>
   }
 
   Widget _buildReceiptValidationWidget() {
-    return Consumer<SupplierPaymentController>(
+    return Consumer<CustomerPaymentController>(
       builder: (context, controller, child) {
         if (!_isPvNumberUserModified) {
           return const SizedBox.shrink();
@@ -404,7 +403,7 @@ class _CustomerPaymentDataScreenState extends State<CustomerPaymentDataScreen>
             value: controller.selectedCustomerId,
             items: controller.customerName ?? [],
             onChanged: (value) {
-              setState(() => _supplierTouched = true);
+              setState(() => _customerTouched = true);
               controller.setCustomerName(value);
               if (value != null && controller.selectedCurrencyId != null) {
                 controller.getCustomerPaymentInvoicesForDistribution(
@@ -456,7 +455,7 @@ class _CustomerPaymentDataScreenState extends State<CustomerPaymentDataScreen>
         controller.customerInvoicesForDistribution!.isEmpty) {
       return const InvoiceEmptyState(
         title: 'No invoices available',
-        subtitle: 'Select currency and supplier to view invoices',
+        subtitle: 'Select currency and customer to view invoices',
       );
     }
 
@@ -577,7 +576,7 @@ class _CustomerPaymentDataScreenState extends State<CustomerPaymentDataScreen>
           ],
           const SizedBox(height: 16),
           CustomDateField(
-            label: 'Payment Date',
+            label: 'Payment Receive Date',
             date: _selectedDate,
             onTap: () => _selectDate(context),
           ),
@@ -784,7 +783,7 @@ class _CustomerPaymentDataScreenState extends State<CustomerPaymentDataScreen>
 
     setState(() {
       _currencyTouched = true;
-      _supplierTouched = true;
+      _customerTouched = true;
       _paymentTypeTouched = true;
       _bankTouched = true;
       _accountNumberTouched = true;
@@ -829,7 +828,7 @@ class _CustomerPaymentDataScreenState extends State<CustomerPaymentDataScreen>
     if (controller.selectedCurrencyId == null) {
       showErrorSnack('Please select a currency');
     } else if (controller.selectedCustomerId == null) {
-      showErrorSnack('Please select a supplier');
+      showErrorSnack('Please select a customer');
     } else if (_selectedPaymentType == null) {
       showErrorSnack('Please select payment type');
     } else if (_totalPayingController.text.isEmpty) {
@@ -885,12 +884,12 @@ class _CustomerPaymentDataScreenState extends State<CustomerPaymentDataScreen>
       }
 
       final success = await controller.postCustomerPaymentRegistration(
-        supplierId: controller.selectedCustomerId!,
+        customerId: controller.selectedCustomerId!,
         referenceNumber: _pvNumberController.text,
         paymentType: _selectedPaymentType!,
         bankId: controller.selectedBankId ?? 0,
         accountNumber: _accountNumberController.text,
-        transferDate: DateFormat('yyyy-MM-dd').format(_selectedDate),
+        paymentReceiveDate: DateFormat('yyyy-MM-dd').format(_selectedDate),
         totalAmount: _totalPayableController.text,
         paidAmount: _totalPayingController.text,
         amountInWords: _amountInWordsController.text,

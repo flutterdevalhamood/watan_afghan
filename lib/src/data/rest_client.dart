@@ -805,7 +805,6 @@ abstract class RestClient {
     @Part(name: "payment_type") String? paymentType,
     @Part(name: "bank_id") int? bankId,
     @Part(name: "accountNumber") String? accountNumber,
-    @Part(name: "receiptNumber") String? receiptNumber,
     @Part(name: "paymentReceiveDate") String? paymentReceiveDate,
     @Part(name: "totalAmount") String? totalAmount,
     @Part(name: "paidAmount") String? paidAmount,

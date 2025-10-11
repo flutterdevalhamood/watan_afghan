@@ -77,10 +77,8 @@ class _CurrencyConversionScreenState
     }
   }
 
-  // Save currency conversion
   Future<void> _saveConversion() async {
     if (_formKey.currentState!.validate()) {
-      // Show loading indicator
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -436,11 +434,11 @@ class _CurrencyConversionScreenState
                       children: [
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: _saveConversion,
-                            icon: const Icon(Icons.save),
-                            label: const Text('Save'),
+                            onPressed: () => Navigator.of(context).pop(),
+                            icon: const Icon(Icons.cancel),
+                            label: const Text('Cancel'),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.teal,
+                              backgroundColor: Colors.red,
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 12),
                             ),
@@ -449,11 +447,11 @@ class _CurrencyConversionScreenState
                         const SizedBox(width: 16),
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: () => Navigator.of(context).pop(),
-                            icon: const Icon(Icons.cancel),
-                            label: const Text('Cancel'),
+                            onPressed: _saveConversion,
+                            icon: const Icon(Icons.save),
+                            label: const Text('Save'),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
+                              backgroundColor: Colors.teal,
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 12),
                             ),

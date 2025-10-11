@@ -1,11 +1,9 @@
-import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:sample/src/util/snack.dart';
 
 import '../data/rest_client.dart';
-import '../repo/auth_repo.dart';
+import 'base_controller.dart';
 
-class CurrencyConversionController with ChangeNotifier {
+class CurrencyConversionController extends BaseController {
   bool isLoading = false;
   int currentPage = 1;
   final int totalPages = 10;
@@ -18,35 +16,8 @@ class CurrencyConversionController with ChangeNotifier {
   List<Map<String, dynamic>>? currencyConversionData;
   String? reportUrl;
 
-  Future<bool> _checkToken() async {
-    final token = AuthRepo.token;
-
-    // Check if token is valid
-    if (token == null || token.isEmpty) {
-      debugPrint("No token available - auth failed");
-      // Handle missing token
-      AuthRepo.handleAuthError();
-      return false;
-    }
-
-    // Check if token is expired (if implementation supports it)
-    if (AuthRepo.isTokenExpired()) {
-      debugPrint("Token expired - auth failed");
-      // Handle expired token
-      AuthRepo.handleAuthError();
-      return false;
-    }
-
-    return true;
-  }
-
-  // Format the token with Bearer prefix
-  String _getAuthHeader() {
-    return 'Bearer ${AuthRepo.token}';
-  }
-
   Future<void> getCurrencyConversion({bool loadMore = false}) async {
-    if (!await _checkToken()) return;
+    if (!await checkToken()) return;
 
     isLoading = true;
     notifyListeners();
@@ -55,7 +26,7 @@ class CurrencyConversionController with ChangeNotifier {
       final currencyConversion = await restApi.getCurrencyConversion(
         currentPage,
         totalPages,
-        _getAuthHeader(),
+        getAuthHeader(),
       );
 
       if (currencyConversion is Map<String, dynamic>) {
@@ -66,25 +37,18 @@ class CurrencyConversionController with ChangeNotifier {
                 data.map((v) => v as Map<String, dynamic>).toList();
             if (loadMore) {
               currencyConversionData ??= [];
-              currencyConversionData!.addAll(
-                newCurrencyConversionData,
-              ); // Append to existing list
+              currencyConversionData!.addAll(newCurrencyConversionData);
             } else {
-              currencyConversionData =
-                  newCurrencyConversionData; // Replace list on initial load
+              currencyConversionData = newCurrencyConversionData;
             }
             hasMore = data.length == totalPages;
           } else {
             hasMore = false;
           }
-        } else {
-          debugPrint('API call failed: ${currencyConversion['Message']}');
         }
-      } else {
-        debugPrint('Unexpected API response format');
       }
     } catch (e) {
-      _handleApiError(e);
+      handleApiError(e, onError: (msg) => errorMessage = msg);
     } finally {
       isLoading = false;
       notifyListeners();
@@ -99,7 +63,7 @@ class CurrencyConversionController with ChangeNotifier {
   }
 
   Future<void> getCurrencyConversionDetail() async {
-    if (!await _checkToken()) return;
+    if (!await checkToken()) return;
 
     isLoading = true;
     errorMessage = null;
@@ -111,7 +75,7 @@ class CurrencyConversionController with ChangeNotifier {
       }
 
       final currencyConversionDetailData = await restApi
-          .getCurrencyConversionDetail(id: id, token: _getAuthHeader());
+          .getCurrencyConversionDetail(id: id, token: getAuthHeader());
 
       if (currencyConversionDetailData['IsSuccess'] == true) {
         final data =
@@ -123,7 +87,7 @@ class CurrencyConversionController with ChangeNotifier {
             'Failed to fetch conversion data';
       }
     } catch (e) {
-      _handleApiError(e);
+      handleApiError(e, onError: (msg) => errorMessage = msg);
     } finally {
       isLoading = false;
       notifyListeners();
@@ -131,14 +95,14 @@ class CurrencyConversionController with ChangeNotifier {
   }
 
   Future<void> getCurrencyBaseData() async {
-    if (!await _checkToken()) return;
+    if (!await checkToken()) return;
 
     isLoading = true;
     notifyListeners();
 
     try {
       final currencyBaseData = await restApi.getCurrencyConversionBaseList(
-        token: _getAuthHeader(),
+        token: getAuthHeader(),
       );
 
       if (currencyBaseData['IsSuccess'] == true) {
@@ -149,12 +113,11 @@ class CurrencyConversionController with ChangeNotifier {
           currencyBaseData['Data']['banks'],
         );
       } else {
-        debugPrint('API call failed: ${currencyBaseData['Message']}');
         errorMessage =
             currencyBaseData['Message'] ?? 'Failed to fetch base data';
       }
     } catch (e) {
-      _handleApiError(e);
+      handleApiError(e, onError: (msg) => errorMessage = msg);
     } finally {
       isLoading = false;
       notifyListeners();
@@ -175,11 +138,11 @@ class CurrencyConversionController with ChangeNotifier {
     String? transactionDate,
     String? description,
   }) async {
-    if (!await _checkToken()) return false;
+    if (!await checkToken()) return false;
 
     try {
       final response = await restApi.postCurrencyConversion(
-        token: _getAuthHeader(),
+        token: getAuthHeader(),
         fromPaymentType: fromPaymentType,
         fromCurrencyId: fromCurrencyId,
         fromAmount: fromAmount,
@@ -194,23 +157,17 @@ class CurrencyConversionController with ChangeNotifier {
         description: description,
       );
 
-      // Check response
       if (response is Map<String, dynamic> && response['IsSuccess'] == true) {
-        debugPrint("Transaction posted successfully!");
         getCurrencyConversion();
         return true;
       } else if (response is Map<String, dynamic>) {
-        debugPrint(
-          "Transaction failed: ${response['Message'] ?? 'Unknown error'}",
-        );
         errorMessage = response['Message'] ?? 'Failed to save transaction';
       } else {
-        debugPrint("Unknown response format");
         errorMessage = 'Unexpected response format';
       }
       return false;
     } catch (e) {
-      return _handleApiError(e);
+      return handleApiError(e, onError: (msg) => errorMessage = msg);
     }
   }
 
@@ -218,93 +175,38 @@ class CurrencyConversionController with ChangeNotifier {
     int? id,
     String? descriptionText,
   ) async {
-    if (!await _checkToken()) return;
+    if (!await checkToken()) return;
 
     try {
       final response = await restApi.deleteCurrencyConversion(
-        token: _getAuthHeader(),
+        token: getAuthHeader(),
         id: id,
         description: descriptionText,
       );
 
       if (response is Map<String, dynamic>) {
         if (response['IsSuccess'] == true) {
-          debugPrint(
-            "Delete successful, refreshing currency conversion list...",
-          );
           await getCurrencyConversion();
           showSuccessSnack('Currency conversion deleted successfully');
         } else {
-          // Handle different types of errors
-          String errorMsg = 'Failed to delete currency conversion';
+          final errorMsg = extractValidationError(
+            response['Data'] as Map<String, dynamic>?,
+            'Failed to delete currency conversion',
+          );
 
-          // Check if it's a validation error with specific field messages
-          if (response['Data'] != null &&
-              response['Data'] is Map<String, dynamic>) {
-            final data = response['Data'] as Map<String, dynamic>;
-
-            // Check for deleteDescription validation error
-            if (data['deleteDescription'] != null &&
-                data['deleteDescription'] is List) {
-              final deleteDescriptionErrors = data['deleteDescription'] as List;
-              if (deleteDescriptionErrors.isNotEmpty) {
-                errorMsg = deleteDescriptionErrors.first.toString();
-              }
-            } else if (data.isNotEmpty) {
-              // Handle other validation errors if needed
-              final firstError = data.values.first;
-              if (firstError is List && firstError.isNotEmpty) {
-                errorMsg = firstError.first.toString();
-              }
-            }
-          } else {
-            // Fallback to general message
-            errorMsg =
-                response['Message'] as String? ??
-                'Failed to delete currency conversion';
-          }
-
-          debugPrint("Delete failed: $errorMsg");
           showErrorSnack(errorMsg);
         }
       } else {
-        debugPrint("Delete completed, refreshing currency conversion list...");
         await getCurrencyConversion();
         showSuccessSnack('Currency conversion deleted successfully');
       }
     } catch (e) {
-      debugPrint("Delete API Exception: $e");
-      _handleApiError(e);
-      showErrorSnack('Failed to delete currency conversion: ${e.toString()}');
+      handleApiError(
+        e,
+        onError: (msg) {
+          showErrorSnack('Failed to delete currency conversion: $msg');
+        },
+      );
     }
-  }
-
-  // Standardized error handling
-  dynamic _handleApiError(dynamic e) {
-    if (e is DioException) {
-      debugPrint("Dio Exception: ${e.message}");
-
-      // Handle redirect to login (authentication failure)
-      if (e.response?.statusCode == 302 ||
-          (e.response?.data is String &&
-              (e.response?.data as String).contains('login'))) {
-        debugPrint("Authentication failed - redirected to login page");
-        errorMessage = 'Authentication failed. Please log in again.';
-        AuthRepo.handleAuthError();
-        return false;
-      }
-
-      // Log detailed response information
-      if (e.response != null) {
-        debugPrint('Response status: ${e.response?.statusCode}');
-        debugPrint('Response data: ${e.response?.data}');
-      }
-
-      errorMessage = 'Network error: ${e.message}';
-    } else {
-      debugPrint("Error: $e");
-      errorMessage = 'Error: ${e.toString()}';
-    }
-    return false;
   }
 }

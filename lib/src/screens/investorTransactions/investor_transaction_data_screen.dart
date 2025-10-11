@@ -542,6 +542,16 @@ class _InvestorTransactionDataScreenState
                   Row(
                     children: [
                       Expanded(
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          onPressed: _isLoading ? null : _resetForm,
+                          child: const Text('Cancel'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
                         child: ElevatedButton.icon(
                           icon: const Icon(Icons.save),
                           label: Text(_isLoading ? 'Saving...' : 'Save'),
@@ -551,16 +561,6 @@ class _InvestorTransactionDataScreenState
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
                           onPressed: _isLoading ? null : _submitForm,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                          onPressed: _isLoading ? null : _resetForm,
-                          child: const Text('Cancel'),
                         ),
                       ),
                     ],

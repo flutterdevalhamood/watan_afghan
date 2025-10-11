@@ -3127,7 +3127,6 @@ class _RestClient implements RestClient {
     String? paymentType,
     int? bankId,
     String? accountNumber,
-    String? receiptNumber,
     String? paymentReceiveDate,
     String? totalAmount,
     String? paidAmount,
@@ -3157,9 +3156,6 @@ class _RestClient implements RestClient {
     }
     if (accountNumber != null) {
       _data.fields.add(MapEntry('accountNumber', accountNumber));
-    }
-    if (receiptNumber != null) {
-      _data.fields.add(MapEntry('receiptNumber', receiptNumber));
     }
     if (paymentReceiveDate != null) {
       _data.fields.add(MapEntry('paymentReceiveDate', paymentReceiveDate));

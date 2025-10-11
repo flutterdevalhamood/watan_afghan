@@ -215,18 +215,15 @@ class _CustomerAdvanceBottomSheetState
 
                 const SizedBox(height: 16),
 
-                // Advance Details Section
                 if (detail.details.isNotEmpty)
                   _buildAdvanceDetailsSection(detail.details),
 
-                // Add some bottom padding for the disperse button
                 const SizedBox(height: 80),
               ],
             ),
           ),
         ),
 
-        // Disperse Button - Fixed at bottom
         if (customerAdvance.isPushedBool)
           Container(
             width: double.infinity,
@@ -245,7 +242,7 @@ class _CustomerAdvanceBottomSheetState
               onPressed: () => _handleDisperse(customerAdvance),
               icon: const Icon(Icons.call_made_outlined, size: 20),
               label: const Text(
-                'Disperse Advance',
+                'Disburse Advance',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
               style: ElevatedButton.styleFrom(
@@ -276,7 +273,7 @@ class _CustomerAdvanceBottomSheetState
             children: [
               Icon(Icons.call_made_outlined, color: Colors.blue),
               SizedBox(width: 8),
-              Text('Disperse Advance'),
+              Text('Disburse Advance'),
             ],
           ),
           content: Column(
@@ -284,7 +281,7 @@ class _CustomerAdvanceBottomSheetState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Are you sure you want to disperse this advance?',
+                'Are you sure you want to disburse this advance?',
                 style: TextStyle(color: Colors.grey[700]),
               ),
               const SizedBox(height: 16),
@@ -332,7 +329,7 @@ class _CustomerAdvanceBottomSheetState
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: const Text('Disperse'),
+              child: const Text('Disburse'),
             ),
           ],
         );
