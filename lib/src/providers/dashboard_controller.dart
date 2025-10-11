@@ -1,10 +1,8 @@
-import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
+import 'package:sample/src/providers/base_controller.dart';
 
 import '../data/rest_client.dart';
-import '../repo/auth_repo.dart';
 
-class DashboardController with ChangeNotifier {
+class DashboardController extends BaseController {
   bool isLoading = false;
   String? errorMessage;
   int? id;
@@ -13,42 +11,15 @@ class DashboardController with ChangeNotifier {
   Map<String, dynamic>? investorPayable;
   List<Map<String, dynamic>>? allBankAccounts;
 
-  Future<bool> _checkToken() async {
-    final token = AuthRepo.token;
-
-    // Check if token is valid
-    if (token == null || token.isEmpty) {
-      debugPrint("No token available - auth failed");
-      // Handle missing token
-      AuthRepo.handleAuthError();
-      return false;
-    }
-
-    // Check if token is expired (if implementation supports it)
-    if (AuthRepo.isTokenExpired()) {
-      debugPrint("Token expired - auth failed");
-      // Handle expired token
-      AuthRepo.handleAuthError();
-      return false;
-    }
-
-    return true;
-  }
-
-  // Format the token with Bearer prefix
-  String _getAuthHeader() {
-    return 'Bearer ${AuthRepo.token}';
-  }
-
   Future<void> getInvestorBaseData() async {
-    if (!await _checkToken()) return;
+    if (!await checkToken()) return;
 
     isLoading = true;
     notifyListeners();
 
     try {
       final adminDashboardData = await restApi.getAdminDashboardData(
-        token: _getAuthHeader(),
+        token: getAuthHeader(),
       );
 
       if (adminDashboardData['IsSuccess'] == true) {
@@ -64,47 +35,15 @@ class DashboardController with ChangeNotifier {
         allBankAccounts = List<Map<String, dynamic>>.from(
           adminDashboardData['Data']['all_bank_accounts'],
         );
-
-        debugPrint('Base data fetched successfully');
       } else {
-        debugPrint('API call failed: ${adminDashboardData['Message']}');
         errorMessage =
             adminDashboardData['Message'] ?? 'Failed to fetch base data';
       }
     } catch (e) {
-      _handleApiError(e);
+      handleApiError(e);
     } finally {
       isLoading = false;
       notifyListeners();
     }
-  }
-
-  // Standardized error handling
-  dynamic _handleApiError(dynamic e) {
-    if (e is DioException) {
-      debugPrint("Dio Exception: ${e.message}");
-
-      // Handle redirect to login (authentication failure)
-      if (e.response?.statusCode == 302 ||
-          (e.response?.data is String &&
-              (e.response?.data as String).contains('login'))) {
-        debugPrint("Authentication failed - redirected to login page");
-        errorMessage = 'Authentication failed. Please log in again.';
-        AuthRepo.handleAuthError();
-        return false;
-      }
-
-      // Log detailed response information
-      if (e.response != null) {
-        debugPrint('Response status: ${e.response?.statusCode}');
-        debugPrint('Response data: ${e.response?.data}');
-      }
-
-      errorMessage = 'Network error: ${e.message}';
-    } else {
-      debugPrint("Error: $e");
-      errorMessage = 'Error: ${e.toString()}';
-    }
-    return false;
   }
 }
