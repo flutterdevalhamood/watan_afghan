@@ -106,20 +106,4 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       ),
     );
   }
-
-  // sendotpProviderListener() {
-  //   ref.listen<ResetPasswordProvider>(resetPasswordProvider, (previous, next) {
-  //     if (next.status == SendStatus.success) {
-  //       Navigator.pushNamed(context, AppRoutes.otp);
-  //     }
-  //     if (next.status == SendStatus.failed) {
-  //       customSnackBar(
-  //         context,
-  //         message: next.message,
-  //         type: SnackBarType.error,
-  //       );
-  //     }
-  //   });
-  //   return const SizedBox.shrink();
-  // }
 }

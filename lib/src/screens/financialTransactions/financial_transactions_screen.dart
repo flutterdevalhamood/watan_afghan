@@ -116,22 +116,8 @@ class FinancialTransactionsScreen extends StatelessWidget {
                         );
                       },
                     ),
-                    // _buildTransactionCard(
-                    //   context,
-                    //   'Bank to Bank',
-                    //   Icons.compare_arrows,
-                    //   Colors.teal,
-                    //   () {},
-                    // ),
                   ],
                 ),
-                // SizedBox(height: 24),
-                // Text(
-                //   'Recent Transactions',
-                //   style: Theme.of(context).textTheme.titleLarge,
-                // ),
-                // SizedBox(height: 16),
-                // _buildRecentTransactionsList(),
               ],
             ),
           ),
@@ -172,58 +158,6 @@ class FinancialTransactionsScreen extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildRecentTransactionsList() {
-    final dummyTransactions = [
-      {
-        'type': 'Customer Advance',
-        'name': 'Acme Corp',
-        'amount': '₹50,000',
-        'date': '10 May 2025',
-      },
-      {
-        'type': 'Supplier Payment',
-        'name': 'Global Supplies Ltd',
-        'amount': '₹25,350',
-        'date': '8 May 2025',
-      },
-      {
-        'type': 'Bank to Bank',
-        'name': 'HDFC to SBI',
-        'amount': '₹100,000',
-        'date': '5 May 2025',
-      },
-    ];
-
-    return ListView.separated(
-      shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
-      itemCount: dummyTransactions.length,
-      separatorBuilder: (context, index) => Divider(),
-      itemBuilder: (context, index) {
-        final transaction = dummyTransactions[index];
-        return ListTile(
-          contentPadding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-          leading: CircleAvatar(
-            backgroundColor: _getColorForTransactionType(transaction['type']!),
-            child: Icon(
-              _getIconForTransactionType(transaction['type']!),
-              color: Colors.white,
-            ),
-          ),
-          title: Text(
-            transaction['name']!,
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          subtitle: Text(transaction['date']!),
-          trailing: Text(
-            transaction['amount']!,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-        );
-      },
     );
   }
 

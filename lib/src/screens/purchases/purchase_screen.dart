@@ -1291,39 +1291,6 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
     }
   }
 
-  // Modified add new product function with validation
-  // void _addNewProduct() {
-  //   if (_areAllPreviousProductsFilled()) {
-  //     setState(() {
-  //       salesItems.add(SalesItem());
-  //       _initializeControllers();
-  //       // _updateTotals();
-  //     });
-  //   } else {
-  //     // Show error message
-  //     final incompleteIndex = _getFirstIncompleteProductIndex();
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(
-  //         content: Text(
-  //           'Please complete all fields in Product ${incompleteIndex + 1} before adding a new product.',
-  //         ),
-  //         backgroundColor: Colors.red,
-  //       ),
-  //     );
-  //   }
-  // }
-
-  // // Remove product function
-  // void _removeProduct(int index) {
-  //   if (salesItems.length > 1) {
-  //     setState(() {
-  //       salesItems.removeAt(index);
-  //       _initializeControllers();
-  //       _updateTotals();
-  //     });
-  //   }
-  // }
-
   void _removeProduct(int index) {
     if (salesItems.length > 1) {
       setState(() {

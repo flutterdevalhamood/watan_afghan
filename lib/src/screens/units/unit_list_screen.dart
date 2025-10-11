@@ -240,12 +240,6 @@ class _UnitListScreenState extends State<UnitListScreen> {
               _searchController.clear();
               _searchQuery = '';
               _unitListController.refresh();
-              // Navigator.push(
-              //   context,
-              //   MaterialPageRoute(
-              //     builder: (context) => UnitRegistrationScreen(),
-              //   ),
-              // );
             },
             child: Icon(Icons.add),
           ),

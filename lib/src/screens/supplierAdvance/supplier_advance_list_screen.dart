@@ -285,55 +285,6 @@ class _SupplierAdvanceListScreenState extends State<SupplierAdvanceListScreen>
                 ),
               ),
             )
-          // else if (provider.errorMessage != null)
-          //   SliverFillRemaining(
-          //     child: Center(
-          //       child: Column(
-          //         mainAxisAlignment: MainAxisAlignment.center,
-          //         children: [
-          //           Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
-          //           const SizedBox(height: 16),
-          //           Text(
-          //             'Error',
-          //             style: TextStyle(
-          //               fontSize: 20,
-          //               fontWeight: FontWeight.bold,
-          //               color: Colors.red[700],
-          //             ),
-          //           ),
-          //           const SizedBox(height: 8),
-          //           Padding(
-          //             padding: const EdgeInsets.symmetric(horizontal: 32),
-          //             child: Text(
-          //               provider.errorMessage!,
-          //               textAlign: TextAlign.center,
-          //               style: const TextStyle(
-          //                 color: Colors.grey,
-          //                 fontSize: 16,
-          //               ),
-          //             ),
-          //           ),
-          //           const SizedBox(height: 24),
-          //           ElevatedButton.icon(
-          //             onPressed: _loadInitialData,
-          //             icon: const Icon(Icons.refresh),
-          //             label: const Text('Retry'),
-          //             style: ElevatedButton.styleFrom(
-          //               backgroundColor: Colors.blue[700],
-          //               foregroundColor: Colors.white,
-          //               padding: const EdgeInsets.symmetric(
-          //                 horizontal: 24,
-          //                 vertical: 12,
-          //               ),
-          //               shape: RoundedRectangleBorder(
-          //                 borderRadius: BorderRadius.circular(8),
-          //               ),
-          //             ),
-          //           ),
-          //         ],
-          //       ),
-          //     ),
-          //   )
           else if (provider.filteredSupplierAdvances.isEmpty)
             SliverFillRemaining(
               child: Center(
