@@ -41,17 +41,17 @@ String convertAmountToWords(double amount) {
     String result = '';
 
     if (num >= 100) {
-      result += ones[num ~/ 100] + ' Hundred ';
+      result += '${ones[num ~/ 100]} Hundred ';
       num %= 100;
     }
 
     if (num >= 20) {
-      result += tens[num ~/ 10] + ' ';
+      result += '${tens[num ~/ 10]} ';
       num %= 10;
     }
 
     if (num > 0) {
-      result += ones[num] + ' ';
+      result += '${ones[num]} ';
     }
 
     return result;
@@ -63,17 +63,17 @@ String convertAmountToWords(double amount) {
   String result = '';
 
   if (integerPart >= 10000000) {
-    result += convertHundreds(integerPart ~/ 10000000) + 'Crore ';
+    result += '${convertHundreds(integerPart ~/ 10000000)}Crore ';
     integerPart %= 10000000;
   }
 
   if (integerPart >= 100000) {
-    result += convertHundreds(integerPart ~/ 100000) + 'Lakh ';
+    result += '${convertHundreds(integerPart ~/ 100000)}Lakh ';
     integerPart %= 100000;
   }
 
   if (integerPart >= 1000) {
-    result += convertHundreds(integerPart ~/ 1000) + 'Thousand ';
+    result += '${convertHundreds(integerPart ~/ 1000)}Thousand ';
     integerPart %= 1000;
   }
 
@@ -88,5 +88,5 @@ String convertAmountToWords(double amount) {
     result += ' and ${convertHundreds(decimalPart).trim()} Paisa';
   }
 
-  return result + ' Only';
+  return '$result Only';
 }

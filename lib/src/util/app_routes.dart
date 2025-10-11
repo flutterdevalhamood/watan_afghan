@@ -180,17 +180,6 @@ class Screenroutes {
           },
         );
 
-      // case Screenroutes.bankDetailsScreen:
-      //   final data = settings.arguments as Map<String, dynamic>?;
-      //   return MaterialPageRoute(
-      //     settings: const RouteSettings(name: Screenroutes.bankDetailsScreen),
-      //     builder: (BuildContext context) {
-      //       return BankDetailsScreen(
-      //
-      //       );
-      //     },
-      //   );
-
       case Screenroutes.expenseScreen:
         return MaterialPageRoute(
           settings: const RouteSettings(name: Screenroutes.expenseScreen),
@@ -603,16 +592,6 @@ class Screenroutes {
             return CustomerAdvanceDataScreen();
           },
         );
-
-      // case Screenroutes.customerAdvanceUpdateScreen:
-      //   return MaterialPageRoute(
-      //     settings: const RouteSettings(
-      //       name: Screenroutes.customerAdvanceUpdateScreen,
-      //     ),
-      //     builder: (BuildContext context) {
-      //       return customerAdvanceUpdateScreen();
-      //     },
-      //   );
 
       case Screenroutes.supplierPaymentListScreen:
         return MaterialPageRoute(

@@ -6,8 +6,6 @@ import 'package:sample/src/util/app_sizes.dart';
 class LightTheme {
   LightTheme._();
 
-  //   static Color get background => const Color(0xFFffffff);
-
   static Color get primaryBlueColor => const Color(0xFF0479F0);
 
   static Color get borderLightGreyColor => const Color(0xffabb0ba);

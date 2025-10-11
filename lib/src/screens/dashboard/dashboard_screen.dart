@@ -124,34 +124,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   ),
 
                                   const SizedBox(height: 24),
-
-                                  // // Sales Monitor Section
-                                  // _buildExpandableSection(
-                                  //   title: "Sales Monitor (Last Month)",
-                                  //   isExpanded: _isSalesExpanded,
-                                  //   onTap: () {
-                                  //     setState(() {
-                                  //       _isSalesExpanded = !_isSalesExpanded;
-                                  //     });
-                                  //   },
-                                  //   child: _buildExpenseMonitorContent(),
-                                  // ),
-
-                                  // const SizedBox(height: 16),
-                                  //
-                                  // // Purchase Monitor Section
-                                  // _buildExpandableSection(
-                                  //   title: "Purchase Monitor (Last Month)",
-                                  //   isExpanded: _isPurchaseExpanded,
-                                  //   onTap: () {
-                                  //     setState(() {
-                                  //       _isPurchaseExpanded =
-                                  //           !_isPurchaseExpanded;
-                                  //     });
-                                  //   },
-                                  //   child: _buildExpenseMonitorContent(),
-                                  // ),
-                                  // const SizedBox(height: 24),
                                 ],
                               ),
                             ),
@@ -169,13 +141,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Container(
       width: double.infinity,
       color: Theme.of(context).colorScheme.primary,
-      // decoration: BoxDecoration(
-      //   gradient: LinearGradient(
-      //     begin: Alignment.topLeft,
-      //     end: Alignment.bottomRight,
-      //     colors: [primaryColor, secondaryColor],
-      //   ),
-      // ),
+
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
         child: Column(
@@ -530,25 +496,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 fontSize: 16,
                                 color: Colors.black,
                               ),
-                              // getCurrencyName(
-                              //   currency,
-                              // ), // Full name as subtitle
-                              // maxLines: 1,
-                              // overflow: TextOverflow.ellipsis,
                             ),
-                            // trailing: SizedBox(
-                            //   width: 120,
-                            //   child: Text(
-                            //     formatCurrency(amountValue, currency),
-                            //     style: const TextStyle(
-                            //       fontWeight: FontWeight.bold,
-                            //       fontSize: 16,
-                            //       color: Colors.black,
-                            //     ),
-                            //     textAlign: TextAlign.end,
-                            //     maxLines: 2,
-                            //   ),
-                            // ),
                           );
                         },
                       )
@@ -644,67 +592,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       },
     );
   }
-  // void _showBankAccountsDialog(DashboardController controller) {
-  //   showDialog(
-  //     context: context,
-  //     builder:
-  //         (context) => AlertDialog(
-  //           title: const Text('Bank Accounts'),
-  //           content: SizedBox(
-  //             width: double.maxFinite,
-  //             child:
-  //                 controller.amountInBank != null &&
-  //                         controller.amountInBank!.isNotEmpty
-  //                     ? ListView.builder(
-  //                       shrinkWrap: true,
-  //                       itemCount: controller.amountInBank!.length,
-  //                       itemBuilder: (context, index) {
-  //                         final entry =
-  //                             controller.amountInBank!.entries.toList()[index];
-  //                         final currency = entry.key;
-  //                         final amount = entry.value;
-  //                         final double amountValue =
-  //                             (amount is int) ? amount.toDouble() : amount;
-  //
-  //                         return ListTile(
-  //                           leading: CircleAvatar(
-  //                             backgroundColor: Colors.blue.withOpacity(0.1),
-  //                             child: Text(
-  //                               getCurrencyFlag(currency),
-  //                               style: const TextStyle(fontSize: 16),
-  //                             ),
-  //                           ),
-  //                           title: Text(getCurrencyName(currency)),
-  //                           subtitle: Text(currency),
-  //                           trailing: Text(
-  //                             formatCurrency(amountValue, currency),
-  //                             style: const TextStyle(
-  //                               fontWeight: FontWeight.bold,
-  //                               fontSize: 14,
-  //                             ),
-  //                           ),
-  //                           onTap: () {
-  //                             Navigator.pop(context);
-  //                             _navigateToBankDetails(
-  //                               currency,
-  //                               amountValue,
-  //                               controller,
-  //                             );
-  //                           },
-  //                         );
-  //                       },
-  //                     )
-  //                     : const Text('No bank account data available'),
-  //           ),
-  //           actions: [
-  //             TextButton(
-  //               onPressed: () => Navigator.pop(context),
-  //               child: const Text('Close'),
-  //             ),
-  //           ],
-  //         ),
-  //   );
-  // }
 
   Widget _buildInvestorPayableSection(DashboardController controller) {
     final Map<String, dynamic>? data = controller.investorPayable;
@@ -849,101 +736,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       showErrorSnack('Bank account data not available');
     }
   }
-
-  // Widget _buildExpandableSection({
-  //   required String title,
-  //   required bool isExpanded,
-  //   required VoidCallback onTap,
-  //   required Widget child,
-  // }) {
-  //   return Card(
-  //     elevation: 3,
-  //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-  //     child: Column(
-  //       children: [
-  //         InkWell(
-  //           onTap: onTap,
-  //           borderRadius: const BorderRadius.only(
-  //             topLeft: Radius.circular(16),
-  //             topRight: Radius.circular(16),
-  //           ),
-  //           child: Padding(
-  //             padding: const EdgeInsets.all(20.0),
-  //             child: Row(
-  //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //               children: [
-  //                 Text(
-  //                   title,
-  //                   style: TextStyle(
-  //                     fontSize: 18,
-  //                     fontWeight: FontWeight.bold,
-  //                     color: Colors.grey.shade800,
-  //                   ),
-  //                 ),
-  //                 Icon(
-  //                   isExpanded
-  //                       ? Icons.keyboard_arrow_up
-  //                       : Icons.keyboard_arrow_down,
-  //                   color: primaryColor,
-  //                 ),
-  //               ],
-  //             ),
-  //           ),
-  //         ),
-  //         if (isExpanded)
-  //           Container(
-  //             decoration: BoxDecoration(
-  //               border: Border(
-  //                 top: BorderSide(color: Colors.grey.shade200, width: 1),
-  //               ),
-  //             ),
-  //             child: child,
-  //           ),
-  //       ],
-  //     ),
-  //   );
-  // }
-  //
-  // Widget _buildExpenseMonitorContent() {
-  //   double sum = dailyExpenses.fold(0, (prev, curr) => prev + curr);
-  //   double average = sum / dailyExpenses.length;
-  //
-  //   return Padding(
-  //     padding: const EdgeInsets.all(20.0),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         Text(
-  //           'Current Month (${DateFormat('MMMM yyyy').format(currentMonth)})',
-  //           style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-  //         ),
-  //         const SizedBox(height: 16),
-  //
-  //         // SUM and AVE row
-  //         Row(
-  //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //           children: [
-  //             _buildSummaryItem(
-  //               label: 'SUM',
-  //               value: sum,
-  //               color: Colors.blue.shade700,
-  //             ),
-  //             _buildSummaryItem(
-  //               label: 'AVE',
-  //               value: average,
-  //               color: Colors.green.shade700,
-  //             ),
-  //           ],
-  //         ),
-  //
-  //         const SizedBox(height: 16),
-  //
-  //         // Daily expense grid
-  //         _buildDailyExpenseGrid(),
-  //       ],
-  //     ),
-  //   );
-  // }
 
   Widget _buildSummaryItem({
     required String label,
