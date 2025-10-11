@@ -78,9 +78,7 @@ class AuthController with ChangeNotifier {
       removeCircle();
       return true;
     } catch (e) {
-      if (e is DioException) {
-        print("Dio Exception $e");
-      }
+      if (e is DioException) {}
       return false;
     }
   }
@@ -110,36 +108,10 @@ class AuthController with ChangeNotifier {
       return false;
     } catch (e) {
       removeCircle();
-      if (e is DioException) {
-        print("Dio Exception $e");
-      }
+      if (e is DioException) {}
       return false;
     }
   }
-
-  // Future<bool> changePassword(
-  //   String? currentPassword,
-  //   String? newPassword,
-  // ) async {
-  //   showCircle();
-  //
-  //   try {
-  //     if (token == null) {
-  //       throw Exception("No Token Found");
-  //     }
-  //     await restApi.changePassword(
-  //       token: 'Bearer $token',
-  //       currentPassword: currentPassword,
-  //       password: newPassword,
-  //     );
-  //     return true;
-  //   } catch (e) {
-  //     if (e is DioException) {
-  //       print("Dio Exception $e");
-  //     }
-  //     return false;
-  //   }
-  // }
 
   Future<bool> updateUserProfile({
     required String token,
@@ -161,8 +133,7 @@ class AuthController with ChangeNotifier {
       final formData = {
         "name": name,
         "contactNumber": contactNumber,
-        if (multipartFile != null)
-          "imageUrl": multipartFile, // backend expects "imageUrl"
+        if (multipartFile != null) "imageUrl": multipartFile,
       };
 
       final response = await restApi.userUpdate("Bearer $token", formData);
@@ -190,9 +161,7 @@ class AuthController with ChangeNotifier {
       return true;
     } catch (e) {
       removeCircle();
-      if (e is DioException) {
-        print("Dio Exception $e");
-      }
+      if (e is DioException) {}
       return false;
     }
   }

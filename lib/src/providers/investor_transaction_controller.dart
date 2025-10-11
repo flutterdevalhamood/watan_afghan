@@ -1,11 +1,9 @@
-import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
+import 'package:sample/src/providers/base_controller.dart';
 import 'package:sample/src/util/snack.dart';
 
 import '../data/rest_client.dart';
-import '../repo/auth_repo.dart';
 
-class InvestorTransactionController with ChangeNotifier {
+class InvestorTransactionController extends BaseController {
   bool isLoading = false;
   int currentPage = 1;
   final int totalPages = 10;
@@ -19,35 +17,8 @@ class InvestorTransactionController with ChangeNotifier {
   List<Map<String, dynamic>>? investorTransactionData;
   String? reportUrl;
 
-  Future<bool> _checkToken() async {
-    final token = AuthRepo.token;
-
-    // Check if token is valid
-    if (token == null || token.isEmpty) {
-      debugPrint("No token available - auth failed");
-      // Handle missing token
-      AuthRepo.handleAuthError();
-      return false;
-    }
-
-    // Check if token is expired (if implementation supports it)
-    if (AuthRepo.isTokenExpired()) {
-      debugPrint("Token expired - auth failed");
-      // Handle expired token
-      AuthRepo.handleAuthError();
-      return false;
-    }
-
-    return true;
-  }
-
-  // Format the token with Bearer prefix
-  String _getAuthHeader() {
-    return 'Bearer ${AuthRepo.token}';
-  }
-
   Future<void> getInvestorTransaction({bool loadMore = false}) async {
-    if (!await _checkToken()) return;
+    if (!await checkToken()) return;
 
     isLoading = true;
     notifyListeners();
@@ -56,7 +27,7 @@ class InvestorTransactionController with ChangeNotifier {
       final investorTransaction = await restApi.getInvestorTransaction(
         currentPage,
         totalPages,
-        _getAuthHeader(),
+        getAuthHeader(),
       );
 
       if (investorTransaction is Map<String, dynamic>) {
@@ -78,14 +49,10 @@ class InvestorTransactionController with ChangeNotifier {
           } else {
             hasMore = false;
           }
-        } else {
-          debugPrint('API call failed: ${investorTransaction['Message']}');
-        }
-      } else {
-        debugPrint('Unexpected API response format');
-      }
+        } else {}
+      } else {}
     } catch (e) {
-      _handleApiError(e);
+      handleApiError(e);
     } finally {
       isLoading = false;
       notifyListeners();
@@ -100,7 +67,7 @@ class InvestorTransactionController with ChangeNotifier {
   }
 
   Future<void> getInvestorTransactionDetail() async {
-    if (!await _checkToken()) return;
+    if (!await checkToken()) return;
 
     isLoading = true;
     errorMessage = null;
@@ -113,21 +80,19 @@ class InvestorTransactionController with ChangeNotifier {
 
       final transactionDetailData = await restApi.getInvestorTransactionDetail(
         id: id,
-        token: _getAuthHeader(),
+        token: getAuthHeader(),
       );
 
       if (transactionDetailData['IsSuccess'] == true) {
         final data = transactionDetailData['Data'] as Map<String, dynamic>;
         transactionData = [data];
-        debugPrint('Assigned units fetched: ${transactionData?.length}');
       } else {
         errorMessage =
             transactionDetailData['Message'] ??
             'Failed to fetch assigned units';
-        debugPrint('API call failed: $errorMessage');
       }
     } catch (e) {
-      _handleApiError(e);
+      handleApiError(e);
     } finally {
       isLoading = false;
       notifyListeners();
@@ -135,14 +100,14 @@ class InvestorTransactionController with ChangeNotifier {
   }
 
   Future<void> getInvestorBaseData() async {
-    if (!await _checkToken()) return;
+    if (!await checkToken()) return;
 
     isLoading = true;
     notifyListeners();
 
     try {
       final investorBaseData = await restApi.getInvestorTransactionBaseList(
-        token: _getAuthHeader(),
+        token: getAuthHeader(),
       );
 
       if (investorBaseData['IsSuccess'] == true) {
@@ -155,14 +120,12 @@ class InvestorTransactionController with ChangeNotifier {
         banksData = List<Map<String, dynamic>>.from(
           investorBaseData['Data']['banks'],
         );
-        debugPrint('Base data fetched successfully');
       } else {
-        debugPrint('API call failed: ${investorBaseData['Message']}');
         errorMessage =
             investorBaseData['Message'] ?? 'Failed to fetch base data';
       }
     } catch (e) {
-      _handleApiError(e);
+      handleApiError(e);
     } finally {
       isLoading = false;
       notifyListeners();
@@ -183,16 +146,11 @@ class InvestorTransactionController with ChangeNotifier {
     String? currencyId,
     String? isIncome,
   }) async {
-    if (!await _checkToken()) return false;
-
-    // Debug logging
-    debugPrint("Posting transaction with payment type: $paymentType");
-    debugPrint("Transaction type: $transactionType");
-    debugPrint("Investor ID: $investorId");
+    if (!await checkToken()) return false;
 
     try {
       final response = await restApi.postInvestorTransaction(
-        token: _getAuthHeader(),
+        token: getAuthHeader(),
         transactionType:
             transactionType
                 ?.toLowerCase(), // Ensure lowercase to match API expectations
@@ -213,21 +171,16 @@ class InvestorTransactionController with ChangeNotifier {
 
       // Check response
       if (response is Map<String, dynamic> && response['IsSuccess'] == true) {
-        debugPrint("Transaction posted successfully!");
         getInvestorTransaction();
         return true;
       } else if (response is Map<String, dynamic>) {
-        debugPrint(
-          "Transaction failed: ${response['Message'] ?? 'Unknown error'}",
-        );
         errorMessage = response['Message'] ?? 'Failed to save transaction';
       } else {
-        debugPrint("Unknown response format");
         errorMessage = 'Unexpected response format';
       }
       return false;
     } catch (e) {
-      return _handleApiError(e);
+      return handleApiError(e);
     }
   }
 
@@ -235,19 +188,16 @@ class InvestorTransactionController with ChangeNotifier {
     int? id,
     String? descriptionText,
   ) async {
-    if (!await _checkToken()) return;
+    if (!await checkToken()) return;
 
     try {
       final response = await restApi.deleteInvestorTransaction(
-        token: _getAuthHeader(),
+        token: getAuthHeader(),
         id: id,
         description: descriptionText,
       );
       if (response is Map<String, dynamic>) {
         if (response['IsSuccess'] == true) {
-          debugPrint(
-            "Delete successful, refreshing investor transaction list...",
-          );
           await getInvestorTransaction();
           showSuccessSnack('Transaction deleted successfully');
         } else {
@@ -281,17 +231,15 @@ class InvestorTransactionController with ChangeNotifier {
           }
 
           errorMessage = errorMsg;
-          debugPrint("Delete failed: $errorMessage");
+
           showErrorSnack(errorMessage.toString());
         }
       } else {
-        debugPrint("Delete completed, refreshing investor transaction list...");
         await getInvestorTransaction();
         showErrorSnack(errorMessage.toString());
       }
     } catch (e) {
-      debugPrint("Delete API Exception: $e");
-      _handleApiError(e);
+      handleApiError(e);
       showErrorSnack('Failed to delete investor transaction: ${e.toString()}');
     } finally {
       isLoading = false;
@@ -305,11 +253,11 @@ class InvestorTransactionController with ChangeNotifier {
     int? investorId,
     int? currencyId,
   ) async {
-    if (!await _checkToken()) return false;
+    if (!await checkToken()) return false;
 
     try {
       final reportsData = await restApi.postInvestorTransactionReport(
-        token: _getAuthHeader(),
+        token: getAuthHeader(),
         fromDate: fromDate,
         toDate: toDate,
         investorId: investorId,
@@ -318,44 +266,14 @@ class InvestorTransactionController with ChangeNotifier {
       if (reportsData['IsSuccess'] == true) {
         reportUrl = reportsData['Data']?['url'];
         notifyListeners();
-        debugPrint('Report URL: $reportUrl');
+
         return true;
       } else {
-        debugPrint('Fetch reports data failed: ${reportsData['Message']}');
         errorMessage = reportsData['Message'] ?? 'Failed to generate report';
         return false;
       }
     } catch (e) {
-      return _handleApiError(e);
+      return handleApiError(e);
     }
-  }
-
-  // Standardized error handling
-  dynamic _handleApiError(dynamic e) {
-    if (e is DioException) {
-      debugPrint("Dio Exception: ${e.message}");
-
-      // Handle redirect to login (authentication failure)
-      if (e.response?.statusCode == 302 ||
-          (e.response?.data is String &&
-              (e.response?.data as String).contains('login'))) {
-        debugPrint("Authentication failed - redirected to login page");
-        errorMessage = 'Authentication failed. Please log in again.';
-        AuthRepo.handleAuthError();
-        return false;
-      }
-
-      // Log detailed response information
-      if (e.response != null) {
-        debugPrint('Response status: ${e.response?.statusCode}');
-        debugPrint('Response data: ${e.response?.data}');
-      }
-
-      errorMessage = 'Network error: ${e.message}';
-    } else {
-      debugPrint("Error: $e");
-      errorMessage = 'Error: ${e.toString()}';
-    }
-    return false;
   }
 }
