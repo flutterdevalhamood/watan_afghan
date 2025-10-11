@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:sample/src/providers/base_controller.dart';
 
 import '../data/rest_client.dart';
 import '../repo/auth_repo.dart';
 
-class UnitController with ChangeNotifier {
+class UnitController extends BaseController {
   List<Map<String, dynamic>>? customerData;
   List<Map<String, dynamic>>? unitData;
   bool isLoading = false;
@@ -38,27 +38,18 @@ class UnitController with ChangeNotifier {
       );
       if (unit['IsSuccess'] == true) {
         final data = unit['Data'] as List<dynamic>;
-        if (data != null) {
-          final newProduct =
-              data.map((v) => v as Map<String, dynamic>).toList();
-          print('productData $unitData');
-          if (loadMore) {
-            unitData ??= [];
-            unitData!.addAll(newProduct);
-          } else {
-            unitData = newProduct;
-          }
-          hasMore = data.length == totalPages;
+        final newProduct = data.map((v) => v as Map<String, dynamic>).toList();
+
+        if (loadMore) {
+          unitData ??= [];
+          unitData!.addAll(newProduct);
         } else {
-          hasMore = false;
+          unitData = newProduct;
         }
-      } else {
-        print('Api call failed ${unit['Message']}');
-      }
+        hasMore = data.length == totalPages;
+      } else {}
     } catch (e) {
-      if (e is DioException) {
-        print('Dio Exception $e');
-      }
+      if (e is DioException) {}
     } finally {
       isLoading = false;
       notifyListeners();
@@ -80,9 +71,7 @@ class UnitController with ChangeNotifier {
       await getUnitData();
       return true;
     } catch (e) {
-      if (e is DioException) {
-        print("Dio Exception $e");
-      }
+      if (e is DioException) {}
       return false;
     }
   }
@@ -96,9 +85,7 @@ class UnitController with ChangeNotifier {
       await getUnitData();
       return true;
     } catch (e) {
-      if (e is DioException) {
-        print('Dio Exception $e');
-      }
+      if (e is DioException) {}
       return false;
     }
   }
@@ -115,9 +102,7 @@ class UnitController with ChangeNotifier {
       );
       await getUnitData();
     } catch (e) {
-      if (e is DioException) {
-        print("Dio Exception $e");
-      }
+      if (e is DioException) {}
     }
   }
 }

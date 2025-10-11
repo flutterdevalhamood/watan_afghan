@@ -1,13 +1,12 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:sample/src/models/supplier_advance_disburse_model.dart';
 import 'package:sample/src/models/supplier_payment_model.dart';
+import 'package:sample/src/providers/base_controller.dart';
 import 'package:sample/src/util/snack.dart';
 
 import '../data/rest_client.dart';
-import '../repo/auth_repo.dart';
 
-class SupplierPaymentController with ChangeNotifier {
+class SupplierPaymentController extends BaseController {
   bool isLoading = false;
   int currentPage = 1;
   final int totalPages = 10;
@@ -188,35 +187,8 @@ class SupplierPaymentController with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> _checkToken() async {
-    final token = AuthRepo.token;
-
-    // Check if token is valid
-    if (token == null || token.isEmpty) {
-      debugPrint("No token available - auth failed");
-      // Handle missing token
-      AuthRepo.handleAuthError();
-      return false;
-    }
-
-    // Check if token is expired (if implementation supports it)
-    if (AuthRepo.isTokenExpired()) {
-      debugPrint("Token expired - auth failed");
-      // Handle expired token
-      AuthRepo.handleAuthError();
-      return false;
-    }
-
-    return true;
-  }
-
-  // Format the token with Bearer prefix
-  String _getAuthHeader() {
-    return 'Bearer ${AuthRepo.token}';
-  }
-
   Future<void> getSupplierPayment({bool loadMore = false}) async {
-    if (!await _checkToken()) return;
+    if (!await checkToken()) return;
 
     isLoading = true;
     errorMessage = null; // Clear previous errors
@@ -232,7 +204,7 @@ class SupplierPaymentController with ChangeNotifier {
           final supplierPayment = await restApi.getSupplierPayment(
             currentPage,
             totalPages,
-            _getAuthHeader(),
+            getAuthHeader(),
           );
 
           if (supplierPayment is Map<String, dynamic>) {
@@ -256,12 +228,10 @@ class SupplierPaymentController with ChangeNotifier {
                 errorMessage = supplierPayment['Message'] as String?;
               }
             } else {
-              debugPrint('API call failed: ${supplierPayment['Message']}');
               errorMessage =
                   supplierPayment['Message'] as String? ?? 'API call failed';
             }
           } else {
-            debugPrint('Unexpected API response format');
             errorMessage = 'Unexpected API response format';
           }
 
@@ -270,8 +240,7 @@ class SupplierPaymentController with ChangeNotifier {
         } catch (e) {
           retryCount++;
 
-          if (e is DioException && _shouldRetry(e) && retryCount < maxRetries) {
-            debugPrint('Retry attempt $retryCount for error: ${e.message}');
+          if (e is DioException && shouldRetry(e) && retryCount < maxRetries) {
             await Future.delayed(
               Duration(seconds: retryCount * 2),
             ); // Exponential backoff
@@ -283,25 +252,11 @@ class SupplierPaymentController with ChangeNotifier {
         }
       }
     } catch (e) {
-      _handleApiError(e);
+      handleApiError(e);
     } finally {
       isLoading = false;
       notifyListeners();
     }
-  }
-
-  // Determine if error should trigger a retry
-  bool _shouldRetry(DioException e) {
-    // Retry on network errors, timeouts, and DNS issues
-    return e.type == DioExceptionType.connectionTimeout ||
-        e.type == DioExceptionType.receiveTimeout ||
-        e.type == DioExceptionType.sendTimeout ||
-        e.type == DioExceptionType.connectionError ||
-        (e.message?.contains('Failed host lookup') ?? false) ||
-        (e.message?.contains('SocketException') ?? false) ||
-        (e.response?.statusCode == 502) ||
-        (e.response?.statusCode == 503) ||
-        (e.response?.statusCode == 504);
   }
 
   void loadMore() {
@@ -322,7 +277,7 @@ class SupplierPaymentController with ChangeNotifier {
   }
 
   Future<void> getSupplierPaymentDetail(int id) async {
-    if (!await _checkToken()) return;
+    if (!await checkToken()) return;
 
     _isDetailLoading = true;
     _detailErrorMessage = null;
@@ -331,27 +286,20 @@ class SupplierPaymentController with ChangeNotifier {
     try {
       final supplierPaymentDetailData = await restApi.getSupplierPaymentDetail(
         id: id,
-        token: _getAuthHeader(),
+        token: getAuthHeader(),
       );
 
       if (supplierPaymentDetailData['IsSuccess'] == true) {
         final data = supplierPaymentDetailData['Data'] as Map<String, dynamic>;
 
         _supplierPaymentDetail = SupplierPaymentDetail.fromJson(data);
-
-        debugPrint(
-          'Successfully loaded supplier advance detail with ${_supplierPaymentDetail?.details.length ?? 0} details',
-        );
       } else {
         _detailErrorMessage =
             supplierPaymentDetailData['Message'] ??
             'Failed to fetch supplier detail';
-        debugPrint('API call failed: $_detailErrorMessage');
       }
     } catch (e) {
-      _detailErrorMessage = _getErrorMessage(e);
-      debugPrint('Supplier detail error: $_detailErrorMessage');
-      debugPrint('Error details: $e');
+      _detailErrorMessage = getErrorMessage(e);
     } finally {
       _isDetailLoading = false;
       notifyListeners();
@@ -365,7 +313,7 @@ class SupplierPaymentController with ChangeNotifier {
   }
 
   Future<void> getSupplierAdvanceBaseData() async {
-    if (!await _checkToken()) return;
+    if (!await checkToken()) return;
 
     isLoading = true;
     errorMessage = null;
@@ -373,7 +321,7 @@ class SupplierPaymentController with ChangeNotifier {
 
     try {
       final supplierAdvanceBaseData = await restApi.getSupplierAdvanceBaseList(
-        token: _getAuthHeader(),
+        token: getAuthHeader(),
       );
 
       if (supplierAdvanceBaseData['IsSuccess'] == true) {
@@ -389,15 +337,12 @@ class SupplierPaymentController with ChangeNotifier {
         );
         nextPaymentVoucher =
             supplierAdvanceBaseData['Data']['next_payment_voucher'];
-
-        debugPrint('Base data fetched successfully');
       } else {
-        print('API call failed: ${supplierAdvanceBaseData['Message']}');
         errorMessage =
             supplierAdvanceBaseData['Message'] ?? 'Failed to fetch base data';
       }
     } catch (e) {
-      _handleApiError(e);
+      handleApiError(e);
     } finally {
       isLoading = false;
       notifyListeners();
@@ -419,11 +364,11 @@ class SupplierPaymentController with ChangeNotifier {
     required String description,
     List<MultipartFile>? paymentFiles,
   }) async {
-    if (!await _checkToken()) return false;
+    if (!await checkToken()) return false;
 
     try {
       final response = await restApi.postSupplierPayment(
-        token: _getAuthHeader(),
+        token: getAuthHeader(),
         supplierId: supplierId,
         referenceNumber: referenceNumber,
         paymentType: paymentType,
@@ -474,7 +419,7 @@ class SupplierPaymentController with ChangeNotifier {
     _receiptCheckMessage = null;
     notifyListeners();
 
-    if (!await _checkToken()) {
+    if (!await checkToken()) {
       _isCheckingReceipt = false;
       _receiptCheckMessage = 'Authentication failed';
       notifyListeners();
@@ -483,7 +428,7 @@ class SupplierPaymentController with ChangeNotifier {
 
     try {
       final response = await restApi.postCheckSupplierPaymentReferenceExist(
-        token: _getAuthHeader(),
+        token: getAuthHeader(),
         referenceNumber: receiptNumber,
       );
 
@@ -513,9 +458,6 @@ class SupplierPaymentController with ChangeNotifier {
         _receiptExists = null;
         _receiptCheckMessage =
             response['Message'] ?? 'Failed to check receipt number';
-
-        // FIXED: Additional debugging for API response
-        debugPrint('API Response: $response');
       }
 
       notifyListeners();
@@ -525,13 +467,8 @@ class SupplierPaymentController with ChangeNotifier {
       _receiptExists = null;
       _receiptCheckMessage = 'Error checking receipt number: ${e.toString()}';
       notifyListeners();
-      debugPrint('Error checking receipt existence: $e');
 
-      // FIXED: Log detailed error information
-      if (e is DioException) {
-        debugPrint('Dio error: ${e.message}');
-        debugPrint('Response: ${e.response}');
-      }
+      if (e is DioException) {}
       return false;
     }
   }
@@ -545,8 +482,7 @@ class SupplierPaymentController with ChangeNotifier {
   }
 
   Future<void> deleteSupplierPayment(int? id, String? descriptionText) async {
-    if (!await _checkToken()) {
-      debugPrint("Token check failed");
+    if (!await checkToken()) {
       return;
     }
 
@@ -556,17 +492,14 @@ class SupplierPaymentController with ChangeNotifier {
     notifyListeners();
 
     try {
-      debugPrint("Calling restApi.deleteSupplierAdvance...");
-
       final response = await restApi.deleteSupplierPayment(
-        token: _getAuthHeader(),
+        token: getAuthHeader(),
         id: id,
         deleteDescription: descriptionText,
       );
 
       if (response is Map<String, dynamic>) {
         if (response['IsSuccess'] == true) {
-          debugPrint("Delete successful, refreshing supplier payment list...");
           await getSupplierPayment();
           showSuccessSnack('Supplier payment deleted successfully');
         } else {
@@ -600,17 +533,15 @@ class SupplierPaymentController with ChangeNotifier {
           }
 
           errorMessage = errorMsg;
-          debugPrint("Delete failed: $errorMessage");
+
           showErrorSnack(errorMessage.toString());
         }
       } else {
-        debugPrint("Delete completed, refreshing supplier payment list...");
         await getSupplierPayment();
         showSuccessSnack('Supplier payment deleted successfully');
       }
     } catch (e) {
-      debugPrint("Delete API Exception: $e");
-      _handleApiError(e);
+      handleApiError(e);
       showErrorSnack('Failed to delete supplier payment: ${e.toString()}');
     } finally {
       isLoading = false;
@@ -619,7 +550,7 @@ class SupplierPaymentController with ChangeNotifier {
   }
 
   Future<void> getSupplierPaymentPush(int id) async {
-    if (!await _checkToken()) return;
+    if (!await checkToken()) return;
 
     _isPushLoading = true;
     _pushErrorMessage = null;
@@ -628,7 +559,7 @@ class SupplierPaymentController with ChangeNotifier {
     try {
       final pushSupplierPayment = await restApi.getSupplierPaymentPush(
         id: id,
-        token: _getAuthHeader(),
+        token: getAuthHeader(),
       );
 
       if (pushSupplierPayment['IsSuccess'] == true) {
@@ -636,11 +567,9 @@ class SupplierPaymentController with ChangeNotifier {
       } else {
         _pushErrorMessage =
             pushSupplierPayment['Message'] ?? 'Failed to fetch supplier detail';
-        debugPrint('API call failed: $_pushErrorMessage');
       }
     } catch (e) {
-      _pushErrorMessage = _getErrorMessage(e);
-      debugPrint('Supplier detail error: $_pushErrorMessage');
+      _pushErrorMessage = getErrorMessage(e);
     } finally {
       _isPushLoading = false;
       notifyListeners();
@@ -651,7 +580,7 @@ class SupplierPaymentController with ChangeNotifier {
     int supplierId,
     int currencyId,
   ) async {
-    if (!await _checkToken()) return;
+    if (!await checkToken()) return;
 
     _isDistributionLoading = true;
     _distributionErrorMessage = null;
@@ -662,7 +591,7 @@ class SupplierPaymentController with ChangeNotifier {
       final response = await restApi.postSupplierPaymentDisburse(
         supplierId: supplierId,
         currencyId: currencyId,
-        token: _getAuthHeader(),
+        token: getAuthHeader(),
       );
 
       if (response['IsSuccess'] == true) {
@@ -678,78 +607,12 @@ class SupplierPaymentController with ChangeNotifier {
       } else {
         _distributionErrorMessage =
             response['Message'] ?? 'Failed to fetch invoices for distribution';
-        debugPrint('API call failed: $_distributionErrorMessage');
       }
     } catch (e) {
-      _distributionErrorMessage = _getErrorMessage(e);
-      debugPrint('Distribution invoices error: $_distributionErrorMessage');
+      _distributionErrorMessage = getErrorMessage(e);
     } finally {
       _isDistributionLoading = false;
       notifyListeners();
     }
-  }
-
-  // Get user-friendly error message
-  String _getErrorMessage(dynamic e) {
-    if (e is DioException) {
-      switch (e.type) {
-        case DioExceptionType.connectionTimeout:
-          return 'Connection timeout. Please check your internet connection.';
-        case DioExceptionType.receiveTimeout:
-          return 'Server response timeout. Please try again.';
-        case DioExceptionType.sendTimeout:
-          return 'Request timeout. Please try again.';
-        case DioExceptionType.connectionError:
-          if (e.message?.contains('Failed host lookup') ?? false) {
-            return 'Cannot connect to server. Please check your internet connection or try again later.';
-          }
-          return 'Connection error. Please check your internet connection.';
-        case DioExceptionType.badResponse:
-          if (e.response?.statusCode == 404) {
-            return 'Service not found. Please contact support.';
-          } else if (e.response?.statusCode == 500) {
-            return 'Server error. Please try again later.';
-          }
-          return 'Server error (${e.response?.statusCode}). Please try again.';
-        case DioExceptionType.cancel:
-          return 'Request was cancelled.';
-        default:
-          return 'Network error. Please check your connection and try again.';
-      }
-    }
-    return 'An unexpected error occurred. Please try again.';
-  }
-
-  // Standardized error handling
-  dynamic _handleApiError(dynamic e) {
-    if (e is DioException) {
-      debugPrint("Dio Exception: ${e.message}");
-      debugPrint("Dio Exception Type: ${e.type}");
-
-      // Handle redirect to login (authentication failure)
-      if (e.response?.statusCode == 302 ||
-          e.response?.statusCode == 401 ||
-          (e.response?.data is String &&
-              (e.response?.data as String).contains('login'))) {
-        debugPrint("Authentication failed - redirected to login page");
-        errorMessage = 'Authentication failed. Please log in again.';
-        AuthRepo.handleAuthError();
-        return false;
-      }
-
-      // Log detailed response information for debugging
-      if (e.response != null) {
-        debugPrint('Response status: ${e.response?.statusCode}');
-        debugPrint('Response headers: ${e.response?.headers}');
-        debugPrint('Response data: ${e.response?.data}');
-      }
-
-      // Set user-friendly error message
-      errorMessage = _getErrorMessage(e);
-    } else {
-      debugPrint("Error: $e");
-      errorMessage = 'An unexpected error occurred. Please try again.';
-    }
-    return false;
   }
 }
