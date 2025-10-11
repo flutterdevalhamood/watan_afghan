@@ -1,13 +1,12 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:sample/src/models/Sales_detail_model.dart';
 import 'package:sample/src/models/sales_model.dart';
+import 'package:sample/src/providers/base_controller.dart';
 import 'package:sample/src/util/snack.dart';
 
 import '../data/rest_client.dart';
-import '../repo/auth_repo.dart';
 
-class SalesController with ChangeNotifier {
+class SalesController extends BaseController {
   bool isLoading = false;
   int currentPage = 1;
   final int totalPages = 10;
@@ -131,35 +130,8 @@ class SalesController with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> _checkToken() async {
-    final token = AuthRepo.token;
-
-    // Check if token is valid
-    if (token == null || token.isEmpty) {
-      debugPrint("No token available - auth failed");
-      // Handle missing token
-      AuthRepo.handleAuthError();
-      return false;
-    }
-
-    // Check if token is expired (if implementation supports it)
-    if (AuthRepo.isTokenExpired()) {
-      debugPrint("Token expired - auth failed");
-      // Handle expired token
-      AuthRepo.handleAuthError();
-      return false;
-    }
-
-    return true;
-  }
-
-  // Format the token with Bearer prefix
-  String _getAuthHeader() {
-    return 'Bearer ${AuthRepo.token}';
-  }
-
   Future<void> getSalesData({bool loadMore = false}) async {
-    if (!await _checkToken()) return;
+    if (!await checkToken()) return;
 
     isLoading = true;
     errorMessage = null; // Clear previous errors
@@ -175,7 +147,7 @@ class SalesController with ChangeNotifier {
           final sales = await restApi.getSalesData(
             currentPage,
             totalPages,
-            _getAuthHeader(),
+            getAuthHeader(),
           );
 
           if (sales is Map<String, dynamic>) {
@@ -198,11 +170,9 @@ class SalesController with ChangeNotifier {
                 errorMessage = sales['Message'] as String?;
               }
             } else {
-              debugPrint('API call failed: ${sales['Message']}');
               errorMessage = sales['Message'] as String? ?? 'API call failed';
             }
           } else {
-            debugPrint('Unexpected API response format');
             errorMessage = 'Unexpected API response format';
           }
 
@@ -211,8 +181,7 @@ class SalesController with ChangeNotifier {
         } catch (e) {
           retryCount++;
 
-          if (e is DioException && _shouldRetry(e) && retryCount < maxRetries) {
-            debugPrint('Retry attempt $retryCount for error: ${e.message}');
+          if (e is DioException && shouldRetry(e) && retryCount < maxRetries) {
             await Future.delayed(
               Duration(seconds: retryCount * 2),
             ); // Exponential backoff
@@ -224,25 +193,11 @@ class SalesController with ChangeNotifier {
         }
       }
     } catch (e) {
-      _handleApiError(e);
+      handleApiError(e);
     } finally {
       isLoading = false;
       notifyListeners();
     }
-  }
-
-  // Determine if error should trigger a retry
-  bool _shouldRetry(DioException e) {
-    // Retry on network errors, timeouts, and DNS issues
-    return e.type == DioExceptionType.connectionTimeout ||
-        e.type == DioExceptionType.receiveTimeout ||
-        e.type == DioExceptionType.sendTimeout ||
-        e.type == DioExceptionType.connectionError ||
-        (e.message?.contains('Failed host lookup') ?? false) ||
-        (e.message?.contains('SocketException') ?? false) ||
-        (e.response?.statusCode == 502) ||
-        (e.response?.statusCode == 503) ||
-        (e.response?.statusCode == 504);
   }
 
   void loadMore() {
@@ -263,7 +218,7 @@ class SalesController with ChangeNotifier {
   }
 
   Future<void> getSalesDetail(int salesId) async {
-    if (!await _checkToken()) return;
+    if (!await checkToken()) return;
 
     _isDetailLoading = true;
     _detailErrorMessage = null;
@@ -272,22 +227,19 @@ class SalesController with ChangeNotifier {
     try {
       final salesDetailData = await restApi.getSalesDetail(
         id: salesId,
-        token: _getAuthHeader(),
+        token: getAuthHeader(),
       );
 
       if (salesDetailData['IsSuccess'] == true) {
         final data = salesDetailData['Data'] as Map<String, dynamic>;
         final salesId = salesDetailData['Data']['id'];
         _salesDetail = SalesData.fromJson(data);
-        debugPrint('Supplier detail fetched: ${salesDetail?.sale?.id}');
       } else {
         _detailErrorMessage =
             salesDetailData['Message'] ?? 'Failed to fetch supplier detail';
-        debugPrint('API call failed: $_detailErrorMessage');
       }
     } catch (e) {
-      _detailErrorMessage = _getErrorMessage(e);
-      debugPrint('Supplier detail error: $_detailErrorMessage');
+      _detailErrorMessage = getErrorMessage(e);
     } finally {
       _isDetailLoading = false;
       notifyListeners();
@@ -301,7 +253,7 @@ class SalesController with ChangeNotifier {
   }
 
   Future<void> getSalesBaseData() async {
-    if (!await _checkToken()) return;
+    if (!await checkToken()) return;
 
     isLoading = true;
     errorMessage = null;
@@ -309,7 +261,7 @@ class SalesController with ChangeNotifier {
 
     try {
       final salesBaseData = await restApi.getSalesBaseList(
-        token: _getAuthHeader(),
+        token: getAuthHeader(),
       );
 
       if (salesBaseData['IsSuccess'] == true) {
@@ -327,14 +279,11 @@ class SalesController with ChangeNotifier {
           salesBaseData['Data']['customers'],
         );
         nextInvoiceNumber = salesBaseData['Data']['next_invoice_number'];
-
-        debugPrint('Base data fetched successfully');
       } else {
-        print('API call failed: ${salesBaseData['Message']}');
         errorMessage = salesBaseData['Message'] ?? 'Failed to fetch base data';
       }
     } catch (e) {
-      _handleApiError(e);
+      handleApiError(e);
     } finally {
       isLoading = false;
       notifyListeners();
@@ -342,7 +291,7 @@ class SalesController with ChangeNotifier {
   }
 
   Future<void> getInvoicesOfProduct(int selectedProductTypeId) async {
-    if (!await _checkToken()) return;
+    if (!await checkToken()) return;
 
     _isLoadingInvoices = true;
     invoicesOfProductData = null;
@@ -352,7 +301,7 @@ class SalesController with ChangeNotifier {
       final invoicesOfProductResponse = await restApi
           .getAllInvoicesOfProductFromInventory(
             id: selectedProductTypeId,
-            token: _getAuthHeader(),
+            token: getAuthHeader(),
           );
 
       if (invoicesOfProductResponse['IsSuccess'] == true) {
@@ -368,20 +317,12 @@ class SalesController with ChangeNotifier {
                 'display_name': entry.value,
               };
             }).toList();
-
-        debugPrint(
-          'Invoices data fetched successfully: ${invoicesOfProductData?.length} invoices',
-        );
-        debugPrint('Invoice numbers: ${invoiceNumbers.join(', ')}');
       } else {
-        debugPrint('API call failed: ${invoicesOfProductResponse['Message']}');
-        // Don't set main errorMessage here to avoid affecting main screen
         invoicesOfProductData = []; // Set empty list on failure
       }
     } catch (e) {
-      debugPrint('Error fetching invoices: $e');
       invoicesOfProductData = []; // Set empty list on error
-      // Don't call _handleApiError here as it might affect main loading state
+      // Don't call handleApiError here as it might affect main loading state
     } finally {
       _isLoadingInvoices = false;
       notifyListeners();
@@ -404,11 +345,11 @@ class SalesController with ChangeNotifier {
     String? customerNote,
     String? productDetails,
   }) async {
-    if (!await _checkToken()) return false;
+    if (!await checkToken()) return false;
 
     try {
       final response = await restApi.registerSales(
-        token: _getAuthHeader(),
+        token: getAuthHeader(),
         customerId: customerId,
         currencyId: currencyId,
         saleDate: saleDate,
@@ -451,11 +392,11 @@ class SalesController with ChangeNotifier {
   // In your SalesController class
   Future<double?> postAvailableQtyForInvoice(String? invoiceNumber) async {
     if (invoiceNumber == null || invoiceNumber.isEmpty) return null;
-    if (!await _checkToken()) return null;
+    if (!await checkToken()) return null;
 
     try {
       final response = await restApi.postAvailableQtyForInvoiceInventory(
-        token: _getAuthHeader(),
+        token: getAuthHeader(),
         fromInvoice: invoiceNumber,
       );
 
@@ -467,7 +408,6 @@ class SalesController with ChangeNotifier {
       }
       return null;
     } catch (e) {
-      debugPrint('Error getting available quantity: $e');
       return null;
     }
   }
@@ -485,7 +425,7 @@ class SalesController with ChangeNotifier {
     _invoiceCheckMessage = null;
     notifyListeners();
 
-    if (!await _checkToken()) {
+    if (!await checkToken()) {
       _isCheckingInvoice = false;
       _invoiceCheckMessage = 'Authentication failed';
       notifyListeners();
@@ -494,7 +434,7 @@ class SalesController with ChangeNotifier {
 
     try {
       final response = await restApi.postCheckSalesInvoiceExist(
-        token: _getAuthHeader(),
+        token: getAuthHeader(),
         invoiceNumber: invoiceNumber,
       );
 
@@ -524,7 +464,7 @@ class SalesController with ChangeNotifier {
       _invoiceExists = null;
       _invoiceCheckMessage = 'Error checking invoice number: $e';
       notifyListeners();
-      debugPrint('Error checking invoice existence: $e');
+
       return false;
     }
   }
@@ -538,8 +478,7 @@ class SalesController with ChangeNotifier {
   }
 
   Future<void> deleteSales(int? id, String? descriptionText) async {
-    if (!await _checkToken()) {
-      debugPrint("Token check failed");
+    if (!await checkToken()) {
       return;
     }
 
@@ -549,29 +488,23 @@ class SalesController with ChangeNotifier {
     notifyListeners();
 
     try {
-      debugPrint("Calling restApi.deleteSales...");
-
       final response = await restApi.deleteSales(
-        token: _getAuthHeader(),
+        token: getAuthHeader(),
         id: id,
         deleteDescription: descriptionText,
       );
 
       if (response is Map<String, dynamic>) {
         if (response['IsSuccess'] == true) {
-          debugPrint("Delete successful, refreshing sales list...");
           await getSalesData();
           showSuccessSnack('Sales data deleted successfully');
         } else {
-          // Handle different types of errors
           String errorMsg = 'Failed to delete sales data';
 
-          // Check if it's a validation error with specific field messages
           if (response['Data'] != null &&
               response['Data'] is Map<String, dynamic>) {
             final data = response['Data'] as Map<String, dynamic>;
 
-            // Check for deleteDescription validation error
             if (data['deleteDescription'] != null &&
                 data['deleteDescription'] is List) {
               final deleteDescriptionErrors = data['deleteDescription'] as List;
@@ -592,17 +525,15 @@ class SalesController with ChangeNotifier {
           }
 
           errorMessage = errorMsg;
-          debugPrint("Delete failed: $errorMessage");
+
           showErrorSnack(errorMessage.toString());
         }
       } else {
-        debugPrint("Delete completed, refreshing sales list...");
         await getSalesData();
         showErrorSnack(errorMessage.toString());
       }
     } catch (e) {
-      debugPrint("Delete API Exception: $e");
-      _handleApiError(e);
+      handleApiError(e);
       showErrorSnack('Failed to delete sales: ${e.toString()}');
     } finally {
       isLoading = false;
@@ -611,91 +542,25 @@ class SalesController with ChangeNotifier {
   }
 
   Future<void> getSalesPdf(String salesId) async {
-    if (!await _checkToken()) return;
+    if (!await checkToken()) return;
 
     try {
       final salesPdf = await restApi.getSalesPDF(
-        token: _getAuthHeader(),
+        token: getAuthHeader(),
         id: salesId,
       );
 
       if (salesPdf['IsSuccess'] == true) {
         salesPdfUrl = salesPdf['Data']?['url'];
         notifyListeners();
-        debugPrint('Base data fetched successfully');
       } else {
-        debugPrint('API call failed: ${salesPdf['Message']}');
         errorMessage = salesPdf['Message'] ?? 'Failed to fetch data';
       }
     } catch (e) {
-      _handleApiError(e);
+      handleApiError(e);
     } finally {
       isLoading = false;
       notifyListeners();
     }
-  }
-
-  // Get user-friendly error message
-  String _getErrorMessage(dynamic e) {
-    if (e is DioException) {
-      switch (e.type) {
-        case DioExceptionType.connectionTimeout:
-          return 'Connection timeout. Please check your internet connection.';
-        case DioExceptionType.receiveTimeout:
-          return 'Server response timeout. Please try again.';
-        case DioExceptionType.sendTimeout:
-          return 'Request timeout. Please try again.';
-        case DioExceptionType.connectionError:
-          if (e.message?.contains('Failed host lookup') ?? false) {
-            return 'Cannot connect to server. Please check your internet connection or try again later.';
-          }
-          return 'Connection error. Please check your internet connection.';
-        case DioExceptionType.badResponse:
-          if (e.response?.statusCode == 404) {
-            return 'Service not found. Please contact support.';
-          } else if (e.response?.statusCode == 500) {
-            return 'Server error. Please try again later.';
-          }
-          return 'Server error (${e.response?.statusCode}). Please try again.';
-        case DioExceptionType.cancel:
-          return 'Request was cancelled.';
-        default:
-          return 'Network error. Please check your connection and try again.';
-      }
-    }
-    return 'An unexpected error occurred. Please try again.';
-  }
-
-  // Standardized error handling
-  dynamic _handleApiError(dynamic e) {
-    if (e is DioException) {
-      debugPrint("Dio Exception: ${e.message}");
-      debugPrint("Dio Exception Type: ${e.type}");
-
-      // Handle redirect to login (authentication failure)
-      if (e.response?.statusCode == 302 ||
-          e.response?.statusCode == 401 ||
-          (e.response?.data is String &&
-              (e.response?.data as String).contains('login'))) {
-        debugPrint("Authentication failed - redirected to login page");
-        errorMessage = 'Authentication failed. Please log in again.';
-        AuthRepo.handleAuthError();
-        return false;
-      }
-
-      // Log detailed response information for debugging
-      if (e.response != null) {
-        debugPrint('Response status: ${e.response?.statusCode}');
-        debugPrint('Response headers: ${e.response?.headers}');
-        debugPrint('Response data: ${e.response?.data}');
-      }
-
-      // Set user-friendly error message
-      errorMessage = _getErrorMessage(e);
-    } else {
-      debugPrint("Error: $e");
-      errorMessage = 'An unexpected error occurred. Please try again.';
-    }
-    return false;
   }
 }
