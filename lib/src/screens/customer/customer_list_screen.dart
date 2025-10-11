@@ -50,10 +50,6 @@ class _CustomerListScreenState extends State<CustomerListScreen>
       }
 
       _scrollController.addListener(_onScroll);
-
-      debugPrint(
-        "Controller initialized successfully. Has data: ${_controller.hasData}",
-      );
     } catch (e) {
       debugPrint("Error initializing controller: $e");
     }
@@ -143,7 +139,7 @@ class _CustomerListScreenState extends State<CustomerListScreen>
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: () async {
           // FIXED: Properly handle navigation and refresh
           final result = await NavigationService().pushNavigation(
@@ -159,9 +155,9 @@ class _CustomerListScreenState extends State<CustomerListScreen>
             await _controller.refresh();
           }
         },
-        icon: const Icon(Icons.add),
-        label: const Text('Create New'),
+
         backgroundColor: Theme.of(context).colorScheme.primary,
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -305,81 +301,8 @@ class _CustomerListScreenState extends State<CustomerListScreen>
       getErrorMessage: () => _controller.errorMessage,
     );
   }
-
-  //   Future<void> _showDeleteConfirmation(Customer customer) async {
-  //     _deleteReasonController.clear();
-  //
-  //     final bool? result = await showDialog<bool>(
-  //       context: context,
-  //       barrierDismissible: false, // FIXED: Prevent accidental dismissal
-  //       builder: (BuildContext dialogContext) {
-  //         return AlertDialog(
-  //           title: const Text('Delete Customer'),
-  //           content: Column(
-  //             mainAxisSize: MainAxisSize.min,
-  //             crossAxisAlignment: CrossAxisAlignment.start,
-  //             children: [
-  //               Text('Are you sure you want to delete "${customer.name}"?'),
-  //               const SizedBox(height: 16),
-  //               TextField(
-  //                 controller: _deleteReasonController,
-  //                 decoration: const InputDecoration(
-  //                   labelText: 'Reason for deletion ',
-  //                   border: OutlineInputBorder(),
-  //                   hintText: 'Enter reason for deletion...',
-  //                 ),
-  //                 maxLines: 3,
-  //                 textCapitalization: TextCapitalization.sentences,
-  //               ),
-  //             ],
-  //           ),
-  //           actions: <Widget>[
-  //             TextButton(
-  //               onPressed: () => Navigator.of(dialogContext).pop(false),
-  //               child: const Text('Cancel'),
-  //             ),
-  //             TextButton(
-  //               onPressed: () => Navigator.of(dialogContext).pop(true),
-  //               style: TextButton.styleFrom(foregroundColor: Colors.red),
-  //               child: const Text('Delete'),
-  //             ),
-  //           ],
-  //         );
-  //       },
-  //     );
-  //
-  //     if (result == true && mounted) {
-  //       try {
-  //         await _controller.deleteCustomer(
-  //           customer.id,
-  //           _deleteReasonController.text.trim().isEmpty
-  //               ? null
-  //               : _deleteReasonController.text.trim(),
-  //         );
-  //       } catch (e) {
-  //         if (mounted) {
-  //           Navigator.of(context).pop(); // Close loading dialog
-  //
-  //           ScaffoldMessenger.of(context).showSnackBar(
-  //             SnackBar(
-  //               content: Text('Failed to delete customer: ${e.toString()}'),
-  //               backgroundColor: Colors.red,
-  //               action: SnackBarAction(
-  //                 label: 'OK',
-  //                 textColor: Colors.white,
-  //                 onPressed: () {
-  //                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
-  //                 },
-  //               ),
-  //             ),
-  //           );
-  //         }
-  //       }
-  //     }
-  //   }
 }
 
-// FIXED: Enhanced Customer Card with better error handling
 class CustomerCard extends StatelessWidget {
   final Customer customer;
   final VoidCallback? onTap;

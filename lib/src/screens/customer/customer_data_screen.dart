@@ -343,17 +343,13 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
         curve: Curves.easeInOut,
       );
 
-      // Add a subtle shake animation to highlight the error field
       _shakeWidget(key);
     }
   }
 
-  // Method to add a shake animation to highlight the error field
   void _shakeWidget(GlobalKey key) {
     final context = key.currentContext;
     if (context != null) {
-      // You can add a shake animation here if needed
-      // For now, we'll just focus on the field if possible
       final focusNode = FocusScope.of(context);
       focusNode.requestFocus();
     }
@@ -950,22 +946,7 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
             ),
             counterText: '',
           ),
-          onChanged:
-              isMobile
-                  ? (value) {
-                    // Optional: Auto-format as user types
-                    // Uncomment if you want live formatting
-                    /*
-          String formatted = _formatMobileNumber(value);
-          if (formatted != value) {
-            controller.value = TextEditingValue(
-              text: formatted,
-              selection: TextSelection.collapsed(offset: formatted.length),
-            );
-          }
-          */
-                  }
-                  : null,
+          onChanged: isMobile ? (value) {} : null,
           validator: (value) {
             // Custom error takes precedence
             if (customError != null) {

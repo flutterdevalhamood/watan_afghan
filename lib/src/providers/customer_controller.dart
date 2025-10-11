@@ -1,12 +1,10 @@
-import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
+import 'package:sample/src/providers/base_controller.dart';
 import 'package:sample/src/util/snack.dart';
 
 import '../data/rest_client.dart';
-import '../repo/auth_repo.dart';
 import '../screens/customer/customer_model.dart';
 
-class CustomerController with ChangeNotifier {
+class CustomerController extends BaseController {
   bool isLoading = false;
   bool isLoadingMore = false; // Separate loading state for pagination
   int currentPage = 1;
@@ -241,35 +239,11 @@ class CustomerController with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> _checkToken() async {
-    final token = AuthRepo.token;
-
-    if (token == null || token.isEmpty) {
-      debugPrint("No token available - auth failed");
-      AuthRepo.handleAuthError();
-      return false;
-    }
-
-    if (AuthRepo.isTokenExpired()) {
-      debugPrint("Token expired - auth failed");
-      AuthRepo.handleAuthError();
-      return false;
-    }
-
-    return true;
-  }
-
-  String _getAuthHeader() {
-    return 'Bearer ${AuthRepo.token}';
-  }
-
-  // FIXED: Improved data loading logic
   Future<void> getCustomerData({bool loadMore = false}) async {
-    if (!await _checkToken()) return;
+    if (!await checkToken()) return;
 
     // Prevent duplicate loading operations
     if (isLoading || (loadMore && isLoadingMore)) {
-      debugPrint("Already loading, skipping request");
       return;
     }
 
@@ -286,10 +260,8 @@ class CustomerController with ChangeNotifier {
       final response = await restApi.getCustomer(
         currentPage,
         totalPages,
-        _getAuthHeader(),
+        getAuthHeader(),
       );
-
-      debugPrint("API Response: $response");
 
       if (response == null) {
         errorMessage = 'No response received from server';
@@ -298,7 +270,7 @@ class CustomerController with ChangeNotifier {
 
       if (response is! Map<String, dynamic>) {
         errorMessage = 'Invalid response format received';
-        debugPrint('Response is not a Map: ${response.runtimeType}');
+
         return;
       }
 
@@ -318,12 +290,8 @@ class CustomerController with ChangeNotifier {
 
           if (loadMore) {
             _customers.addAll(newCustomerData);
-            debugPrint(
-              'Loaded ${newCustomerData.length} more customers. Total: ${_customers.length}',
-            );
           } else {
             _customers = newCustomerData;
-            debugPrint('Loaded ${newCustomerData.length} customers');
           }
 
           hasMore = data.length == totalPages;
@@ -331,17 +299,14 @@ class CustomerController with ChangeNotifier {
           if (!loadMore) {
             errorMessage = 'No customer data received';
           }
-          debugPrint('Data is null or not a List: $data');
         }
       } else {
         errorMessage =
             customer['Message'] as String? ?? 'Unknown error occurred';
-        debugPrint('API call failed: $errorMessage');
       }
     } catch (e) {
-      debugPrint('Exception in getCustomerData: $e');
       if (!loadMore) {
-        _handleApiError(e);
+        handleApiError(e);
       }
     } finally {
       if (loadMore) {
@@ -360,10 +325,7 @@ class CustomerController with ChangeNotifier {
     }
   }
 
-  // FIXED: Improved refresh logic - don't clear data immediately
   Future<void> refresh() async {
-    debugPrint("Refreshing customer data...");
-
     currentPage = 1;
     hasMore = true;
     errorMessage = null;
@@ -371,12 +333,10 @@ class CustomerController with ChangeNotifier {
 
     // Don't clear data immediately - let the new data replace it
     await getCustomerData();
-
-    debugPrint("Refresh completed. Total customers: ${_customers.length}");
   }
 
   Future<void> getCustomerDetail(int customerId) async {
-    if (!await _checkToken()) return;
+    if (!await checkToken()) return;
 
     _isDetailLoading = true;
     _detailErrorMessage = null;
@@ -385,7 +345,7 @@ class CustomerController with ChangeNotifier {
     try {
       final response = await restApi.getCustomerDetail(
         id: customerId,
-        token: _getAuthHeader(),
+        token: getAuthHeader(),
       );
 
       if (response != null && response is Map<String, dynamic>) {
@@ -395,7 +355,6 @@ class CustomerController with ChangeNotifier {
           final data = customerDetailData['Data'];
           if (data != null && data is Map<String, dynamic>) {
             customerDetail = [data];
-            debugPrint('Customer detail fetched: ${customerDetail?.length}');
           } else {
             _detailErrorMessage = 'Invalid customer detail data format';
           }
@@ -403,13 +362,12 @@ class CustomerController with ChangeNotifier {
           _detailErrorMessage =
               customerDetailData['Message'] as String? ??
               'Failed to fetch customer details';
-          debugPrint('API call failed: $_detailErrorMessage');
         }
       } else {
         _detailErrorMessage = 'Invalid response format';
       }
     } catch (e) {
-      _handleApiError(e);
+      handleApiError(e);
       _detailErrorMessage = errorMessage;
     } finally {
       _isDetailLoading = false;
@@ -418,14 +376,14 @@ class CustomerController with ChangeNotifier {
   }
 
   Future<void> getCustomerBaseData() async {
-    if (!await _checkToken()) return;
+    if (!await checkToken()) return;
 
     isLoading = true;
     notifyListeners();
 
     try {
       final response = await restApi.getCustomerBaseList(
-        token: _getAuthHeader(),
+        token: getAuthHeader(),
       );
 
       if (response != null && response is Map<String, dynamic>) {
@@ -443,18 +401,17 @@ class CustomerController with ChangeNotifier {
             countries = List<Map<String, dynamic>>.from(
               data['countries'] ?? [],
             );
-            debugPrint('Base data fetched successfully');
+
             _setDefaultCompanyType();
           }
         } else {
           errorMessage =
               customerBaseData['Message'] as String? ??
               'Failed to fetch base data';
-          debugPrint('API call failed: $errorMessage');
         }
       }
     } catch (e) {
-      _handleApiError(e);
+      handleApiError(e);
     } finally {
       isLoading = false;
       notifyListeners();
@@ -483,9 +440,6 @@ class CustomerController with ChangeNotifier {
 
       if (customerType.isNotEmpty && customerType['id'] != null) {
         selectedCompanyTypeId = customerType['id'];
-        debugPrint(
-          'Default company type set to: ${customerType['Name']} (ID: ${customerType['id']})',
-        );
       }
     }
   }
@@ -506,7 +460,7 @@ class CustomerController with ChangeNotifier {
     int? regionId,
     String? postCode,
   }) async {
-    if (!await _checkToken()) {
+    if (!await checkToken()) {
       return CustomerRegistrationResult(
         success: false,
         message: 'Authentication failed',
@@ -515,7 +469,7 @@ class CustomerController with ChangeNotifier {
 
     try {
       final response = await restApi.postCustomerRegistration(
-        token: _getAuthHeader(),
+        token: getAuthHeader(),
         name: name,
         representative: representative,
         companyTypeId: companyTypeId,
@@ -534,14 +488,11 @@ class CustomerController with ChangeNotifier {
 
       if (response != null && response is Map<String, dynamic>) {
         if (response['IsSuccess'] == true) {
-          debugPrint("Customer registration posted successfully!");
-          // FIXED: Use refresh instead of getCustomerData to properly reload
           await refresh();
           return CustomerRegistrationResult(success: true);
         } else {
           final errorMessage =
               response['Message'] as String? ?? 'Unknown error';
-          debugPrint("Registration failed: $errorMessage");
 
           bool isDuplicate =
               errorMessage.toLowerCase().contains('duplicate') ||
@@ -557,14 +508,13 @@ class CustomerController with ChangeNotifier {
           );
         }
       } else {
-        debugPrint("Unknown response format");
         return CustomerRegistrationResult(
           success: false,
           message: 'Unexpected response format',
         );
       }
     } catch (e) {
-      _handleApiError(e);
+      handleApiError(e);
       return CustomerRegistrationResult(
         success: false,
         message: errorMessage ?? 'An error occurred',
@@ -573,26 +523,16 @@ class CustomerController with ChangeNotifier {
   }
 
   Future<void> deleteCustomer(int? id, String? descriptionText) async {
-    debugPrint("=== DELETE CUSTOMER DEBUG INFO ===");
-    debugPrint("Customer ID: $id");
-    debugPrint("Description: $descriptionText");
-
-    if (!await _checkToken()) {
-      debugPrint("Token check failed");
+    if (!await checkToken()) {
       return;
     }
 
-    // FIXED: Don't show global loading for delete operations
     try {
-      debugPrint("Calling restApi.deleteCustomer...");
-
       final response = await restApi.deleteCustomer(
-        token: _getAuthHeader(),
+        token: getAuthHeader(),
         id: id,
         description: descriptionText,
       );
-
-      debugPrint("Delete API Response: $response");
 
       if (response != null && response is Map<String, dynamic>) {
         if (response['IsSuccess'] == true) {
@@ -630,11 +570,10 @@ class CustomerController with ChangeNotifier {
           }
 
           errorMessage = errorMsg;
-          debugPrint("Delete failed: $errorMessage");
+
           showErrorSnack(errorMessage.toString());
         }
       } else {
-        debugPrint("Delete completed, refreshing customer list...");
         // Remove locally and refresh
         _customers.removeWhere((customer) => customer.id == id);
         notifyListeners();
@@ -642,90 +581,13 @@ class CustomerController with ChangeNotifier {
         showErrorSnack(errorMessage.toString());
       }
     } catch (e) {
-      debugPrint("Delete API Exception: $e");
-      _handleApiError(e);
+      handleApiError(e);
       showErrorSnack('Failed to delete customer: ${e.toString()}');
-    }
-  }
-
-  // Future<void> deleteCustomer(int? id, String? descriptionText) async {
-  //   debugPrint("=== DELETE CUSTOMER DEBUG INFO ===");
-  //   debugPrint("Customer ID: $id");
-  //   debugPrint("Description: $descriptionText");
-  //
-  //   if (!await _checkToken()) {
-  //     debugPrint("Token check failed");
-  //     return;
-  //   }
-  //
-  //   // FIXED: Don't show global loading for delete operations
-  //   try {
-  //     debugPrint("Calling restApi.deleteCustomer...");
-  //
-  //     final response = await restApi.deleteCustomer(
-  //       token: _getAuthHeader(),
-  //       id: id,
-  //       description: descriptionText,
-  //     );
-  //
-  //     debugPrint("Delete API Response: $response");
-  //
-  //     if (response != null && response is Map<String, dynamic>) {
-  //       if (response['IsSuccess'] == true) {
-  //         _customers.removeWhere((customer) => customer.id == id);
-  //         notifyListeners();
-  //         await refresh();
-  //         showSuccessSnack('Customer deleted successfully');
-  //       } else {
-  //         errorMessage =
-  //             response['Message'] as String? ?? 'Failed to delete customer';
-  //         debugPrint("Delete failed: $errorMessage");
-  //         showErrorSnack(errorMessage.toString());
-  //       }
-  //     } else {
-  //       debugPrint("Delete completed, refreshing customer list...");
-  //       // Remove locally and refresh
-  //       _customers.removeWhere((customer) => customer.id == id);
-  //       notifyListeners();
-  //       await refresh();
-  //       showErrorSnack(errorMessage.toString());
-  //     }
-  //   } catch (e) {
-  //     debugPrint("Delete API Exception: $e");
-  //     _handleApiError(e);
-  //     showErrorSnack('Failed to delete expense ${e.toString()}');
-  //   }
-  // }
-
-  // Enhanced error handling
-  void _handleApiError(dynamic e) {
-    if (e is DioException) {
-      debugPrint("Dio Exception: ${e.message}");
-
-      if (e.response?.statusCode == 302 ||
-          (e.response?.data is String &&
-              (e.response?.data as String).contains('login'))) {
-        debugPrint("Authentication failed - redirected to login page");
-        errorMessage = 'Authentication failed. Please log in again.';
-        AuthRepo.handleAuthError();
-        return;
-      }
-
-      if (e.response != null) {
-        debugPrint('Response status: ${e.response?.statusCode}');
-        debugPrint('Response data: ${e.response?.data}');
-      }
-
-      errorMessage = 'Network error: ${e.message}';
-    } else {
-      debugPrint("Error: $e");
-      errorMessage = 'Error: ${e.toString()}';
     }
   }
 
   @override
   void dispose() {
-    debugPrint("CustomerController disposed");
     super.dispose();
   }
 }
