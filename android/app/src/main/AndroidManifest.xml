@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <application
-        android:label="watan_afghan"
+        android:label="Watan Afghan"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity
