@@ -511,28 +511,20 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
                               isRequired: true,
                             ),
                             const SizedBox(height: 20),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _buildDropdown(
-                                    key: _fieldKeys['companyType'],
-                                    value: controller.selectedCompanyTypeId,
-                                    items: controller.companyType ?? [],
-                                    label: 'Company Type',
-                                    isRequired: true,
-                                    onChanged: controller.setCompanyType,
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: _buildDateField(
-                                    key: _fieldKeys['registrationDate'],
-                                    controller: _registrationDateController,
-                                    label: 'Registration Date',
-                                    isRequired: true,
-                                  ),
-                                ),
-                              ],
+                            _buildDropdown(
+                              key: _fieldKeys['companyType'],
+                              value: controller.selectedCompanyTypeId,
+                              items: controller.companyType ?? [],
+                              label: 'Company Type',
+                              isRequired: true,
+                              onChanged: controller.setCompanyType,
+                            ),
+                            const SizedBox(height: 20),
+                            _buildDateField(
+                              key: _fieldKeys['registrationDate'],
+                              controller: _registrationDateController,
+                              label: 'Registration Date',
+                              isRequired: true,
                             ),
                           ],
                         ),
