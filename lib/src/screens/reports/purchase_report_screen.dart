@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:sample/src/providers/purchase_controller.dart';
 import 'package:sample/src/providers/reports_controller.dart';
+import 'package:sample/src/util/pdf_share_helper.dart';
 import 'package:sample/src/widgets/pdf_download_widget.dart';
 
 class PurchaseReportScreen extends StatefulWidget {
@@ -245,6 +246,21 @@ class _PurchaseReportScreenState extends State<PurchaseReportScreen> {
         ),
         elevation: 0,
         backgroundColor: Theme.of(context).colorScheme.primary,
+        actions: [
+          if (_pdfPath != null)
+            IconButton(
+              icon: const Icon(Icons.share),
+              onPressed:
+                  () => PdfShareHelper.sharePdf(
+                    context: context,
+                    pdfPath: _pdfPath!,
+                    subject: 'Purchase Report',
+                    text:
+                        'Purchase Report from ${DateFormat('MMM dd, yyyy').format(_fromDate!)} to ${DateFormat('MMM dd, yyyy').format(_toDate!)}',
+                  ),
+              tooltip: 'Share Report',
+            ),
+        ],
       ),
       body: _pdfPath != null ? _buildPdfViewer() : _buildReportForm(),
     );

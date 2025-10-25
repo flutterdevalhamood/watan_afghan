@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:provider/provider.dart';
 import 'package:sample/src/providers/reports_controller.dart';
+import 'package:sample/src/util/pdf_share_helper.dart';
 import 'package:sample/src/widgets/pdf_download_widget.dart';
 
 class CurrentStockReportScreen extends StatefulWidget {
@@ -96,6 +97,20 @@ class _CurrentStockReportScreenState extends State<CurrentStockReportScreen> {
         ),
         elevation: 0,
         backgroundColor: Theme.of(context).colorScheme.primary,
+        actions: [
+          if (_pdfPath != null)
+            IconButton(
+              icon: const Icon(Icons.share),
+              onPressed:
+                  () => PdfShareHelper.sharePdf(
+                    context: context,
+                    pdfPath: _pdfPath!,
+                    subject: 'Current Stock Report',
+                    text: 'Current Stock Report ',
+                  ),
+              tooltip: 'Share Report',
+            ),
+        ],
       ),
       body: _pdfPath != null ? _buildPdfViewer() : _buildReportForm(),
     );

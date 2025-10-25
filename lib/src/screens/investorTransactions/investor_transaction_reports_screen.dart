@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:sample/src/providers/investor_transaction_controller.dart';
+import 'package:sample/src/util/pdf_share_helper.dart';
 import 'package:sample/src/widgets/pdf_download_widget.dart';
 
 class InvestorTransactionReportScreen extends StatefulWidget {
@@ -213,6 +214,21 @@ class _InvestorTransactionReportScreenState
             fontWeight: FontWeight.w600,
           ),
         ),
+        actions: [
+          if (_pdfPath != null)
+            IconButton(
+              icon: const Icon(Icons.share),
+              onPressed:
+                  () => PdfShareHelper.sharePdf(
+                    context: context,
+                    pdfPath: _pdfPath!,
+                    subject: 'Cash Report',
+                    text:
+                        'Investor Transaction Report from ${DateFormat('MMM dd, yyyy').format(_fromDate!)} to ${DateFormat('MMM dd, yyyy').format(_toDate!)}',
+                  ),
+              tooltip: 'Share Report',
+            ),
+        ],
         elevation: 0,
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),
