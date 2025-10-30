@@ -1,4 +1,3 @@
-// customer_advance_distribute_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sample/src/models/customer_advance_disburse_model.dart';

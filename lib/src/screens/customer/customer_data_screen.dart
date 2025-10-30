@@ -63,25 +63,20 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
     controller.getCustomerBaseData();
   }
 
-  // Add method to validate mobile number with country code
   String? _validateMobileNumber(String value) {
     if (value.trim().isEmpty) {
       return 'Mobile number is required';
     }
 
-    // Remove any spaces, dashes, or parentheses for validation
     String cleanedValue = value.replaceAll(RegExp(r'[\s\-\(\)]'), '');
 
-    // Check if it starts with + (country code required)
     if (!cleanedValue.startsWith('+')) {
       return 'Mobile number must include country code (e.g., +971xxxxxxxxx)';
     }
 
-    // Extract country code and number
     String? countryCode;
     String numberPart = '';
 
-    // Try to match country codes (longest first to avoid conflicts)
     List<String> sortedCodes =
         countryPhoneValidation.keys.toList()
           ..sort((a, b) => b.length.compareTo(a.length));
@@ -98,18 +93,15 @@ class _CustomerRegistrationScreenState extends State<CustomerDataScreen> {
       return 'Invalid country code. Please use a valid country code (e.g., +971, +1, +44)';
     }
 
-    // Check if number part contains only digits
     if (!RegExp(r'^[0-9]+$').hasMatch(numberPart)) {
       return 'Phone number can only contain digits after country code';
     }
 
-    // Get validation rules for the country
     Map<String, dynamic> rules = countryPhoneValidation[countryCode]!;
     int minLength = rules['minLength'];
     int maxLength = rules['maxLength'];
     String countryName = rules['name'];
 
-    // Validate length
     if (numberPart.length < minLength) {
       return 'Invalid ${countryName} number. Must be at least $minLength digits after $countryCode';
     }

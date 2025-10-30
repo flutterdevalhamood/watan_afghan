@@ -1,4 +1,3 @@
-// Create a new file: bank_details_model.dart
 class BankDetailsModel {
   final String currency;
   final double amount;

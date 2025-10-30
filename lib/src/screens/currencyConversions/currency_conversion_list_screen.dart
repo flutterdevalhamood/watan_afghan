@@ -351,17 +351,6 @@ class _CurrencyConversionListScreenState
           'Currency Conversions',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: () {
-              // TODO: Implement filtering
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Filtering coming soon')),
-              );
-            },
-          ),
-        ],
       ),
       body: Consumer<CurrencyConversionController>(
         builder: (context, controller, child) {
