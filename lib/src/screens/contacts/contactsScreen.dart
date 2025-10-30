@@ -166,26 +166,6 @@ class _ContactsScreenState extends State<ContactsScreen>
                       ),
 
                       const SizedBox(height: 20),
-
-                      // _buildContactCard(
-                      //   title: 'Financers',
-                      //   subtitle: 'Access financial partner contacts',
-                      //   icon: Icons.account_balance_rounded,
-                      //   color: const Color(0xFFF59E0B),
-                      //   gradient: [
-                      //     const Color(0xFFF59E0B),
-                      //     const Color(0xFFD97706),
-                      //   ],
-                      //   onTap: () {
-                      //     // Navigate to financer list screen
-                      //     // NavigationService().pushNavigation(
-                      //     //   Screenroutes.financerListScreen,
-                      //     // );
-                      //     Navigator.pop(context);
-                      //     // Add your navigation logic here
-                      //   },
-                      //   delay: 400,
-                      // ),
                     ],
                   ),
                 ),
